@@ -1,6 +1,8 @@
 use clap::{Parser, Subcommand};
 use petal::lexer::Lexer;
 
+use crate::petal::errors::print_error;
+
 #[macro_use]
 extern crate lazy_static;
 
@@ -28,34 +30,16 @@ fn main() {
     match args.command {
         Commands::Build { file } => {
             let file = std::fs::read_to_string(file).expect("Could not read file");
-            println!("File: {}", file);
 
             let tokens = match Lexer::lex(&file) {
                 Ok(tokens) => tokens,
                 Err(e) => {
-                    eprintln!("{}", e);
+                    print_error(&file, &e);
                     std::process::exit(1);
                 }
             };
 
             println!("{:?}", tokens);
-
-            // let tokens = match Lexer::lex(&file) {
-            //     Ok(tokens) => tokens,
-            //     Err(errors) => {
-            //         eprintln!(
-            //             "{}",
-            //             errors
-            //                 .iter()
-            //                 .map(|e| e.to_string())
-            //                 .collect::<Vec<_>>()
-            //                 .join("\n")
-            //         );
-            //         std::process::exit(1);
-            //     }
-            // };
-
-            // println!("{:?}", tokens);
         }
     }
 }

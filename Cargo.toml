@@ -9,5 +9,6 @@ authors = ["Jake Runzer <jakerunzer@gmail.com>"]
 [dependencies]
 anyhow = "1.0.70"
 clap = { version = "4.2.4", features = ["derive"] }
+colored = "2.0.0"
 insta = { version = "1.29.0", features = ["json"] }
 lazy_static = "1.4.0"
