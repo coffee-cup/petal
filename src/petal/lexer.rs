@@ -110,7 +110,7 @@ impl<'a> Lexer<'a> {
 
         loop {
             match self.current {
-                Some(c) if c.is_digit(10) => number.push(c),
+                Some(c) if c.is_ascii_digit() => number.push(c),
                 Some('.') => {
                     if seen_dot {
                         return Err(LexerError::new(
@@ -127,7 +127,7 @@ impl<'a> Lexer<'a> {
 
             // Advance if the next character belongs to the number
             match self.peek() {
-                Some(c) if c.is_digit(10) || c == '.' => self.advance(),
+                Some(c) if c.is_ascii_digit() || c == '.' => self.advance(),
                 _ => break,
             }
         }
@@ -231,11 +231,11 @@ impl<'a> Iterator for Lexer<'a> {
                 let comment = self.advance_while(&|c| c != '\n');
                 Token::new(TT::Comment).with_literal(Literal::Comment(
                     comment
-                        .trim_start_matches(&|c| c == '#' || c == ' ')
+                        .trim_start_matches(|c| c == '#' || c == ' ')
                         .to_string(),
                 ))
             }
-            Some(c) if c.is_digit(10) => match self.number() {
+            Some(c) if c.is_ascii_digit() => match self.number() {
                 Ok(token) => token,
                 Err(e) => return Some(Err(e)),
             },
