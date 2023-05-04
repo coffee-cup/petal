@@ -1,6 +1,6 @@
 use core::fmt;
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Hash, Eq, PartialEq, Debug, Clone)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen,
@@ -49,7 +49,7 @@ pub enum Literal {
     Comment(String),
 }
 
-#[derive(PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone)]
 pub struct TokenPos {
     pub line: usize,
     pub col: usize,
