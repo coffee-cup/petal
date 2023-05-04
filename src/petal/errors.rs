@@ -17,9 +17,13 @@ pub fn print_error(source: &str, error: &LexerError) {
         "^".red()
     );
 
+    let error_msg_pos: i32 = std::cmp::max(
+        0,
+        (line_number_len as i32) + (error.pos.col as i32) - ((error_len as i32) / 2),
+    );
     println!(
         "{} {}",
-        " ".repeat(line_number_len + error.pos.col - (error_len / 2)),
+        " ".repeat(error_msg_pos as usize),
         error.msg.red().bold()
     );
 }

@@ -114,8 +114,8 @@ impl<'a> Lexer<'a> {
                 Some('.') => {
                     if seen_dot {
                         return Err(LexerError::new(
-                            TokenPos::new(self.line, self.col),
-                            "Invalid number".to_string(),
+                            TokenPos::new(self.line, self.col - 1),
+                            "Invalid number: Too many dots".to_string(),
                         ));
                     }
 
