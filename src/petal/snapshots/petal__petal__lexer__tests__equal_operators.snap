@@ -1,0 +1,66 @@
+---
+source: src/petal/lexer.rs
+expression: "lex(\"== != <= >=\".to_string())"
+---
+[
+    Token {
+        token_type: EqualEqual,
+        lexeme: "==",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 1,
+            },
+            TokenPos {
+                line: 0,
+                col: 2,
+            },
+        ),
+    },
+    Token {
+        token_type: BangEqual,
+        lexeme: "!=",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 4,
+            },
+            TokenPos {
+                line: 0,
+                col: 5,
+            },
+        ),
+    },
+    Token {
+        token_type: LessEqual,
+        lexeme: "<=",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 7,
+            },
+            TokenPos {
+                line: 0,
+                col: 8,
+            },
+        ),
+    },
+    Token {
+        token_type: GreaterEqual,
+        lexeme: ">=",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 10,
+            },
+            TokenPos {
+                line: 0,
+                col: 11,
+            },
+        ),
+    },
+]

@@ -33,24 +33,11 @@ pub enum TokenType {
     Number,
 
     // Keywords.
-    And,
-    Class,
-    Else,
-    False,
-    Fun,
-    For,
     If,
-    Nil,
-    Or,
-    Print,
-    Return,
-    Super,
-    This,
+    Else,
     True,
-    Var,
-    While,
+    False,
 
-    Eof,
     Comment,
 }
 
@@ -63,26 +50,52 @@ pub enum Literal {
 }
 
 #[derive(PartialEq, Debug, Clone)]
+pub struct TokenPos {
+    pub line: usize,
+    pub col: usize,
+}
+
+impl TokenPos {
+    pub fn new(line: usize, col: usize) -> Self {
+        TokenPos { line, col }
+    }
+}
+
+pub type TokenRange = (TokenPos, TokenPos);
+
+#[derive(PartialEq, Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
     pub literal: Option<Literal>,
-    pub line: usize,
+    pub range: TokenRange,
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, lexeme: String, line: usize) -> Token {
+    pub fn new(token_type: TokenType) -> Token {
         Token {
             token_type,
-            lexeme,
+            lexeme: "".to_string(),
             literal: None,
-            line,
+            range: (TokenPos::new(0, 0), TokenPos::new(0, 0)),
         }
     }
 
     pub fn with_literal(self, literal: Literal) -> Token {
         let mut t = self;
         t.literal = Some(literal);
+        t
+    }
+
+    pub fn with_lexeme(self, lexeme: String) -> Token {
+        let mut t = self;
+        t.lexeme = lexeme;
+        t
+    }
+
+    pub fn with_range(self, range: TokenRange) -> Token {
+        let mut t = self;
+        t.range = range;
         t
     }
 }

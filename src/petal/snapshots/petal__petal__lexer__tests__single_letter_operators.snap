@@ -1,0 +1,261 @@
+---
+source: src/petal/lexer.rs
+expression: "lex(\"( ) { } . , ? : ; + - * / ! = < >\".to_string())"
+---
+[
+    Token {
+        token_type: LeftParen,
+        lexeme: "(",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 1,
+            },
+            TokenPos {
+                line: 0,
+                col: 1,
+            },
+        ),
+    },
+    Token {
+        token_type: RightParen,
+        lexeme: ")",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 3,
+            },
+            TokenPos {
+                line: 0,
+                col: 3,
+            },
+        ),
+    },
+    Token {
+        token_type: LeftBrace,
+        lexeme: "{",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 5,
+            },
+            TokenPos {
+                line: 0,
+                col: 5,
+            },
+        ),
+    },
+    Token {
+        token_type: RightBrace,
+        lexeme: "}",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 7,
+            },
+            TokenPos {
+                line: 0,
+                col: 7,
+            },
+        ),
+    },
+    Token {
+        token_type: Dot,
+        lexeme: ".",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 9,
+            },
+            TokenPos {
+                line: 0,
+                col: 9,
+            },
+        ),
+    },
+    Token {
+        token_type: Comma,
+        lexeme: ",",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 11,
+            },
+            TokenPos {
+                line: 0,
+                col: 11,
+            },
+        ),
+    },
+    Token {
+        token_type: QuestionMark,
+        lexeme: "?",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 13,
+            },
+            TokenPos {
+                line: 0,
+                col: 13,
+            },
+        ),
+    },
+    Token {
+        token_type: Colon,
+        lexeme: ":",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 15,
+            },
+            TokenPos {
+                line: 0,
+                col: 15,
+            },
+        ),
+    },
+    Token {
+        token_type: Semicolon,
+        lexeme: ";",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 17,
+            },
+            TokenPos {
+                line: 0,
+                col: 17,
+            },
+        ),
+    },
+    Token {
+        token_type: Plus,
+        lexeme: "+",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 19,
+            },
+            TokenPos {
+                line: 0,
+                col: 19,
+            },
+        ),
+    },
+    Token {
+        token_type: Minus,
+        lexeme: "-",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 21,
+            },
+            TokenPos {
+                line: 0,
+                col: 21,
+            },
+        ),
+    },
+    Token {
+        token_type: Star,
+        lexeme: "*",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 23,
+            },
+            TokenPos {
+                line: 0,
+                col: 23,
+            },
+        ),
+    },
+    Token {
+        token_type: Slash,
+        lexeme: "/",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 25,
+            },
+            TokenPos {
+                line: 0,
+                col: 25,
+            },
+        ),
+    },
+    Token {
+        token_type: Bang,
+        lexeme: "!",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 27,
+            },
+            TokenPos {
+                line: 0,
+                col: 27,
+            },
+        ),
+    },
+    Token {
+        token_type: Equal,
+        lexeme: "=",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 29,
+            },
+            TokenPos {
+                line: 0,
+                col: 29,
+            },
+        ),
+    },
+    Token {
+        token_type: Less,
+        lexeme: "<",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 31,
+            },
+            TokenPos {
+                line: 0,
+                col: 31,
+            },
+        ),
+    },
+    Token {
+        token_type: Greater,
+        lexeme: ">",
+        literal: None,
+        range: (
+            TokenPos {
+                line: 0,
+                col: 33,
+            },
+            TokenPos {
+                line: 0,
+                col: 33,
+            },
+        ),
+    },
+]

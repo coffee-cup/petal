@@ -1,0 +1,44 @@
+---
+source: src/petal/lexer.rs
+expression: "lex(\"\\\"hello world\\\" \\\"123 -+() . '\\\"\".to_string())"
+---
+[
+    Token {
+        token_type: String,
+        lexeme: "\"hello world\"",
+        literal: Some(
+            String(
+                "hello world",
+            ),
+        ),
+        range: (
+            TokenPos {
+                line: 0,
+                col: 1,
+            },
+            TokenPos {
+                line: 0,
+                col: 13,
+            },
+        ),
+    },
+    Token {
+        token_type: String,
+        lexeme: "\"123 -+() . '\"",
+        literal: Some(
+            String(
+                "123 -+() . '",
+            ),
+        ),
+        range: (
+            TokenPos {
+                line: 0,
+                col: 15,
+            },
+            TokenPos {
+                line: 0,
+                col: 28,
+            },
+        ),
+    },
+]

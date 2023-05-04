@@ -2,11 +2,12 @@
 name = "petal"
 version = "0.1.0"
 edition = "2021"
+authors = ["Jake Runzer <jakerunzer@gmail.com>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1.0.70"
 clap = { version = "4.2.4", features = ["derive"] }
+insta = { version = "1.29.0", features = ["json"] }
 lazy_static = "1.4.0"
-rustyline = "11.0.0"

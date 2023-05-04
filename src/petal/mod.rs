@@ -1,3 +1,2 @@
-pub mod repl;
-mod scanner;
-mod token;
+pub mod lexer;
+pub mod token;
