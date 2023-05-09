@@ -1,5 +1,7 @@
 use core::fmt;
 
+use super::positions::{Pos, Span};
+
 #[derive(Hash, Eq, PartialEq, Debug, Clone)]
 pub enum TokenType {
     // Single-character tokens.
@@ -39,6 +41,7 @@ pub enum TokenType {
     False,
 
     Comment,
+    Eof,
 }
 
 #[derive(PartialEq, Debug, Clone)]
@@ -49,26 +52,12 @@ pub enum Literal {
     Comment(String),
 }
 
-#[derive(Eq, PartialEq, Debug, Clone)]
-pub struct TokenPos {
-    pub line: usize,
-    pub col: usize,
-}
-
-impl TokenPos {
-    pub fn new(line: usize, col: usize) -> Self {
-        TokenPos { line, col }
-    }
-}
-
-pub type TokenRange = (TokenPos, TokenPos);
-
 #[derive(PartialEq, Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
     pub literal: Option<Literal>,
-    pub range: TokenRange,
+    pub span: Span,
 }
 
 impl Token {
@@ -77,7 +66,7 @@ impl Token {
             token_type,
             lexeme: "".to_string(),
             literal: None,
-            range: (TokenPos::new(0, 0), TokenPos::new(0, 0)),
+            span: Pos::new(0, 0).into(),
         }
     }
 
@@ -93,9 +82,9 @@ impl Token {
         t
     }
 
-    pub fn with_range(self, range: TokenRange) -> Token {
+    pub fn with_span(self, span: Span) -> Token {
         let mut t = self;
-        t.range = range;
+        t.span = span;
         t
     }
 }

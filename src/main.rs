@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use petal::lexer::Lexer;
+use petal::{lexer::Lexer, parser};
 
 use crate::petal::errors::print_error;
 
@@ -31,15 +31,21 @@ fn main() {
         Commands::Build { file } => {
             let file = std::fs::read_to_string(file).expect("Could not read file");
 
-            let tokens = match Lexer::lex(&file) {
-                Ok(tokens) => tokens,
-                Err(e) => {
-                    print_error(&file, &e);
-                    std::process::exit(1);
-                }
-            };
+            let mut lexer = Lexer::new(&file);
+            let mut parser = parser::Parser::new(&mut lexer);
+            let expr = parser.parse().unwrap();
 
-            println!("{:?}", tokens);
+            println!("Expr: {:?}", expr);
+
+            // let tokens = match Lexer::lex(&file) {
+            //     Ok(tokens) => tokens,
+            //     Err(e) => {
+            //         print_error(&file, &e);
+            //         std::process::exit(1);
+            //     }
+            // };
+
+            // println!("{:?}", tokens);
         }
     }
 }

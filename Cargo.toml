@@ -12,3 +12,4 @@ clap = { version = "4.2.4", features = ["derive"] }
 colored = "2.0.0"
 insta = { version = "1.29.0", features = ["json"] }
 lazy_static = "1.4.0"
+thiserror = "1.0.40"

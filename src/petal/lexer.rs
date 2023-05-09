@@ -1,7 +1,12 @@
 use core::fmt;
 use std::{collections::HashMap, str::Chars};
+use thiserror::Error;
 
-use super::token::{Literal, Token, TokenPos, TokenType};
+use super::{
+    errors::CompilerError,
+    positions::{Pos, Span},
+    token::{Literal, Token, TokenType},
+};
 
 type TT = TokenType;
 
@@ -14,11 +19,48 @@ pub struct Lexer<'a> {
     current_lexeme: String,
 }
 
+#[derive(Error, Clone, Debug)]
+pub enum LexerErrorKind {
+    #[error("Unexpected character {0}")]
+    UnexpectedChar(char),
+
+    #[error("Unterminated string")]
+    UnterminatedString,
+
+    #[error("Invalid number")]
+    InvalidNumber,
+}
+
 #[derive(Debug, Clone)]
 pub struct LexerError {
-    pub pos: TokenPos,
-    pub msg: String,
+    pub span: Option<Span>,
+    pub kind: LexerErrorKind,
 }
+
+impl LexerError {
+    pub fn new(kind: LexerErrorKind) -> Self {
+        LexerError { span: None, kind }
+    }
+
+    pub fn with_span(&self, span: Span) -> Self {
+        LexerError {
+            span: Some(span),
+            ..self.clone()
+        }
+    }
+}
+
+impl CompilerError for LexerError {
+    fn span(&self) -> Option<Span> {
+        self.span.clone()
+    }
+
+    fn msg(&self) -> String {
+        self.kind.to_string()
+    }
+}
+
+type LexerResult<T> = Result<T, LexerError>;
 
 lazy_static! {
     static ref KEYWORDS: HashMap<&'static str, TokenType> = {
@@ -45,7 +87,7 @@ impl<'a> Lexer<'a> {
         lexer
     }
 
-    pub fn lex(source: &str) -> Result<Vec<Token>, LexerError> {
+    pub fn lex(source: &str) -> LexerResult<Vec<Token>> {
         let lexer = Lexer::new(source);
 
         let mut tokens: Vec<Token> = Vec::new();
@@ -80,9 +122,9 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn string(&mut self) -> Result<Token, LexerError> {
+    fn string(&mut self) -> LexerResult<Token> {
         let mut s = String::new();
-        let start_pos = TokenPos::new(self.line, self.col);
+        let start_pos = Pos::new(self.line, self.col);
 
         self.advance();
 
@@ -91,10 +133,8 @@ impl<'a> Lexer<'a> {
                 Some('"') => break,
                 Some(c) => s.push(c),
                 _ => {
-                    return Err(LexerError::new(
-                        start_pos,
-                        "Unterminated string".to_string(),
-                    ))
+                    return Err(LexerError::new(LexerErrorKind::UnterminatedString)
+                        .with_span(start_pos.into()))
                 }
             }
 
@@ -104,7 +144,7 @@ impl<'a> Lexer<'a> {
         Ok(Token::new(TT::String).with_literal(Literal::String(s)))
     }
 
-    fn number(&mut self) -> Result<Token, LexerError> {
+    fn number(&mut self) -> LexerResult<Token> {
         let mut number = String::new();
         let mut seen_dot = false;
 
@@ -113,10 +153,8 @@ impl<'a> Lexer<'a> {
                 Some(c) if c.is_ascii_digit() => number.push(c),
                 Some('.') => {
                     if seen_dot {
-                        return Err(LexerError::new(
-                            TokenPos::new(self.line, self.col - 1),
-                            "Invalid number: Too many dots".to_string(),
-                        ));
+                        return Err(LexerError::new(LexerErrorKind::InvalidNumber)
+                            .with_span(Pos::new(self.line, self.col - 1).into()));
                     }
 
                     seen_dot = true;
@@ -133,10 +171,8 @@ impl<'a> Lexer<'a> {
         }
 
         let value = number.parse::<f64>().map_err(|_e| {
-            LexerError::new(
-                TokenPos::new(self.line, self.col),
-                "Invalid number".to_string(),
-            )
+            LexerError::new(LexerErrorKind::InvalidNumber)
+                .with_span(Pos::new(self.line, self.col).into())
         })?;
 
         Ok(Token::new(TT::Number).with_literal(Literal::Number(value)))
@@ -246,35 +282,25 @@ impl<'a> Iterator for Lexer<'a> {
             Some(c) if c.is_alphabetic() => self.identifier_or_reserved(),
 
             Some(_) => {
-                return Some(Err(LexerError::new(
-                    TokenPos::new(self.line, self.col),
-                    format!("Unexpected character '{}'", self.current.unwrap()),
-                )))
+                return Some(Err(LexerError::new(LexerErrorKind::UnexpectedChar(
+                    self.current.unwrap(),
+                ))
+                .with_span(Pos::new(self.line, self.col).into())))
             }
 
             None => return None,
         };
 
-        let token = token.with_lexeme(self.current_lexeme.clone()).with_range((
-            TokenPos::new(start_line, start_col),
-            TokenPos::new(self.line, self.col),
-        ));
+        let token = token
+            .with_lexeme(self.current_lexeme.clone())
+            .with_span(Span::new(
+                Pos::new(start_line, start_col),
+                Pos::new(self.line, self.col),
+            ));
 
         self.advance();
 
         Some(Ok(token))
-    }
-}
-
-impl LexerError {
-    pub fn new(pos: TokenPos, msg: String) -> LexerError {
-        LexerError { pos, msg }
-    }
-}
-
-impl fmt::Display for LexerError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[{}:{}] Error {}", self.pos.line, self.pos.col, self.msg)
     }
 }
 

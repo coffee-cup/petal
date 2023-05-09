@@ -2,6 +2,16 @@
 source: src/petal/parser.rs
 expression: expr
 ---
-Number(
-    1.0,
-)
+Number {
+    value: 1.0,
+    loc: (
+        TokenPos {
+            line: 0,
+            col: 2,
+        },
+        TokenPos {
+            line: 0,
+            col: 2,
+        },
+    ),
+}

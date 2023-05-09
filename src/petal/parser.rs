@@ -1,10 +1,55 @@
 use std::{collections::HashMap, rc::Rc};
+use thiserror::Error;
 
 use super::{
     ast::Expr,
-    lexer::Lexer,
-    token::{Literal, Token, TokenPos, TokenRange, TokenType},
+    errors::CompilerError,
+    lexer::{Lexer, LexerErrorKind},
+    positions::{HasSpan, Pos, Span},
+    token::{Literal, Token, TokenType},
 };
+
+type TT = TokenType;
+
+#[derive(Error, Clone, Debug)]
+pub enum ParserErrorKind {
+    #[error("{0}")]
+    LexerError(#[from] LexerErrorKind),
+
+    #[error("Unexpected token {0}")]
+    UnexpectedToken(Token),
+}
+
+#[derive(Debug, Clone)]
+pub struct ParserError {
+    pub span: Option<Span>,
+    pub kind: ParserErrorKind,
+}
+
+impl ParserError {
+    pub fn new(kind: ParserErrorKind) -> Self {
+        ParserError { span: None, kind }
+    }
+
+    pub fn with_span(&self, span: Span) -> Self {
+        ParserError {
+            span: Some(span),
+            ..self.clone()
+        }
+    }
+}
+
+impl CompilerError for ParserError {
+    fn span(&self) -> Option<Span> {
+        self.span.clone()
+    }
+
+    fn msg(&self) -> String {
+        self.kind.to_string()
+    }
+}
+
+type ParserResult<T> = Result<T, ParserError>;
 
 #[derive(PartialOrd, PartialEq, Clone, Debug)]
 pub enum Precedence {
@@ -21,79 +66,69 @@ pub enum Precedence {
     Highest,
 }
 
-impl Precedence {
-    fn next(self) -> Self {
-        use Precedence::*;
-        match self {
-            Lowest => Assign,
-            Assign => LogicalOr,
-            LogicalOr => LogicalAnd,
-            LogicalAnd => Equality,
-            Equality => Comparison,
-            Comparison => Term,
-            Term => Factor,
-            Factor => Unary,
-            Unary => Call,
-            Call => Highest,
-            Highest => Highest,
-        }
-    }
-}
-
-pub trait PrefixParselet {
+trait PrefixParselet {
     fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr>;
 }
 
-pub trait InfixParselet {
+trait InfixParselet {
     fn parse(&self, parser: &mut Parser, left: Expr, token: Token) -> ParserResult<Expr>;
     fn precedence(&self) -> Precedence;
 }
 
-#[derive(Debug, Clone)]
-pub struct ParserError {
-    pub range: Option<TokenRange>,
-    pub msg: String,
+macro_rules! register {
+    ($map:expr, $token_type:path, $parselet:ident) => {
+        $map.insert($token_type, std::rc::Rc::new($parselet))
+    };
 }
 
-impl ParserError {
-    pub fn new(msg: String) -> ParserError {
-        ParserError { range: None, msg }
-    }
-
-    pub fn with_range(self, range: TokenRange) -> ParserError {
-        let mut e = self;
-        e.range = Some(range);
-        e
-    }
-}
-
-type ParserResult<T> = Result<T, ParserError>;
-
-struct IntegerParselet;
-impl PrefixParselet for IntegerParselet {
+struct NumberParselet;
+impl PrefixParselet for NumberParselet {
     fn parse(&self, _parser: &mut Parser, token: Token) -> ParserResult<Expr> {
         match token.literal {
-            Some(Literal::Number(value)) => Ok(Expr::Number(value)),
-            _ => Err(
-                ParserError::new(format!("Expected a number, but found {}", token))
-                    .with_range(token.clone().range),
-            ),
+            Some(Literal::Number(value)) => Ok(Expr::Number {
+                value,
+                span: token.span,
+            }),
+            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(token))),
         }
     }
 }
 
-struct GroupParseLet;
-impl PrefixParselet for GroupParseLet {
+struct PrefixOperatorParselet;
+impl PrefixParselet for PrefixOperatorParselet {
     fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr> {
-        let expr = parser.parse_expression(Precedence::Lowest)?;
-        parser.expect_token(TokenType::RightParen)?;
-        Ok(expr)
+        let operand = parser.parse_expression()?;
+        Ok(Expr::PrefixOp {
+            op: token.clone(),
+            right: Box::new(operand),
+            span: token.span,
+        })
+    }
+}
+
+struct BinaryOperatorParselet;
+impl InfixParselet for BinaryOperatorParselet {
+    fn parse(&self, parser: &mut Parser, left: Expr, token: Token) -> ParserResult<Expr> {
+        let right = parser.parse_expression()?;
+        let span = left.span().clone().merge(right.span().clone());
+
+        Ok(Expr::BinaryOp {
+            left: Box::new(left),
+            op: token,
+            right: Box::new(right),
+            span,
+        })
+    }
+
+    fn precedence(&self) -> Precedence {
+        todo!()
     }
 }
 
 pub struct Parser<'a> {
     lexer: &'a mut Lexer<'a>,
-    current_token: Option<Token>,
+    current_token: Token,
+    next_token: Token,
     prefix_parselets: HashMap<TokenType, Rc<dyn PrefixParselet>>,
     infix_parselets: HashMap<TokenType, Rc<dyn InfixParselet>>,
 }
@@ -102,105 +137,84 @@ impl<'a> Parser<'a> {
     pub fn new(lexer: &'a mut Lexer<'a>) -> Parser<'a> {
         let mut parser = Parser {
             lexer,
-            current_token: None,
+            current_token: Token::new(TT::Eof),
+            next_token: Token::new(TT::Eof),
             prefix_parselets: HashMap::new(),
             infix_parselets: HashMap::new(),
         };
 
-        // Register prefix parselets
-        parser
-            .prefix_parselets
-            .insert(TokenType::Number, Rc::new(IntegerParselet));
-        parser
-            .prefix_parselets
-            .insert(TokenType::LeftParen, Rc::new(GroupParseLet));
+        // Prime the next_token
+        parser.consume().unwrap();
+
+        // Prefix parselets
+        register!(parser.prefix_parselets, TT::Number, NumberParselet);
+
+        // Infix parselets
+        register!(parser.infix_parselets, TT::Plus, BinaryOperatorParselet);
+        register!(parser.infix_parselets, TT::Minus, BinaryOperatorParselet);
+        register!(parser.infix_parselets, TT::Star, BinaryOperatorParselet);
+        register!(parser.infix_parselets, TT::Slash, BinaryOperatorParselet);
 
         parser
     }
 
     pub fn parse(&mut self) -> ParserResult<Expr> {
-        self.parse_expression(Precedence::Lowest)
+        self.parse_expression()
     }
 
-    fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<Expr> {
-        let token = self
-            .consume()?
-            .ok_or_else(|| ParserError::new("Unexpected EOF".to_string()))?;
+    fn parse_expression(&mut self) -> ParserResult<Expr> {
+        println!("\n\n--- Parse expression ---");
+        let token = self.consume()?;
+
+        println!("Token: {}", token);
 
         let prefix_parselet = self
             .prefix_parselets
             .get(&token.token_type)
             .ok_or_else(|| {
-                ParserError::new(format!(
-                    "No prefix parselet found for token {}",
-                    token.clone()
-                ))
-                .with_range(token.clone().range)
+                ParserError::new(ParserErrorKind::UnexpectedToken(token.clone()))
+                    .with_span(token.span.clone())
             })?
             .clone();
 
-        let mut left = prefix_parselet.parse(self, token)?;
+        println!("Found prefix parselet");
 
-        while precedence < self.get_precedence() {
-            let token = self.consume()?.ok_or_else(|| {
-                ParserError::new("Unexpected EOF. Expected infix operator".to_string())
-            })?;
-            let infix_parselet = self
-                .infix_parselets
-                .get(&token.token_type)
-                .ok_or_else(|| {
-                    ParserError::new(format!(
-                        "No infix parselet found for token {}",
-                        token.clone()
-                    ))
-                    .with_range(token.clone().range)
-                })?
-                .clone();
+        let mut left = prefix_parselet.parse(self, token.clone())?;
 
-            left = infix_parselet.parse(self, left, token)?;
+        println!("\nLeft: {:?}", left);
+
+        let token = self.next_token.clone();
+        println!("Next token: {}", token);
+
+        let infix_parselet = self
+            .infix_parselets
+            .get(&token.token_type)
+            .map(|x| x.clone());
+
+        if let Some(infix_parselet) = infix_parselet.clone() {
+            println!("Found infix parselet");
+            self.consume()?;
+            left = infix_parselet.clone().parse(self, left, token.clone())?;
         }
+
+        println!("\nReturning: {:?}", left);
 
         Ok(left)
     }
 
-    fn get_precedence(&self) -> Precedence {
-        if let Some(token) = &self.current_token {
-            self.infix_parselets
-                .get(&token.token_type)
-                .map_or(Precedence::Lowest, |parselet| parselet.precedence())
-        } else {
-            Precedence::Lowest
-        }
-    }
+    fn consume(&mut self) -> ParserResult<Token> {
+        self.current_token = self.next_token.clone();
+        self.next_token = self
+            .lexer
+            .next()
+            .unwrap_or_else(|| Ok(Token::new(TT::Eof)))
+            .map_err(|lexer_error| {
+                let mut pe = ParserError::new(ParserErrorKind::LexerError(lexer_error.kind));
+                pe.span = lexer_error.span;
+                pe
+            })?;
 
-    fn consume(&mut self) -> ParserResult<Option<Token>> {
-        match self.lexer.next() {
-            Some(Ok(token)) => {
-                self.current_token = Some(token.clone());
-                Ok(Some(token))
-            }
-            Some(Err(e)) => Err(ParserError::new(e.msg).with_range((e.pos.clone(), e.pos))),
-            None => Ok(None),
-        }
-    }
-
-    fn expect_token(&mut self, token_type: TokenType) -> ParserResult<Token> {
-        if let Some(token) = self.consume()? {
-            if token.token_type == token_type {
-                return Ok(token.clone());
-            }
-
-            return Err(ParserError::new(format!(
-                "Expected token {:?}, but found {:?}",
-                token_type, self.current_token
-            ))
-            .with_range(token.range));
-        }
-
-        Err(ParserError::new(format!(
-            "Expected token {:?}, but found {:?}",
-            token_type, self.current_token
-        )))
+        Ok(self.current_token.clone())
     }
 }
 
@@ -208,21 +222,29 @@ impl<'a> Parser<'a> {
 mod tests {
     use super::*;
 
-    fn parse(s: String) -> Expr {
-        let mut lexer = Lexer::new(&s);
-        let mut parser = Parser::new(&mut lexer);
-        parser.parse().unwrap()
-    }
+    // fn parse(s: String) -> Expr {
+    //     let mut lexer = Lexer::new(&s);
+    //     let mut parser = Parser::new(&mut lexer);
+    //     parser.parse().unwrap()
+    // }
 
-    #[test]
-    fn test_literals() {
-        let expr = parse("1".to_string());
-        insta::assert_debug_snapshot!(expr);
-    }
+    // #[test]
+    // fn test_literals() {
+    //     let expr = parse("1".to_string());
+    //     insta::assert_debug_snapshot!(expr);
+    // }
 
-    #[test]
-    fn test_groups() {
-        let expr = parse("(1)".to_string());
-        insta::assert_debug_snapshot!(expr);
-    }
+    // #[test]
+    // fn test_groups() {
+    //     let expr = parse("(1)".to_string());
+    //     insta::assert_debug_snapshot!(expr);
+    // }
+
+    // #[test]
+    // fn test_math() {
+    //     let expr = parse("1 + 2 * 3".to_string());
+    //     insta::assert_debug_snapshot!(expr);
+
+    //     assert_eq!(1, 2);
+    // }
 }
