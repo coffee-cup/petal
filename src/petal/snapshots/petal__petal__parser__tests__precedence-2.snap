@@ -1,0 +1,44 @@
+---
+source: src/petal/parser.rs
+expression: "parse(\"!foo\")"
+---
+PrefixOp {
+    op: Token {
+        token_type: Bang,
+        lexeme: "!",
+        literal: None,
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 1,
+            },
+            end: Pos {
+                line: 0,
+                col: 1,
+            },
+        },
+    },
+    right: Ident {
+        name: "foo",
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 2,
+            },
+            end: Pos {
+                line: 0,
+                col: 4,
+            },
+        },
+    },
+    span: Span {
+        start: Pos {
+            line: 0,
+            col: 1,
+        },
+        end: Pos {
+            line: 0,
+            col: 1,
+        },
+    },
+}

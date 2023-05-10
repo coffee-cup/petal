@@ -1,0 +1,93 @@
+---
+source: src/petal/parser.rs
+expression: "parse(\"1 ? 2 : 3 ? 4 : 5\")"
+---
+Conditional {
+    condition: Number {
+        value: 1.0,
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 1,
+            },
+            end: Pos {
+                line: 0,
+                col: 1,
+            },
+        },
+    },
+    then_branch: Number {
+        value: 2.0,
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 5,
+            },
+            end: Pos {
+                line: 0,
+                col: 5,
+            },
+        },
+    },
+    else_branch: Conditional {
+        condition: Number {
+            value: 3.0,
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 9,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 9,
+                },
+            },
+        },
+        then_branch: Number {
+            value: 4.0,
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 13,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 13,
+                },
+            },
+        },
+        else_branch: Number {
+            value: 5.0,
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 17,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 17,
+                },
+            },
+        },
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 9,
+            },
+            end: Pos {
+                line: 0,
+                col: 17,
+            },
+        },
+    },
+    span: Span {
+        start: Pos {
+            line: 0,
+            col: 1,
+        },
+        end: Pos {
+            line: 0,
+            col: 17,
+        },
+    },
+}

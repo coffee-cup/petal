@@ -1,0 +1,84 @@
+---
+source: src/petal/parser.rs
+expression: "parse(\"!a ^ b\")"
+---
+BinaryOp {
+    left: PrefixOp {
+        op: Token {
+            token_type: Bang,
+            lexeme: "!",
+            literal: None,
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 1,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 1,
+                },
+            },
+        },
+        right: Ident {
+            name: "a",
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 2,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 2,
+                },
+            },
+        },
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 1,
+            },
+            end: Pos {
+                line: 0,
+                col: 2,
+            },
+        },
+    },
+    op: Token {
+        token_type: Caret,
+        lexeme: "^",
+        literal: None,
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 4,
+            },
+            end: Pos {
+                line: 0,
+                col: 4,
+            },
+        },
+    },
+    right: Ident {
+        name: "b",
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 6,
+            },
+            end: Pos {
+                line: 0,
+                col: 6,
+            },
+        },
+    },
+    span: Span {
+        start: Pos {
+            line: 0,
+            col: 1,
+        },
+        end: Pos {
+            line: 0,
+            col: 6,
+        },
+    },
+}

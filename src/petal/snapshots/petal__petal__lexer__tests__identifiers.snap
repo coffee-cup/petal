@@ -11,16 +11,16 @@ expression: "lex(\"a boop hello world\".to_string())"
                 "a",
             ),
         ),
-        range: (
-            TokenPos {
+        span: Span {
+            start: Pos {
                 line: 0,
                 col: 1,
             },
-            TokenPos {
+            end: Pos {
                 line: 0,
                 col: 1,
             },
-        ),
+        },
     },
     Token {
         token_type: Identifier,
@@ -30,16 +30,16 @@ expression: "lex(\"a boop hello world\".to_string())"
                 "boop",
             ),
         ),
-        range: (
-            TokenPos {
+        span: Span {
+            start: Pos {
                 line: 0,
                 col: 3,
             },
-            TokenPos {
+            end: Pos {
                 line: 0,
                 col: 6,
             },
-        ),
+        },
     },
     Token {
         token_type: Identifier,
@@ -49,16 +49,16 @@ expression: "lex(\"a boop hello world\".to_string())"
                 "hello",
             ),
         ),
-        range: (
-            TokenPos {
+        span: Span {
+            start: Pos {
                 line: 0,
                 col: 8,
             },
-            TokenPos {
+            end: Pos {
                 line: 0,
                 col: 12,
             },
-        ),
+        },
     },
     Token {
         token_type: Identifier,
@@ -68,15 +68,15 @@ expression: "lex(\"a boop hello world\".to_string())"
                 "world",
             ),
         ),
-        range: (
-            TokenPos {
+        span: Span {
+            start: Pos {
                 line: 0,
                 col: 14,
             },
-            TokenPos {
+            end: Pos {
                 line: 0,
                 col: 18,
             },
-        ),
+        },
     },
 ]

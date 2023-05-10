@@ -1,0 +1,97 @@
+---
+source: src/petal/parser.rs
+expression: "parse(\"(1 + 2) * 3\")"
+---
+BinaryOp {
+    left: BinaryOp {
+        left: Number {
+            value: 1.0,
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 2,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 2,
+                },
+            },
+        },
+        op: Token {
+            token_type: Plus,
+            lexeme: "+",
+            literal: None,
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 4,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 4,
+                },
+            },
+        },
+        right: Number {
+            value: 2.0,
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 6,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 6,
+                },
+            },
+        },
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 2,
+            },
+            end: Pos {
+                line: 0,
+                col: 6,
+            },
+        },
+    },
+    op: Token {
+        token_type: Star,
+        lexeme: "*",
+        literal: None,
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 9,
+            },
+            end: Pos {
+                line: 0,
+                col: 9,
+            },
+        },
+    },
+    right: Number {
+        value: 3.0,
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 11,
+            },
+            end: Pos {
+                line: 0,
+                col: 11,
+            },
+        },
+    },
+    span: Span {
+        start: Pos {
+            line: 0,
+            col: 2,
+        },
+        end: Pos {
+            line: 0,
+            col: 11,
+        },
+    },
+}

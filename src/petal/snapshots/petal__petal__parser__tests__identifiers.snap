@@ -1,17 +1,17 @@
 ---
 source: src/petal/parser.rs
-expression: expr
+expression: "parse(\"a\")"
 ---
-Number {
-    value: 1.0,
-    loc: (
-        TokenPos {
+Ident {
+    name: "a",
+    span: Span {
+        start: Pos {
             line: 0,
             col: 1,
         },
-        TokenPos {
+        end: Pos {
             line: 0,
             col: 1,
         },
-    ),
+    },
 }

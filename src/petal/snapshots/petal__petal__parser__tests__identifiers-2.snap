@@ -1,17 +1,17 @@
 ---
 source: src/petal/parser.rs
-expression: "parse(\"(foo)\")"
+expression: "parse(\"foo\")"
 ---
 Ident {
     name: "foo",
     span: Span {
         start: Pos {
             line: 0,
-            col: 2,
+            col: 1,
         },
         end: Pos {
             line: 0,
-            col: 4,
+            col: 3,
         },
     },
 }

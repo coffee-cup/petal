@@ -11,16 +11,16 @@ expression: "lex(\"1 123 123.456\".to_string())"
                 1.0,
             ),
         ),
-        range: (
-            TokenPos {
+        span: Span {
+            start: Pos {
                 line: 0,
                 col: 1,
             },
-            TokenPos {
+            end: Pos {
                 line: 0,
                 col: 1,
             },
-        ),
+        },
     },
     Token {
         token_type: Number,
@@ -30,16 +30,16 @@ expression: "lex(\"1 123 123.456\".to_string())"
                 123.0,
             ),
         ),
-        range: (
-            TokenPos {
+        span: Span {
+            start: Pos {
                 line: 0,
                 col: 3,
             },
-            TokenPos {
+            end: Pos {
                 line: 0,
                 col: 5,
             },
-        ),
+        },
     },
     Token {
         token_type: Number,
@@ -49,15 +49,15 @@ expression: "lex(\"1 123 123.456\".to_string())"
                 123.456,
             ),
         ),
-        range: (
-            TokenPos {
+        span: Span {
+            start: Pos {
                 line: 0,
                 col: 7,
             },
-            TokenPos {
+            end: Pos {
                 line: 0,
                 col: 13,
             },
-        ),
+        },
     },
 ]

@@ -6,6 +6,9 @@ use crate::petal::errors::print_error;
 #[macro_use]
 extern crate lazy_static;
 
+#[macro_use]
+extern crate num_derive;
+
 mod petal;
 
 #[derive(Parser, Debug)]

@@ -11,16 +11,16 @@ expression: "lex(\"\\\"hello world\\\" \\\"123 -+() . '\\\"\".to_string())"
                 "hello world",
             ),
         ),
-        range: (
-            TokenPos {
+        span: Span {
+            start: Pos {
                 line: 0,
                 col: 1,
             },
-            TokenPos {
+            end: Pos {
                 line: 0,
                 col: 13,
             },
-        ),
+        },
     },
     Token {
         token_type: String,
@@ -30,15 +30,15 @@ expression: "lex(\"\\\"hello world\\\" \\\"123 -+() . '\\\"\".to_string())"
                 "123 -+() . '",
             ),
         ),
-        range: (
-            TokenPos {
+        span: Span {
+            start: Pos {
                 line: 0,
                 col: 15,
             },
-            TokenPos {
+            end: Pos {
                 line: 0,
                 col: 28,
             },
-        ),
+        },
     },
 ]

@@ -6,6 +6,7 @@ use super::{
     errors::CompilerError,
     lexer::{Lexer, LexerErrorKind},
     positions::{HasSpan, Pos, Span},
+    precedence::Precedence,
     token::{Literal, Token, TokenType},
 };
 
@@ -18,6 +19,9 @@ pub enum ParserErrorKind {
 
     #[error("Unexpected token {0}")]
     UnexpectedToken(Token),
+
+    #[error("Expected {0}, found {1}")]
+    ExpectedToken(TokenType, Token),
 }
 
 #[derive(Debug, Clone)]
@@ -51,21 +55,6 @@ impl CompilerError for ParserError {
 
 type ParserResult<T> = Result<T, ParserError>;
 
-#[derive(PartialOrd, PartialEq, Clone, Debug)]
-pub enum Precedence {
-    Lowest,
-    Assign,     // =
-    LogicalOr,  // ||
-    LogicalAnd, // &&
-    Equality,   // ==, !=
-    Comparison, // <, >, <=, >=
-    Term,       // +, -
-    Factor,     // *, /
-    Unary,      // !, -
-    Call,       // my_function()
-    Highest,
-}
-
 trait PrefixParselet {
     fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr>;
 }
@@ -73,12 +62,6 @@ trait PrefixParselet {
 trait InfixParselet {
     fn parse(&self, parser: &mut Parser, left: Expr, token: Token) -> ParserResult<Expr>;
     fn precedence(&self) -> Precedence;
-}
-
-macro_rules! register {
-    ($map:expr, $token_type:path, $parselet:ident) => {
-        $map.insert($token_type, std::rc::Rc::new($parselet))
-    };
 }
 
 struct NumberParselet;
@@ -94,22 +77,83 @@ impl PrefixParselet for NumberParselet {
     }
 }
 
-struct PrefixOperatorParselet;
+struct StringParselet;
+impl PrefixParselet for StringParselet {
+    fn parse(&self, _parser: &mut Parser, token: Token) -> ParserResult<Expr> {
+        match token.literal {
+            Some(Literal::String(value)) => Ok(Expr::String {
+                value,
+                span: token.span,
+            }),
+            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(token))),
+        }
+    }
+}
+
+struct IdentParselet;
+impl PrefixParselet for IdentParselet {
+    fn parse(&self, _parser: &mut Parser, token: Token) -> ParserResult<Expr> {
+        match token.literal {
+            Some(Literal::Identifier(name)) => Ok(Expr::Ident {
+                name,
+                span: token.span,
+            }),
+            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(token))),
+        }
+    }
+}
+
+struct CommentParselet;
+impl PrefixParselet for CommentParselet {
+    fn parse(&self, _parser: &mut Parser, token: Token) -> ParserResult<Expr> {
+        match token.literal {
+            Some(Literal::Comment(value)) => Ok(Expr::Comment {
+                value,
+                span: token.span,
+            }),
+            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(token))),
+        }
+    }
+}
+
+struct GroupParselet;
+impl PrefixParselet for GroupParselet {
+    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr> {
+        let expr = parser.parse_expression(Precedence::Lowest)?;
+        parser.consume_expected(TT::RightParen)?;
+        Ok(expr)
+    }
+}
+
+struct PrefixOperatorParselet {
+    precedence: Precedence,
+}
 impl PrefixParselet for PrefixOperatorParselet {
     fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr> {
-        let operand = parser.parse_expression()?;
+        let operand = parser.parse_expression(self.precedence.clone())?;
+        let span = token.span().merge(operand.span());
+
         Ok(Expr::PrefixOp {
             op: token.clone(),
             right: Box::new(operand),
-            span: token.span,
+            span,
         })
     }
 }
 
-struct BinaryOperatorParselet;
+struct BinaryOperatorParselet {
+    precedence: Precedence,
+    is_right: bool,
+}
 impl InfixParselet for BinaryOperatorParselet {
     fn parse(&self, parser: &mut Parser, left: Expr, token: Token) -> ParserResult<Expr> {
-        let right = parser.parse_expression()?;
+        let parse_right_prec = if self.is_right {
+            self.precedence().prev()
+        } else {
+            self.precedence()
+        };
+
+        let right = parser.parse_expression(parse_right_prec)?;
         let span = left.span().clone().merge(right.span().clone());
 
         Ok(Expr::BinaryOp {
@@ -121,8 +165,86 @@ impl InfixParselet for BinaryOperatorParselet {
     }
 
     fn precedence(&self) -> Precedence {
-        todo!()
+        self.precedence.clone()
     }
+}
+
+struct PostfixOperatorParselet {
+    precedence: Precedence,
+}
+impl PrefixParselet for PostfixOperatorParselet {
+    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr> {
+        let operand = parser.parse_expression(self.precedence.clone())?;
+        let span = token.span.clone().merge(operand.span().clone());
+
+        Ok(Expr::PostfixOp {
+            op: token.clone(),
+            left: Box::new(operand),
+            span,
+        })
+    }
+}
+
+struct ConditionalParselet;
+impl InfixParselet for ConditionalParselet {
+    fn parse(&self, parser: &mut Parser, left: Expr, token: Token) -> ParserResult<Expr> {
+        let then_branch = parser.parse_expression(Precedence::Lowest)?;
+        parser.consume_expected(TT::Colon)?;
+        let else_branch = parser.parse_expression(self.precedence().prev())?;
+        let span = left.span().clone().merge(else_branch.span().clone());
+
+        Ok(Expr::Conditional {
+            condition: Box::new(left),
+            then_branch: Box::new(then_branch),
+            else_branch: Box::new(else_branch),
+            span,
+        })
+    }
+
+    fn precedence(&self) -> Precedence {
+        Precedence::Conditional
+    }
+}
+
+macro_rules! register {
+    ($map:expr, $token_type:path, $parselet:ident) => {
+        $map.insert($token_type, std::rc::Rc::new($parselet))
+    };
+}
+
+macro_rules! prefix {
+    ($map:expr, $token_type:path, $precedence:expr) => {
+        $map.insert(
+            $token_type,
+            std::rc::Rc::new(PrefixOperatorParselet {
+                precedence: $precedence,
+            }),
+        )
+    };
+}
+
+macro_rules! infix_left {
+    ($map:expr, $token_type:path, $precedence:expr) => {
+        $map.insert(
+            $token_type,
+            std::rc::Rc::new(BinaryOperatorParselet {
+                precedence: $precedence,
+                is_right: false,
+            }),
+        )
+    };
+}
+
+macro_rules! infix_right {
+    ($map:expr, $token_type:path, $precedence:expr) => {
+        $map.insert(
+            $token_type,
+            std::rc::Rc::new(BinaryOperatorParselet {
+                precedence: $precedence,
+                is_right: true,
+            }),
+        )
+    };
 }
 
 pub struct Parser<'a> {
@@ -146,24 +268,40 @@ impl<'a> Parser<'a> {
         // Prime the next_token
         parser.consume().unwrap();
 
-        // Prefix parselets
+        // Custom parselets
         register!(parser.prefix_parselets, TT::Number, NumberParselet);
+        register!(parser.prefix_parselets, TT::String, StringParselet);
+        register!(parser.prefix_parselets, TT::Identifier, IdentParselet);
+        register!(parser.prefix_parselets, TT::Comment, CommentParselet);
+        register!(parser.prefix_parselets, TT::LeftParen, GroupParselet);
+        register!(
+            parser.infix_parselets,
+            TT::QuestionMark,
+            ConditionalParselet
+        );
+
+        // Prefix parselets
+        prefix!(parser.prefix_parselets, TT::Minus, Precedence::Unary);
+        prefix!(parser.prefix_parselets, TT::Bang, Precedence::Unary);
 
         // Infix parselets
-        register!(parser.infix_parselets, TT::Plus, BinaryOperatorParselet);
-        register!(parser.infix_parselets, TT::Minus, BinaryOperatorParselet);
-        register!(parser.infix_parselets, TT::Star, BinaryOperatorParselet);
-        register!(parser.infix_parselets, TT::Slash, BinaryOperatorParselet);
+        infix_left!(parser.infix_parselets, TT::Minus, Precedence::Sum);
+        infix_left!(parser.infix_parselets, TT::Plus, Precedence::Sum);
+        infix_left!(parser.infix_parselets, TT::Star, Precedence::Product);
+        infix_left!(parser.infix_parselets, TT::Slash, Precedence::Product);
+        infix_right!(parser.infix_parselets, TT::Caret, Precedence::Exponent);
 
         parser
     }
 
     pub fn parse(&mut self) -> ParserResult<Expr> {
-        self.parse_expression()
+        let result = self.parse_expression(Precedence::Lowest)?;
+        self.consume_expected(TT::Eof)?;
+        Ok(result)
     }
 
-    fn parse_expression(&mut self) -> ParserResult<Expr> {
-        println!("\n\n--- Parse expression ---");
+    fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<Expr> {
+        println!("\n\n--- Parse expression: {:?} ---", precedence);
         let token = self.consume()?;
 
         println!("Token: {}", token);
@@ -181,25 +319,52 @@ impl<'a> Parser<'a> {
 
         let mut left = prefix_parselet.parse(self, token.clone())?;
 
-        println!("\nLeft: {:?}", left);
+        println!(
+            "Test {:?} < {:?} = {}",
+            precedence,
+            self.get_precedence(),
+            precedence < self.get_precedence()
+        );
 
-        let token = self.next_token.clone();
-        println!("Next token: {}", token);
+        while precedence < self.get_precedence() {
+            let token = self.consume()?;
 
-        let infix_parselet = self
-            .infix_parselets
-            .get(&token.token_type)
-            .map(|x| x.clone());
+            println!("Token: {}", token);
 
-        if let Some(infix_parselet) = infix_parselet.clone() {
-            println!("Found infix parselet");
-            self.consume()?;
-            left = infix_parselet.clone().parse(self, left, token.clone())?;
+            let infix_parselet = self
+                .infix_parselets
+                .get(&token.token_type)
+                .ok_or_else(|| {
+                    ParserError::new(ParserErrorKind::UnexpectedToken(token.clone()))
+                        .with_span(token.span.clone())
+                })?
+                .clone();
+
+            left = infix_parselet.parse(self, left, token.clone())?;
         }
 
         println!("\nReturning: {:?}", left);
 
         Ok(left)
+    }
+
+    fn get_precedence(&self) -> Precedence {
+        self.infix_parselets
+            .get(&self.next_token.token_type)
+            .map(|p| p.precedence())
+            .unwrap_or(Precedence::Lowest)
+    }
+
+    fn consume_expected(&mut self, token_type: TokenType) -> ParserResult<Token> {
+        if self.next_token.token_type != token_type {
+            return Err(ParserError::new(ParserErrorKind::ExpectedToken(
+                token_type,
+                self.next_token.clone(),
+            ))
+            .with_span(self.next_token.span.clone()));
+        }
+
+        self.consume()
     }
 
     fn consume(&mut self) -> ParserResult<Token> {
@@ -222,29 +387,66 @@ impl<'a> Parser<'a> {
 mod tests {
     use super::*;
 
-    // fn parse(s: String) -> Expr {
-    //     let mut lexer = Lexer::new(&s);
-    //     let mut parser = Parser::new(&mut lexer);
-    //     parser.parse().unwrap()
-    // }
+    fn parse(s: &str) -> Expr {
+        let mut lexer = Lexer::new(s);
+        let mut parser = Parser::new(&mut lexer);
+        parser.parse().unwrap()
+    }
 
-    // #[test]
-    // fn test_literals() {
-    //     let expr = parse("1".to_string());
-    //     insta::assert_debug_snapshot!(expr);
-    // }
+    #[test]
+    fn test_literals() {
+        insta::assert_debug_snapshot!(parse("1"));
+        insta::assert_debug_snapshot!(parse("123.456"));
+        insta::assert_debug_snapshot!(parse("\"hello\""));
+    }
 
-    // #[test]
-    // fn test_groups() {
-    //     let expr = parse("(1)".to_string());
-    //     insta::assert_debug_snapshot!(expr);
-    // }
+    #[test]
+    fn test_identifiers() {
+        insta::assert_debug_snapshot!(parse("a"));
+        insta::assert_debug_snapshot!(parse("foo"));
+    }
 
-    // #[test]
-    // fn test_math() {
-    //     let expr = parse("1 + 2 * 3".to_string());
-    //     insta::assert_debug_snapshot!(expr);
+    #[test]
+    fn test_unary_prec() {
+        insta::assert_debug_snapshot!(parse("-ab"));
+        insta::assert_debug_snapshot!(parse("!foo"));
+        insta::assert_debug_snapshot!(parse("!-a"));
+    }
 
-    //     assert_eq!(1, 2);
-    // }
+    #[test]
+    fn test_binary_prec() {
+        insta::assert_debug_snapshot!(parse("1 + 2 + 3"));
+        insta::assert_debug_snapshot!(parse("1 + 2 * 3"));
+        insta::assert_debug_snapshot!(parse("1 * 2 + 3"));
+        insta::assert_debug_snapshot!(parse("1 ^ 2"));
+    }
+
+    #[test]
+    fn test_unary_binary_prec() {
+        insta::assert_debug_snapshot!(parse("-a * b"));
+        insta::assert_debug_snapshot!(parse("!a ^ b"));
+    }
+
+    #[test]
+    fn test_binary_associativity() {
+        insta::assert_debug_snapshot!(parse("a + b - c"));
+        insta::assert_debug_snapshot!(parse("a * b / c"));
+        insta::assert_debug_snapshot!(parse("a ^ b ^ c"));
+    }
+
+    #[test]
+    fn test_conditionals() {
+        insta::assert_debug_snapshot!(parse("1 ? 2 : 3"));
+        insta::assert_debug_snapshot!(parse("1 ? 2 : 3 ? 4 : 5"));
+        insta::assert_debug_snapshot!(parse("a + b ? c * d : e / f",));
+    }
+
+    #[test]
+    fn test_groups() {
+        insta::assert_debug_snapshot!(parse("(foo)"));
+        insta::assert_debug_snapshot!(parse("(1 + 2) * 3"));
+        insta::assert_debug_snapshot!(parse("1 * (2 - 3)"));
+        insta::assert_debug_snapshot!(parse("a ^ (b + c)"));
+        insta::assert_debug_snapshot!(parse("(a ^ b) ^ c"));
+    }
 }

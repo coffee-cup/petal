@@ -1,0 +1,71 @@
+---
+source: src/petal/parser.rs
+expression: "parse(\"!-a\")"
+---
+PrefixOp {
+    op: Token {
+        token_type: Bang,
+        lexeme: "!",
+        literal: None,
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 1,
+            },
+            end: Pos {
+                line: 0,
+                col: 1,
+            },
+        },
+    },
+    right: PrefixOp {
+        op: Token {
+            token_type: Minus,
+            lexeme: "-",
+            literal: None,
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 2,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 2,
+                },
+            },
+        },
+        right: Ident {
+            name: "a",
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 3,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 3,
+                },
+            },
+        },
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 2,
+            },
+            end: Pos {
+                line: 0,
+                col: 2,
+            },
+        },
+    },
+    span: Span {
+        start: Pos {
+            line: 0,
+            col: 1,
+        },
+        end: Pos {
+            line: 0,
+            col: 1,
+        },
+    },
+}

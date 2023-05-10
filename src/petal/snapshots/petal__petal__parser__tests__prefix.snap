@@ -1,0 +1,44 @@
+---
+source: src/petal/parser.rs
+expression: "parse(\"-1\")"
+---
+PrefixOp {
+    op: Token {
+        token_type: Minus,
+        lexeme: "-",
+        literal: None,
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 1,
+            },
+            end: Pos {
+                line: 0,
+                col: 1,
+            },
+        },
+    },
+    right: Number {
+        value: 1.0,
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 2,
+            },
+            end: Pos {
+                line: 0,
+                col: 2,
+            },
+        },
+    },
+    span: Span {
+        start: Pos {
+            line: 0,
+            col: 1,
+        },
+        end: Pos {
+            line: 0,
+            col: 1,
+        },
+    },
+}

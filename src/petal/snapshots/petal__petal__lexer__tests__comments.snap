@@ -11,15 +11,15 @@ expression: tokens
                 "hello world",
             ),
         ),
-        range: (
-            TokenPos {
+        span: Span {
+            start: Pos {
                 line: 0,
                 col: 1,
             },
-            TokenPos {
+            end: Pos {
                 line: 0,
                 col: 14,
             },
-        ),
+        },
     },
 ]

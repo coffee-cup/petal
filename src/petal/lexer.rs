@@ -87,20 +87,6 @@ impl<'a> Lexer<'a> {
         lexer
     }
 
-    pub fn lex(source: &str) -> LexerResult<Vec<Token>> {
-        let lexer = Lexer::new(source);
-
-        let mut tokens: Vec<Token> = Vec::new();
-        for t in lexer {
-            match t {
-                Ok(token) => tokens.push(token),
-                Err(e) => return Err(e),
-            }
-        }
-
-        Ok(tokens)
-    }
-
     fn identifier_or_reserved(&mut self) -> Token {
         let mut s = String::new();
 
@@ -254,6 +240,7 @@ impl<'a> Iterator for Lexer<'a> {
             Some('.') => Token::new(TT::Dot),
             Some('?') => Token::new(TT::QuestionMark),
             Some(':') => Token::new(TT::Colon),
+            Some('^') => Token::new(TT::Caret),
             Some(';') => Token::new(TT::Semicolon),
             Some('+') => Token::new(TT::Plus),
             Some('-') => Token::new(TT::Minus),
@@ -327,7 +314,7 @@ mod tests {
 
     #[test]
     fn test_single_letter_operators() {
-        insta::assert_debug_snapshot!(lex("( ) { } . , ? : ; + - * / ! = < >".to_string()));
+        insta::assert_debug_snapshot!(lex("( ) { } . , ? : ^ ; + - * / ! = < >".to_string()));
         insta::assert_debug_snapshot!(lex("   ()\n(\n    (".to_string()));
     }
 

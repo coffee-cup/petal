@@ -11,15 +11,15 @@ expression: "lex(\"\\\"multi\\nline\\nstring\\\"\".to_string())"
                 "multi\nline\nstring",
             ),
         ),
-        range: (
-            TokenPos {
+        span: Span {
+            start: Pos {
                 line: 0,
                 col: 1,
             },
-            TokenPos {
+            end: Pos {
                 line: 2,
                 col: 6,
             },
-        ),
+        },
     },
 ]
