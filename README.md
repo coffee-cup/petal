@@ -11,6 +11,13 @@ fn add(a: int, b: int) -> int  {
 }
 
 let three = add(1, 2)
+
+# Exposed functions are exposed to the host environment in the compiled wasm module
+# This function can be called from JavaScript on the web
+# The goal is to automatically generate a TypeScript API for the wasm module
+expose fn do_work(n: int) -> int {
+  return n * 2
+}
 ```
 
 ## todo
