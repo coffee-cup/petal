@@ -2,7 +2,7 @@ use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
 
 use super::{
-    ast::Expr,
+    ast::{Decl, Expr, Stmt},
     errors::CompilerError,
     lexer::{Lexer, LexerErrorKind},
     positions::{HasSpan, Span},
@@ -335,10 +335,83 @@ impl<'a> Parser<'a> {
         parser
     }
 
-    pub fn parse(&mut self) -> ParserResult<Expr> {
-        let result = self.parse_expression(Precedence::Lowest)?;
+    pub fn parse(&mut self) -> ParserResult<Stmt> {
+        let result = self.parse_declaration()?;
         self.consume_expected(TT::Eof)?;
         Ok(result)
+    }
+
+    fn parse_declaration(&mut self) -> ParserResult<Stmt> {
+        let stmt = match self.peek().token_type {
+            TT::Let => self.parse_let_declaration()?,
+            _ => self.parse_statement()?,
+        };
+
+        Ok(stmt)
+    }
+
+    fn parse_let_declaration(&mut self) -> ParserResult<Stmt> {
+        let token = self.consume()?;
+        let mut span = token.span().clone();
+
+        let name = match self.consume_expected(TT::Identifier)?.literal {
+            Some(Literal::Identifier(name)) => name,
+            _ => unreachable!(),
+        };
+
+        self.match_expected(TT::Equal)?;
+        let init = self.parse_expression(Precedence::Lowest)?;
+
+        span = span.merge(init.span().clone());
+
+        Ok(Stmt::Let { name, init, span })
+    }
+
+    fn parse_statement(&mut self) -> ParserResult<Stmt> {
+        let stmt = match self.peek().token_type {
+            TT::If => self.parse_if_statement()?,
+            _ => {
+                let expr = self.parse_expression(Precedence::Lowest)?;
+                let span = expr.span().clone();
+
+                // TODO: consume newline or semicolon?
+                Stmt::ExprStmt {
+                    expr: Box::new(expr),
+                    span,
+                }
+            }
+        };
+
+        Ok(stmt)
+    }
+
+    fn parse_if_statement(&mut self) -> ParserResult<Stmt> {
+        let token = self.consume()?;
+        let mut span = token.span().clone();
+
+        let condition = self.parse_expression(Precedence::Lowest)?;
+        self.consume_expected(TT::LeftBrace)?;
+
+        let then_block = self.parse_statement()?;
+        self.consume_expected(TT::RightBrace)?;
+        span = span.merge(then_block.span());
+
+        let else_block = if self.match_expected(TT::Else)? {
+            self.consume_expected(TT::LeftBrace)?;
+            let else_block = self.parse_statement()?;
+            self.consume_expected(TT::RightBrace)?;
+            span = span.merge(else_block.span());
+            Some(Box::new(else_block))
+        } else {
+            None
+        };
+
+        Ok(Stmt::IfStmt {
+            condition: condition,
+            then_block: Box::new(then_block),
+            else_block,
+            span,
+        })
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<Expr> {
@@ -384,12 +457,13 @@ impl<'a> Parser<'a> {
         &self.next_token
     }
 
-    fn match_expected(&mut self, token_type: TokenType) -> ParserResult<()> {
+    fn match_expected(&mut self, token_type: TokenType) -> ParserResult<bool> {
         if self.next_token.token_type == token_type {
             self.consume()?;
+            return Ok(true);
         }
 
-        Ok(())
+        Ok(false)
     }
 
     fn consume_expected(&mut self, token_type: TokenType) -> ParserResult<Token> {
@@ -424,74 +498,106 @@ impl<'a> Parser<'a> {
 mod tests {
     use super::*;
 
-    fn parse(s: &str) -> Expr {
+    fn parse_stmt(s: &str) -> Stmt {
         let mut lexer = Lexer::new(s);
         let mut parser = Parser::new(&mut lexer);
-        parser.parse().unwrap()
+        parser.parse_declaration().unwrap()
+    }
+
+    fn parse_expr(s: &str) -> Expr {
+        let mut lexer = Lexer::new(s);
+        let mut parser = Parser::new(&mut lexer);
+        parser.parse_expression(Precedence::Lowest).unwrap()
     }
 
     #[test]
     fn test_literals() {
-        insta::assert_debug_snapshot!(parse("1"));
-        insta::assert_debug_snapshot!(parse("123.456"));
-        insta::assert_debug_snapshot!(parse("\"hello\""));
+        insta::assert_debug_snapshot!(parse_expr("1"));
+        insta::assert_debug_snapshot!(parse_expr("123.456"));
+        insta::assert_debug_snapshot!(parse_expr("\"hello\""));
     }
 
     #[test]
     fn test_identifiers() {
-        insta::assert_debug_snapshot!(parse("a"));
-        insta::assert_debug_snapshot!(parse("foo"));
+        insta::assert_debug_snapshot!(parse_expr("a"));
+        insta::assert_debug_snapshot!(parse_expr("foo"));
     }
 
     #[test]
     fn test_unary_prec() {
-        insta::assert_debug_snapshot!(parse("-ab"));
-        insta::assert_debug_snapshot!(parse("!foo"));
-        insta::assert_debug_snapshot!(parse("!-a"));
+        insta::assert_debug_snapshot!(parse_expr("-ab"));
+        insta::assert_debug_snapshot!(parse_expr("!foo"));
+        insta::assert_debug_snapshot!(parse_expr("!-a"));
     }
 
     #[test]
     fn test_binary_prec() {
-        insta::assert_debug_snapshot!(parse("1 + 2 + 3"));
-        insta::assert_debug_snapshot!(parse("1 + 2 * 3"));
-        insta::assert_debug_snapshot!(parse("1 * 2 + 3"));
-        insta::assert_debug_snapshot!(parse("1 ^ 2"));
+        insta::assert_debug_snapshot!(parse_expr("1 + 2 + 3"));
+        insta::assert_debug_snapshot!(parse_expr("1 + 2 * 3"));
+        insta::assert_debug_snapshot!(parse_expr("1 * 2 + 3"));
+        insta::assert_debug_snapshot!(parse_expr("1 ^ 2"));
     }
 
     #[test]
     fn test_unary_binary_prec() {
-        insta::assert_debug_snapshot!(parse("-a * b"));
-        insta::assert_debug_snapshot!(parse("!a ^ b"));
+        insta::assert_debug_snapshot!(parse_expr("-a * b"));
+        insta::assert_debug_snapshot!(parse_expr("!a ^ b"));
     }
 
     #[test]
     fn test_binary_associativity() {
-        insta::assert_debug_snapshot!(parse("a + b - c"));
-        insta::assert_debug_snapshot!(parse("a * b / c"));
-        insta::assert_debug_snapshot!(parse("a ^ b ^ c"));
+        insta::assert_debug_snapshot!(parse_expr("a + b - c"));
+        insta::assert_debug_snapshot!(parse_expr("a * b / c"));
+        insta::assert_debug_snapshot!(parse_expr("a ^ b ^ c"));
     }
 
     #[test]
     fn test_conditionals() {
-        insta::assert_debug_snapshot!(parse("1 ? 2 : 3"));
-        insta::assert_debug_snapshot!(parse("1 ? 2 : 3 ? 4 : 5"));
-        insta::assert_debug_snapshot!(parse("a + b ? c * d : e / f",));
+        insta::assert_debug_snapshot!(parse_expr("1 ? 2 : 3"));
+        insta::assert_debug_snapshot!(parse_expr("1 ? 2 : 3 ? 4 : 5"));
+        insta::assert_debug_snapshot!(parse_expr("a + b ? c * d : e / f",));
     }
 
     #[test]
     fn test_groups() {
-        insta::assert_debug_snapshot!(parse("(foo)"));
-        insta::assert_debug_snapshot!(parse("(1 + 2) * 3"));
-        insta::assert_debug_snapshot!(parse("1 * (2 - 3)"));
-        insta::assert_debug_snapshot!(parse("a ^ (b + c)"));
-        insta::assert_debug_snapshot!(parse("(a ^ b) ^ c"));
+        insta::assert_debug_snapshot!(parse_expr("(foo)"));
+        insta::assert_debug_snapshot!(parse_expr("(1 + 2) * 3"));
+        insta::assert_debug_snapshot!(parse_expr("1 * (2 - 3)"));
+        insta::assert_debug_snapshot!(parse_expr("a ^ (b + c)"));
+        insta::assert_debug_snapshot!(parse_expr("(a ^ b) ^ c"));
     }
 
     #[test]
     fn test_calls() {
-        insta::assert_debug_snapshot!(parse("foo()"));
-        insta::assert_debug_snapshot!(parse("foo(a, 1, \"hello\")"));
-        insta::assert_debug_snapshot!(parse("a(b) + c(d)"));
-        insta::assert_debug_snapshot!(parse("a(b)(c)"));
+        insta::assert_debug_snapshot!(parse_expr("foo()"));
+        insta::assert_debug_snapshot!(parse_expr("foo(a, 1, \"hello\")"));
+        insta::assert_debug_snapshot!(parse_expr("a(b) + c(d)"));
+        insta::assert_debug_snapshot!(parse_expr("a(b)(c)"));
+    }
+
+    #[test]
+    fn test_let_declarations() {
+        insta::assert_debug_snapshot!(parse_stmt("let a = b"));
+        insta::assert_debug_snapshot!(parse_stmt("let a = b + c * d"));
+    }
+
+    #[test]
+    fn test_ifs() {
+        insta::assert_debug_snapshot!(parse_stmt(
+            "
+            if cond {
+                a
+            }
+        "
+        ));
+        insta::assert_debug_snapshot!(parse_stmt(
+            "
+            if cond {
+                a
+            } else {
+                b
+            }
+        "
+        ));
     }
 }

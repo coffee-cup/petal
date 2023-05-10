@@ -1,0 +1,55 @@
+---
+source: src/petal/parser.rs
+expression: "parse_stmt(\"\n            if cond {\n                a\n            }\n        \")"
+---
+IfStmt {
+    condition: Ident {
+        name: "cond",
+        span: Span {
+            start: Pos {
+                line: 1,
+                col: 15,
+            },
+            end: Pos {
+                line: 1,
+                col: 18,
+            },
+        },
+    },
+    then_block: ExprStmt {
+        expr: Ident {
+            name: "a",
+            span: Span {
+                start: Pos {
+                    line: 2,
+                    col: 16,
+                },
+                end: Pos {
+                    line: 2,
+                    col: 16,
+                },
+            },
+        },
+        span: Span {
+            start: Pos {
+                line: 2,
+                col: 16,
+            },
+            end: Pos {
+                line: 2,
+                col: 16,
+            },
+        },
+    },
+    else_block: None,
+    span: Span {
+        start: Pos {
+            line: 1,
+            col: 12,
+        },
+        end: Pos {
+            line: 2,
+            col: 16,
+        },
+    },
+}

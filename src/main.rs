@@ -34,9 +34,9 @@ fn main() {
 
             let mut lexer = Lexer::new(&file);
             let mut parser = parser::Parser::new(&mut lexer);
-            let expr = parser.parse().unwrap();
+            let stt = parser.parse().unwrap();
 
-            println!("Expr: {:?}", expr);
+            println!("Stmt: {:?}", stt);
 
             // let tokens = match Lexer::lex(&file) {
             //     Ok(tokens) => tokens,

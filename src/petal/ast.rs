@@ -4,6 +4,45 @@ use super::{
 };
 
 #[derive(PartialEq, Clone, Debug)]
+pub enum Decl {
+    // fn foo(a, b) { ... }
+    // Fn {
+    //     name: String,
+    //     args: Vec<String>,
+    //     body: Vec<Stmt>,
+    //     span: Span,
+    // },
+
+    // struct Foo { ... }
+    // Struct {
+    //     name: String,
+    //     fields: Vec<Decl>,
+    //     span: Span,
+    // },
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum Stmt {
+    // let a = 1
+    Let {
+        name: String,
+        init: Expr,
+        span: Span,
+    },
+
+    IfStmt {
+        condition: Expr,
+        then_block: Box<Stmt>,
+        else_block: Option<Box<Stmt>>,
+        span: Span,
+    },
+    ExprStmt {
+        expr: Box<Expr>,
+        span: Span,
+    },
+}
+
+#[derive(PartialEq, Clone, Debug)]
 pub enum Expr {
     // 1
     Number {
@@ -65,6 +104,16 @@ pub enum Expr {
         args: Vec<Expr>,
         span: Span,
     },
+}
+
+impl HasSpan for Stmt {
+    fn span(&self) -> Span {
+        match self {
+            Stmt::Let { span, .. } => span.clone(),
+            Stmt::IfStmt { span, .. } => span.clone(),
+            Stmt::ExprStmt { span, .. } => span.clone(),
+        }
+    }
 }
 
 impl HasSpan for Expr {

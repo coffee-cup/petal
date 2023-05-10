@@ -36,6 +36,7 @@ pub enum TokenType {
     Number,
 
     // Keywords.
+    Let,
     If,
     Else,
     True,
@@ -130,6 +131,7 @@ impl fmt::Display for TokenType {
             TokenType::Identifier => write!(f, "identifier"),
             TokenType::String => write!(f, "string"),
             TokenType::Number => write!(f, "number"),
+            TokenType::Let => write!(f, "let"),
             TokenType::If => write!(f, "if"),
             TokenType::Else => write!(f, "else"),
             TokenType::True => write!(f, "true"),

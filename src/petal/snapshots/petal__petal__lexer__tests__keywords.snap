@@ -1,11 +1,11 @@
 ---
 source: src/petal/lexer.rs
-expression: "lex(\"if else false true\".to_string())"
+expression: "lex(\"let if else false true\".to_string())"
 ---
 [
     Token {
-        token_type: If,
-        lexeme: "if",
+        token_type: Let,
+        lexeme: "let",
         literal: None,
         span: Span {
             start: Pos {
@@ -14,7 +14,22 @@ expression: "lex(\"if else false true\".to_string())"
             },
             end: Pos {
                 line: 0,
-                col: 2,
+                col: 3,
+            },
+        },
+    },
+    Token {
+        token_type: If,
+        lexeme: "if",
+        literal: None,
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 5,
+            },
+            end: Pos {
+                line: 0,
+                col: 6,
             },
         },
     },
@@ -25,11 +40,11 @@ expression: "lex(\"if else false true\".to_string())"
         span: Span {
             start: Pos {
                 line: 0,
-                col: 4,
+                col: 8,
             },
             end: Pos {
                 line: 0,
-                col: 7,
+                col: 11,
             },
         },
     },
@@ -40,11 +55,11 @@ expression: "lex(\"if else false true\".to_string())"
         span: Span {
             start: Pos {
                 line: 0,
-                col: 9,
+                col: 13,
             },
             end: Pos {
                 line: 0,
-                col: 13,
+                col: 17,
             },
         },
     },
@@ -55,11 +70,11 @@ expression: "lex(\"if else false true\".to_string())"
         span: Span {
             start: Pos {
                 line: 0,
-                col: 15,
+                col: 19,
             },
             end: Pos {
                 line: 0,
-                col: 18,
+                col: 22,
             },
         },
     },

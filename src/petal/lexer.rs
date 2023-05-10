@@ -64,9 +64,10 @@ type LexerResult<T> = Result<T, LexerError>;
 lazy_static! {
     static ref KEYWORDS: HashMap<&'static str, TokenType> = {
         let mut m = HashMap::new();
+        m.insert("let", TT::Let);
+        m.insert("if", TT::If);
         m.insert("else", TT::Else);
         m.insert("false", TT::False);
-        m.insert("if", TT::If);
         m.insert("true", TT::True);
         m
     };
@@ -335,7 +336,7 @@ mod tests {
 
     #[test]
     fn test_keywords() {
-        insta::assert_debug_snapshot!(lex("if else false true".to_string()));
+        insta::assert_debug_snapshot!(lex("let if else false true".to_string()));
     }
 
     #[test]
