@@ -4,6 +4,15 @@
 
 A programming language that compiles to web assembly.
 
+```
+# Mix of TypeScript and Rust syntax
+fn add(a: int, b: int) -> int  {
+  return a + b
+}
+
+let three = add(1, 2)
+```
+
 ## todo
 
 This is a rough list of everything that needs to be done
