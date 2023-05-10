@@ -1,4 +1,4 @@
-use super::{lexer::LexerError, positions::Span};
+use super::positions::Span;
 
 use colored::Colorize;
 
@@ -9,7 +9,7 @@ pub trait CompilerError {
 
 pub fn print_error(source: &str, error: &dyn CompilerError) {
     if let Some(span) = error.span() {
-        let msg = error.msg();
+        let _msg = error.msg();
         let line = source.lines().nth(span.start.line).unwrap();
         let line_number = format!("{} | ", span.start.line);
         let line_number_len = line_number.len();

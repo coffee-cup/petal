@@ -5,7 +5,7 @@ use super::{
     ast::Expr,
     errors::CompilerError,
     lexer::{Lexer, LexerErrorKind},
-    positions::{HasSpan, Pos, Span},
+    positions::{HasSpan, Span},
     precedence::Precedence,
     token::{Literal, Token, TokenType},
 };
@@ -18,10 +18,10 @@ pub enum ParserErrorKind {
     LexerError(#[from] LexerErrorKind),
 
     #[error("Unexpected token {0}")]
-    UnexpectedToken(Token),
+    UnexpectedToken(String),
 
     #[error("Expected {0}, found {1}")]
-    ExpectedToken(TokenType, Token),
+    ExpectedToken(TokenType, String),
 }
 
 #[derive(Debug, Clone)]
@@ -72,7 +72,9 @@ impl PrefixParselet for NumberParselet {
                 value,
                 span: token.span,
             }),
-            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(token))),
+            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
+                token.to_string(),
+            ))),
         }
     }
 }
@@ -85,7 +87,9 @@ impl PrefixParselet for StringParselet {
                 value,
                 span: token.span,
             }),
-            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(token))),
+            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
+                token.to_string(),
+            ))),
         }
     }
 }
@@ -98,7 +102,9 @@ impl PrefixParselet for IdentParselet {
                 name,
                 span: token.span,
             }),
-            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(token))),
+            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
+                token.to_string(),
+            ))),
         }
     }
 }
@@ -111,14 +117,16 @@ impl PrefixParselet for CommentParselet {
                 value,
                 span: token.span,
             }),
-            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(token))),
+            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
+                token.to_string(),
+            ))),
         }
     }
 }
 
 struct GroupParselet;
 impl PrefixParselet for GroupParselet {
-    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr> {
+    fn parse(&self, parser: &mut Parser, _token: Token) -> ParserResult<Expr> {
         let expr = parser.parse_expression(Precedence::Lowest)?;
         parser.consume_expected(TT::RightParen)?;
         Ok(expr)
@@ -134,7 +142,7 @@ impl PrefixParselet for PrefixOperatorParselet {
         let span = token.span().merge(operand.span());
 
         Ok(Expr::PrefixOp {
-            op: token.clone(),
+            op: token,
             right: Box::new(operand),
             span,
         })
@@ -154,7 +162,7 @@ impl InfixParselet for BinaryOperatorParselet {
         };
 
         let right = parser.parse_expression(parse_right_prec)?;
-        let span = left.span().clone().merge(right.span().clone());
+        let span = left.span().merge(right.span());
 
         Ok(Expr::BinaryOp {
             left: Box::new(left),
@@ -175,10 +183,10 @@ struct PostfixOperatorParselet {
 impl PrefixParselet for PostfixOperatorParselet {
     fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr> {
         let operand = parser.parse_expression(self.precedence.clone())?;
-        let span = token.span.clone().merge(operand.span().clone());
+        let span = token.span.merge(operand.span());
 
         Ok(Expr::PostfixOp {
-            op: token.clone(),
+            op: token,
             left: Box::new(operand),
             span,
         })
@@ -187,11 +195,11 @@ impl PrefixParselet for PostfixOperatorParselet {
 
 struct ConditionalParselet;
 impl InfixParselet for ConditionalParselet {
-    fn parse(&self, parser: &mut Parser, left: Expr, token: Token) -> ParserResult<Expr> {
+    fn parse(&self, parser: &mut Parser, left: Expr, _token: Token) -> ParserResult<Expr> {
         let then_branch = parser.parse_expression(Precedence::Lowest)?;
         parser.consume_expected(TT::Colon)?;
         let else_branch = parser.parse_expression(self.precedence().prev())?;
-        let span = left.span().clone().merge(else_branch.span().clone());
+        let span = left.span().merge(else_branch.span());
 
         Ok(Expr::Conditional {
             condition: Box::new(left),
@@ -301,49 +309,33 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<Expr> {
-        println!("\n\n--- Parse expression: {:?} ---", precedence);
         let token = self.consume()?;
-
-        println!("Token: {}", token);
 
         let prefix_parselet = self
             .prefix_parselets
             .get(&token.token_type)
             .ok_or_else(|| {
-                ParserError::new(ParserErrorKind::UnexpectedToken(token.clone()))
+                ParserError::new(ParserErrorKind::UnexpectedToken(token.to_string()))
                     .with_span(token.span.clone())
             })?
             .clone();
 
-        println!("Found prefix parselet");
-
         let mut left = prefix_parselet.parse(self, token.clone())?;
-
-        println!(
-            "Test {:?} < {:?} = {}",
-            precedence,
-            self.get_precedence(),
-            precedence < self.get_precedence()
-        );
 
         while precedence < self.get_precedence() {
             let token = self.consume()?;
-
-            println!("Token: {}", token);
 
             let infix_parselet = self
                 .infix_parselets
                 .get(&token.token_type)
                 .ok_or_else(|| {
-                    ParserError::new(ParserErrorKind::UnexpectedToken(token.clone()))
+                    ParserError::new(ParserErrorKind::UnexpectedToken(token.to_string()))
                         .with_span(token.span.clone())
                 })?
                 .clone();
 
             left = infix_parselet.parse(self, left, token.clone())?;
         }
-
-        println!("\nReturning: {:?}", left);
 
         Ok(left)
     }
@@ -359,7 +351,7 @@ impl<'a> Parser<'a> {
         if self.next_token.token_type != token_type {
             return Err(ParserError::new(ParserErrorKind::ExpectedToken(
                 token_type,
-                self.next_token.clone(),
+                self.next_token.to_string(),
             ))
             .with_span(self.next_token.span.clone()));
         }

@@ -1,8 +1,6 @@
 use clap::{Parser, Subcommand};
 use petal::{lexer::Lexer, parser};
 
-use crate::petal::errors::print_error;
-
 #[macro_use]
 extern crate lazy_static;
 

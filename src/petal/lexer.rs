@@ -1,4 +1,3 @@
-use core::fmt;
 use std::{collections::HashMap, str::Chars};
 use thiserror::Error;
 
