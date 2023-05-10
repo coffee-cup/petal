@@ -2,7 +2,7 @@ use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
 
 use super::{
-    ast::{Decl, Expr, Stmt},
+    ast::{Expr, Stmt},
     errors::CompilerError,
     lexer::{Lexer, LexerErrorKind},
     positions::{HasSpan, Span},
@@ -153,7 +153,7 @@ struct CallParselet;
 impl InfixParselet for CallParselet {
     fn parse(&self, parser: &mut Parser, left: Expr, _token: Token) -> ParserResult<Expr> {
         let mut args: Vec<Expr> = Vec::new();
-        let mut span = left.span().clone();
+        let mut span = left.span();
 
         loop {
             if parser.peek().token_type == TT::RightParen {
@@ -352,7 +352,7 @@ impl<'a> Parser<'a> {
 
     fn parse_let_declaration(&mut self) -> ParserResult<Stmt> {
         let token = self.consume()?;
-        let mut span = token.span().clone();
+        let mut span = token.span();
 
         let name = match self.consume_expected(TT::Identifier)?.literal {
             Some(Literal::Identifier(name)) => name,
@@ -362,7 +362,7 @@ impl<'a> Parser<'a> {
         self.match_expected(TT::Equal)?;
         let init = self.parse_expression(Precedence::Lowest)?;
 
-        span = span.merge(init.span().clone());
+        span = span.merge(init.span());
 
         Ok(Stmt::Let { name, init, span })
     }
@@ -372,7 +372,7 @@ impl<'a> Parser<'a> {
             TT::If => self.parse_if_statement()?,
             _ => {
                 let expr = self.parse_expression(Precedence::Lowest)?;
-                let span = expr.span().clone();
+                let span = expr.span();
 
                 // TODO: consume newline or semicolon?
                 Stmt::ExprStmt {
@@ -387,7 +387,7 @@ impl<'a> Parser<'a> {
 
     fn parse_if_statement(&mut self) -> ParserResult<Stmt> {
         let token = self.consume()?;
-        let mut span = token.span().clone();
+        let mut span = token.span();
 
         let condition = self.parse_expression(Precedence::Lowest)?;
         self.consume_expected(TT::LeftBrace)?;
@@ -407,7 +407,7 @@ impl<'a> Parser<'a> {
         };
 
         Ok(Stmt::IfStmt {
-            condition: condition,
+            condition,
             then_block: Box::new(then_block),
             else_block,
             span,
