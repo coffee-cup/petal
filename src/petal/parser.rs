@@ -149,6 +149,38 @@ impl PrefixParselet for PrefixOperatorParselet {
     }
 }
 
+struct CallParselet;
+impl InfixParselet for CallParselet {
+    fn parse(&self, parser: &mut Parser, left: Expr, _token: Token) -> ParserResult<Expr> {
+        let mut args: Vec<Expr> = Vec::new();
+        let mut span = left.span().clone();
+
+        loop {
+            if parser.peek().token_type == TT::RightParen {
+                break;
+            }
+
+            let arg = parser.parse_expression(Precedence::Lowest)?;
+            span = span.merge(arg.span());
+
+            args.push(arg);
+            parser.match_expected(TT::Comma)?;
+        }
+
+        parser.consume_expected(TT::RightParen)?;
+
+        Ok(Expr::Call {
+            callee: Box::new(left),
+            args,
+            span,
+        })
+    }
+
+    fn precedence(&self) -> Precedence {
+        Precedence::Call
+    }
+}
+
 struct BinaryOperatorParselet {
     precedence: Precedence,
     is_right: bool,
@@ -287,6 +319,7 @@ impl<'a> Parser<'a> {
             TT::QuestionMark,
             ConditionalParselet
         );
+        register!(parser.infix_parselets, TT::LeftParen, CallParselet);
 
         // Prefix parselets
         prefix!(parser.prefix_parselets, TT::Minus, Precedence::Unary);
@@ -345,6 +378,18 @@ impl<'a> Parser<'a> {
             .get(&self.next_token.token_type)
             .map(|p| p.precedence())
             .unwrap_or(Precedence::Lowest)
+    }
+
+    fn peek(&self) -> &Token {
+        &self.next_token
+    }
+
+    fn match_expected(&mut self, token_type: TokenType) -> ParserResult<()> {
+        if self.next_token.token_type == token_type {
+            self.consume()?;
+        }
+
+        Ok(())
     }
 
     fn consume_expected(&mut self, token_type: TokenType) -> ParserResult<Token> {
@@ -440,5 +485,13 @@ mod tests {
         insta::assert_debug_snapshot!(parse("1 * (2 - 3)"));
         insta::assert_debug_snapshot!(parse("a ^ (b + c)"));
         insta::assert_debug_snapshot!(parse("(a ^ b) ^ c"));
+    }
+
+    #[test]
+    fn test_calls() {
+        insta::assert_debug_snapshot!(parse("foo()"));
+        insta::assert_debug_snapshot!(parse("foo(a, 1, \"hello\")"));
+        insta::assert_debug_snapshot!(parse("a(b) + c(d)"));
+        insta::assert_debug_snapshot!(parse("a(b)(c)"));
     }
 }

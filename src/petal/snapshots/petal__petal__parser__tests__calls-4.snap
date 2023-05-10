@@ -1,0 +1,71 @@
+---
+source: src/petal/parser.rs
+expression: "parse(\"a(b)(c)\")"
+---
+Call {
+    callee: Call {
+        callee: Ident {
+            name: "a",
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 1,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 1,
+                },
+            },
+        },
+        args: [
+            Ident {
+                name: "b",
+                span: Span {
+                    start: Pos {
+                        line: 0,
+                        col: 3,
+                    },
+                    end: Pos {
+                        line: 0,
+                        col: 3,
+                    },
+                },
+            },
+        ],
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 1,
+            },
+            end: Pos {
+                line: 0,
+                col: 3,
+            },
+        },
+    },
+    args: [
+        Ident {
+            name: "c",
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 6,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 6,
+                },
+            },
+        },
+    ],
+    span: Span {
+        start: Pos {
+            line: 0,
+            col: 1,
+        },
+        end: Pos {
+            line: 0,
+            col: 6,
+        },
+    },
+}

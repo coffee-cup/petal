@@ -1,0 +1,30 @@
+---
+source: src/petal/parser.rs
+expression: "parse(\"foo()\")"
+---
+Call {
+    callee: Ident {
+        name: "foo",
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 1,
+            },
+            end: Pos {
+                line: 0,
+                col: 3,
+            },
+        },
+    },
+    args: [],
+    span: Span {
+        start: Pos {
+            line: 0,
+            col: 1,
+        },
+        end: Pos {
+            line: 0,
+            col: 3,
+        },
+    },
+}

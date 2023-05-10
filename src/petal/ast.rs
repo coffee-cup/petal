@@ -58,6 +58,13 @@ pub enum Expr {
         value: String,
         span: Span,
     },
+
+    // foo(1, 2, 3)
+    Call {
+        callee: Box<Expr>,
+        args: Vec<Expr>,
+        span: Span,
+    },
 }
 
 impl HasSpan for Expr {
@@ -71,6 +78,7 @@ impl HasSpan for Expr {
             Expr::Ident { span, .. } => span.clone(),
             Expr::String { span, .. } => span.clone(),
             Expr::Comment { span, .. } => span.clone(),
+            Expr::Call { span, .. } => span.clone(),
         }
     }
 }
