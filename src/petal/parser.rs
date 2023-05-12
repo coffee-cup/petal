@@ -414,7 +414,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<Expr> {
+    pub fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<Expr> {
         let token = self.consume()?;
 
         let prefix_parselet = self
