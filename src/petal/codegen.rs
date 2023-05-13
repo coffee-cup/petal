@@ -1,6 +1,6 @@
 use crate::petal::ir::WatValue;
 
-use super::ir::{WatInstruction, WatValueType};
+use super::ir::{IRFunction, WatInstruction, WatValueType};
 
 pub struct Codegen {}
 
@@ -24,8 +24,33 @@ impl Codegen {
     }
 }
 
-trait ToWat {
+pub trait ToWat {
     fn to_wat(&self) -> String;
+}
+
+impl ToWat for IRFunction {
+    fn to_wat(&self) -> String {
+        let params = self
+            .params
+            .iter()
+            .map(|p| format!("(param ${} {})", p.name, p.ty.to_wat()))
+            .collect::<Vec<_>>()
+            .join(" ");
+
+        let body = self
+            .body
+            .iter()
+            .map(|i| format!("  {}", i.to_wat()))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        format!(
+            "(func ${} {}
+{}
+)",
+            self.name, params, body
+        )
+    }
 }
 
 impl ToWat for WatValueType {
@@ -56,7 +81,7 @@ impl ToWat for WatInstruction {
             Mult(wat_type) => format!("{}.mul", wat_type.to_wat(),),
             Div(wat_type) => format!("{}.div", wat_type.to_wat(),),
 
-            GetLocal(name) => format!("(get_local ${})", name),
+            GetLocal(name) => format!("get_local ${}", name),
 
             _ => todo!("Implement IRToWat for WatInstruction"),
         }

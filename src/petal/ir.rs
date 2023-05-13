@@ -1,5 +1,5 @@
 use super::{
-    ast::Expr,
+    ast::{Expr, Program, Stmt},
     token::{Token, TokenType},
 };
 
@@ -39,8 +39,21 @@ pub enum WatInstruction {
     GetLocal(String),
 }
 
+type Chunk = Vec<WatInstruction>;
+
+pub struct IRParam {
+    pub name: String,
+    pub ty: WatValueType,
+}
+
+pub struct IRFunction {
+    pub name: String,
+    pub params: Vec<IRParam>,
+    pub body: Chunk,
+}
+
 pub trait ToWatInstructions {
-    fn to_ir_chunk(&self) -> Vec<WatInstruction>;
+    fn to_ir_chunk(&self) -> Chunk;
 }
 
 macro_rules! instrs {
@@ -53,8 +66,55 @@ macro_rules! instrs {
     }};
 }
 
+impl Program {
+    pub fn to_ir(&self) -> Vec<IRFunction> {
+        let mut main_chunk = Chunk::new();
+        let mut funcs: Vec<IRFunction> = Vec::new();
+
+        for stmt in &self.statements {
+            match stmt {
+                Stmt::Fun { .. } => todo!("program to ir",),
+                stmt => main_chunk.extend(stmt.to_ir_chunk()),
+            }
+        }
+
+        let main_func = IRFunction {
+            name: String::from("petal_main"),
+            params: Vec::new(),
+            body: main_chunk,
+        };
+
+        funcs.push(main_func);
+        funcs
+    }
+}
+
+// impl ToWatInstructions for Program {
+//     fn to_ir_chunk(&self) -> Chunk {
+//         let mut main_chunk = Chunk::new();
+
+//         for stmt in &self.statements {
+//             match stmt {
+//                 Stmt::Fun { .. } => todo!("to_ir_chunk for {:?}", stmt),
+//                 stmt => main_chunk.extend(stmt.to_ir_chunk()),
+//             }
+//         }
+
+//         result
+//     }
+// }
+
+impl ToWatInstructions for Stmt {
+    fn to_ir_chunk(&self) -> Chunk {
+        match self {
+            Stmt::ExprStmt { expr, .. } => expr.to_ir_chunk(),
+            _ => todo!("to_ir_chunk for {:?}", self),
+        }
+    }
+}
+
 impl ToWatInstructions for Expr {
-    fn to_ir_chunk(&self) -> Vec<WatInstruction> {
+    fn to_ir_chunk(&self) -> Chunk {
         match self {
             Expr::Number { value, .. } => vec![WatInstruction::Const(WatValue::F64(*value))],
             Expr::BinaryOp {

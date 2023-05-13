@@ -1,8 +1,8 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, println, rc::Rc};
 use thiserror::Error;
 
 use super::{
-    ast::{Expr, Stmt},
+    ast::{Expr, Program, Stmt},
     errors::CompilerError,
     lexer::{Lexer, LexerErrorKind},
     positions::{HasSpan, Span},
@@ -335,10 +335,21 @@ impl<'a> Parser<'a> {
         parser
     }
 
-    pub fn parse(&mut self) -> ParserResult<Stmt> {
-        let result = self.parse_declaration()?;
+    pub fn parse(&mut self) -> ParserResult<Program> {
+        let result = self.parse_program()?;
         self.consume_expected(TT::Eof)?;
         Ok(result)
+    }
+
+    fn parse_program(&mut self) -> ParserResult<Program> {
+        let mut statements = Vec::new();
+
+        while !self.is_at_end() {
+            let decl = self.parse_declaration()?;
+            statements.push(decl);
+        }
+
+        Ok(Program { statements })
     }
 
     fn parse_declaration(&mut self) -> ParserResult<Stmt> {
@@ -455,6 +466,10 @@ impl<'a> Parser<'a> {
 
     fn peek(&self) -> &Token {
         &self.next_token
+    }
+
+    fn is_at_end(&self) -> bool {
+        self.next_token.token_type == TT::Eof
     }
 
     fn match_expected(&mut self, token_type: TokenType) -> ParserResult<bool> {

@@ -1,7 +1,7 @@
 pub mod ast;
 pub mod codegen;
 pub mod errors;
-mod ir;
+pub mod ir;
 pub mod lexer;
 pub mod parser;
 pub mod positions;
