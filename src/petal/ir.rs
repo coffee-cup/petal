@@ -1,5 +1,5 @@
 use super::{
-    ast::{Expr, Program, Stmt},
+    ast::{Expr, FuncDecl, Program, Stmt},
     token::TokenType,
 };
 
@@ -106,10 +106,61 @@ impl IRGenerator {
     pub fn generate_ir_from_program(&mut self, program: &Program) -> IRModule {
         let mut ir_module = IRModule::new();
 
+        for stmt in &program.statements {
+            match stmt {
+                Stmt::Func(func) => {
+                    let ir_func = self.generate_function(func);
+                    ir_module.add_function(ir_func);
+                }
+                _ => {}
+            }
+        }
+
         let main_func = self.generate_main_function(program);
         ir_module.add_function(main_func);
 
         ir_module
+    }
+
+    fn generate_function(&mut self, func: &FuncDecl) -> IRFunction {
+        let mut chunk = Chunk::new();
+        let mut locals = Vec::new();
+
+        let params = func
+            .args
+            .iter()
+            .map(|arg| IRParam {
+                name: arg.name.clone(),
+                ty: WatValueType::F64,
+            })
+            .collect();
+
+        for stmt in &func.body.statements {
+            match stmt {
+                Stmt::Func { .. } => panic!("Functions cannot appear inside functions"),
+                Stmt::Let { name, .. } => {
+                    locals.push(IRLocal {
+                        name: name.to_string(),
+                        ty: WatValueType::F64,
+                    });
+                    chunk.extend(stmt.to_ir_chunk());
+                }
+                stmt => chunk.extend(stmt.to_ir_chunk()),
+            }
+        }
+
+        let return_ty = Some(WatValueType::F64);
+
+        self.drop_chunk_stack(&mut chunk, return_ty.is_some());
+
+        IRFunction {
+            name: func.name.clone(),
+            params,
+            return_ty,
+            locals,
+            is_exported: true,
+            body: chunk,
+        }
     }
 
     fn generate_main_function(&mut self, program: &Program) -> IRFunction {
@@ -118,7 +169,7 @@ impl IRGenerator {
 
         for stmt in &program.statements {
             match stmt {
-                Stmt::Func { .. } => todo!("program to ir",),
+                Stmt::Func { .. } => {}
                 Stmt::Let { name, .. } => {
                     locals.push(IRLocal {
                         name: name.to_string(),
@@ -155,47 +206,6 @@ impl IRGenerator {
         }
     }
 }
-
-// impl Program {
-//     pub fn to_ir(&self) -> IRModule {
-//         let mut main_chunk = Chunk::new();
-//         let mut funcs: Vec<IRFunction> = Vec::new();
-
-//         for stmt in &self.statements {
-//             match stmt {
-//                 Stmt::Func { .. } => todo!("program to ir",),
-//                 stmt => main_chunk.extend(stmt.to_ir_chunk()),
-//             }
-//         }
-
-//         let main_func = IRFunction {
-//             name: String::from("petal_main"),
-//             params: Vec::new(),
-//             body: main_chunk,
-//         };
-
-//         funcs.push(main_func);
-
-//         let module = IRModule { funcs };
-
-//         module
-//     }
-// }
-
-// impl ToWatInstructions for Program {
-//     fn to_ir_chunk(&self) -> Chunk {
-//         let mut main_chunk = Chunk::new();
-
-//         for stmt in &self.statements {
-//             match stmt {
-//                 Stmt::Fun { .. } => todo!("to_ir_chunk for {:?}", stmt),
-//                 stmt => main_chunk.extend(stmt.to_ir_chunk()),
-//             }
-//         }
-
-//         result
-//     }
-// }
 
 impl ToWatInstructions for Stmt {
     fn to_ir_chunk(&self) -> Chunk {
