@@ -9,28 +9,22 @@ pub struct Program {
 }
 
 #[derive(PartialEq, Clone, Debug)]
-pub enum Decl {
-    // fn foo(a, b) { ... }
-    // Fn {
-    //     name: String,
-    //     args: Vec<String>,
-    //     body: Vec<Stmt>,
-    //     span: Span,
-    // },
-
-    // struct Foo { ... }
-    // Struct {
-    //     name: String,
-    //     fields: Vec<Decl>,
-    //     span: Span,
-    // },
+pub struct FuncArg {
+    pub name: String,
+    pub span: Span,
 }
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct FuncDecl {
     pub name: String,
-    pub args: Vec<String>,
-    pub body: Vec<Stmt>,
+    pub args: Vec<FuncArg>,
+    pub body: Block,
+    pub span: Span,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct Block {
+    pub statements: Vec<Stmt>,
     pub span: Span,
 }
 

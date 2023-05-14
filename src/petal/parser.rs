@@ -2,7 +2,7 @@ use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
 
 use super::{
-    ast::{Expr, Program, Stmt},
+    ast::{Block, Expr, FuncArg, FuncDecl, Program, Stmt},
     lexer::{Lexer, LexerErrorKind},
     positions::{HasSpan, Span},
     precedence::Precedence,
@@ -359,11 +359,70 @@ impl<'a> Parser<'a> {
 
     fn parse_declaration(&mut self) -> ParserResult<Stmt> {
         let stmt = match self.peek().token_type {
+            TT::Fun => self.parse_function()?,
             TT::Let => self.parse_let_declaration()?,
             _ => self.parse_statement()?,
         };
 
         Ok(stmt)
+    }
+
+    fn parse_function(&mut self) -> ParserResult<Stmt> {
+        let token = self.consume()?;
+        let mut span = token.span();
+
+        let name = match self.consume_expected(TT::Identifier)?.literal {
+            Some(Literal::Identifier(name)) => name,
+            _ => unreachable!(),
+        };
+
+        self.consume_expected(TT::LeftParen)?;
+
+        let mut args: Vec<FuncArg> = Vec::new();
+        while !self.peek().is(TT::RightParen) && !self.is_at_end() {
+            args.push(self.parse_function_arg()?);
+            if self.peek().is(TT::Comma) {
+                self.consume()?;
+            }
+        }
+
+        self.consume_expected(TT::RightParen)?;
+        let block = self.parse_block()?;
+        span = span.merge(block.span.clone());
+
+        Ok(Stmt::Func(FuncDecl {
+            name,
+            args,
+            body: block,
+            span,
+        }))
+    }
+
+    fn parse_function_arg(&mut self) -> ParserResult<FuncArg> {
+        let name_token = self.consume_expected(TT::Identifier)?;
+        let span = name_token.span();
+
+        let name = match name_token.literal {
+            Some(Literal::Identifier(name)) => name,
+            _ => unreachable!(),
+        };
+
+        Ok(FuncArg { name, span })
+    }
+
+    fn parse_block(&mut self) -> ParserResult<Block> {
+        let token = self.consume_expected(TT::LeftBrace)?;
+        let mut span = token.span();
+
+        let mut statements = Vec::new();
+        while !self.peek().is(TT::RightBrace) && !self.is_at_end() {
+            statements.push(self.parse_declaration()?);
+        }
+
+        let token = self.consume_expected(TT::RightBrace)?;
+        span = span.merge(token.span());
+
+        Ok(Block { statements, span })
     }
 
     fn parse_let_declaration(&mut self) -> ParserResult<Stmt> {
@@ -618,6 +677,19 @@ mod tests {
                 b
             }
         "
+        ));
+    }
+
+    #[test]
+    fn test_functions() {
+        insta::assert_debug_snapshot!(parse_stmt("fn foo() {}"));
+        insta::assert_debug_snapshot!(parse_stmt("fn foo(a) {}"));
+        insta::assert_debug_snapshot!(parse_stmt("fn foo(a, b) {}"));
+        insta::assert_debug_snapshot!(parse_stmt(
+            "
+        fn foo(foo, bar) {
+            let a = foo + bar
+        }"
         ));
     }
 }

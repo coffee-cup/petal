@@ -36,6 +36,7 @@ pub enum TokenType {
     Number,
 
     // Keywords.
+    Fun,
     Let,
     If,
     Else,
@@ -89,6 +90,10 @@ impl Token {
         t.span = span;
         t
     }
+
+    pub fn is(&self, token_type: TokenType) -> bool {
+        self.token_type == token_type
+    }
 }
 
 impl HasSpan for Token {
@@ -131,6 +136,7 @@ impl fmt::Display for TokenType {
             TokenType::Identifier => write!(f, "identifier"),
             TokenType::String => write!(f, "string"),
             TokenType::Number => write!(f, "number"),
+            TokenType::Fun => write!(f, "fn"),
             TokenType::Let => write!(f, "let"),
             TokenType::If => write!(f, "if"),
             TokenType::Else => write!(f, "else"),

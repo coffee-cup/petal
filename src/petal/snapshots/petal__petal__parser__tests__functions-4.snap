@@ -1,0 +1,127 @@
+---
+source: src/petal/parser.rs
+expression: "parse_stmt(\"\n        fn foo(foo, bar) {\n            let a = foo + bar\n        }\")"
+---
+Func(
+    FuncDecl {
+        name: "foo",
+        args: [
+            FuncArg {
+                name: "foo",
+                span: Span {
+                    start: Pos {
+                        line: 1,
+                        col: 15,
+                    },
+                    end: Pos {
+                        line: 1,
+                        col: 17,
+                    },
+                },
+            },
+            FuncArg {
+                name: "bar",
+                span: Span {
+                    start: Pos {
+                        line: 1,
+                        col: 20,
+                    },
+                    end: Pos {
+                        line: 1,
+                        col: 22,
+                    },
+                },
+            },
+        ],
+        body: Block {
+            statements: [
+                Let {
+                    name: "a",
+                    init: BinaryOp {
+                        left: Ident {
+                            name: "foo",
+                            span: Span {
+                                start: Pos {
+                                    line: 2,
+                                    col: 20,
+                                },
+                                end: Pos {
+                                    line: 2,
+                                    col: 22,
+                                },
+                            },
+                        },
+                        op: Token {
+                            token_type: Plus,
+                            lexeme: "+",
+                            literal: None,
+                            span: Span {
+                                start: Pos {
+                                    line: 2,
+                                    col: 24,
+                                },
+                                end: Pos {
+                                    line: 2,
+                                    col: 24,
+                                },
+                            },
+                        },
+                        right: Ident {
+                            name: "bar",
+                            span: Span {
+                                start: Pos {
+                                    line: 2,
+                                    col: 26,
+                                },
+                                end: Pos {
+                                    line: 2,
+                                    col: 28,
+                                },
+                            },
+                        },
+                        span: Span {
+                            start: Pos {
+                                line: 2,
+                                col: 20,
+                            },
+                            end: Pos {
+                                line: 2,
+                                col: 28,
+                            },
+                        },
+                    },
+                    span: Span {
+                        start: Pos {
+                            line: 2,
+                            col: 12,
+                        },
+                        end: Pos {
+                            line: 2,
+                            col: 28,
+                        },
+                    },
+                },
+            ],
+            span: Span {
+                start: Pos {
+                    line: 1,
+                    col: 25,
+                },
+                end: Pos {
+                    line: 3,
+                    col: 8,
+                },
+            },
+        },
+        span: Span {
+            start: Pos {
+                line: 1,
+                col: 8,
+            },
+            end: Pos {
+                line: 3,
+                col: 8,
+            },
+        },
+    },
+)

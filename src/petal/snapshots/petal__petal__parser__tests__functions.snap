@@ -1,0 +1,33 @@
+---
+source: src/petal/parser.rs
+expression: "parse_stmt(\"fn foo() {}\")"
+---
+Func(
+    FuncDecl {
+        name: "foo",
+        args: [],
+        body: Block {
+            statements: [],
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 10,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 11,
+                },
+            },
+        },
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 1,
+            },
+            end: Pos {
+                line: 0,
+                col: 11,
+            },
+        },
+    },
+)
