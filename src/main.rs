@@ -1,9 +1,7 @@
-
+use std::io::Write;
 
 use clap::{Parser, Subcommand};
 use petal::Compiler;
-
-
 
 #[macro_use]
 extern crate lazy_static;
@@ -30,6 +28,10 @@ enum Commands {
         /// Whether to output the WAT string
         #[arg(short = 'w', long = "wat")]
         wat: bool,
+
+        /// Directory to output the compiled WASM to
+        #[arg(short = 'o', long = "output", default_value = "build")]
+        output: String,
     },
 }
 
@@ -37,7 +39,7 @@ fn main() {
     let args = Cli::parse();
 
     match args.command {
-        Commands::Build { file, wat } => {
+        Commands::Build { file, wat, output } => {
             let compiler = Compiler::new();
 
             match compiler.compile_file(&file) {
@@ -48,6 +50,18 @@ fn main() {
                     if wat {
                         println!("{}", wasm.print_wat())
                     }
+
+                    // Ensure that the output directory exists
+                    std::fs::create_dir_all(&output).expect("Unable to create output directory");
+
+                    let file_name = file.clone().replace("petal", "wasm");
+
+                    // Save the WASM binary to the output directory
+                    let mut file = std::fs::File::create(format!("{}/{}", output, file_name))
+                        .expect("Unable to create output file");
+
+                    file.write_all(wasm.bytes())
+                        .expect("Unable to write the .wasm binary");
                 }
             }
 

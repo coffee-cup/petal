@@ -2,28 +2,6 @@ use crate::petal::ir::WatValue;
 
 use super::ir::{IRFunction, IRModule, WatInstruction, WatValueType};
 
-pub struct Codegen {}
-
-impl Codegen {
-    pub fn new() -> Self {
-        Codegen {}
-    }
-
-    pub fn generate_module(&mut self) -> String {
-        String::from(
-            "
-        (module
-            (import \"host\" \"log\" (func $log (param i32)))
-
-            (func (export \"hello\")
-                i32.const 11
-                call $log
-            )
-        )",
-        )
-    }
-}
-
 pub trait ToWat {
     fn to_wat(&self) -> String;
 }
@@ -57,6 +35,17 @@ impl ToWat for IRFunction {
             .collect::<Vec<_>>()
             .join(" ");
 
+        let name = if self.is_exported {
+            format!("(export \"{}\")", self.name)
+        } else {
+            format!("{}", self.name)
+        };
+
+        let return_ty = match &self.return_ty {
+            Some(ty) => format!("(result {})", ty.to_wat()),
+            None => String::new(),
+        };
+
         let body = self
             .body
             .iter()
@@ -65,10 +54,9 @@ impl ToWat for IRFunction {
             .join("\n");
 
         format!(
-            "(func ${} {}
-{}
+            "(func {name} {params} {return_ty}
+{body}
 )",
-            self.name, params, body
         )
     }
 }

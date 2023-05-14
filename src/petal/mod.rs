@@ -36,6 +36,9 @@ impl Compiler {
         let wasm = Wasm::new(&ir_module)
             .map_err(|(e, wat_string)| CompilerError::WasmGenerationError(e, wat_string))?;
 
+        wasm.validate()
+            .map_err(|e| CompilerError::WasmValidationError(e.to_string(), wasm.print_wat()))?;
+
         Ok(wasm)
     }
 }

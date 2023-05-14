@@ -1,3 +1,5 @@
+use wasmparser::BinaryReaderError;
+
 use super::{codegen::ToWat, ir::IRModule};
 
 pub struct Wasm {
@@ -13,13 +15,15 @@ impl Wasm {
         Ok(Self { wasm_binary })
     }
 
-    // pub fn validate(&self) -> Result<()> {
-    //     wasmparser::validate(&self.wasm_binary)
-    //         .map(|_v| ())
-    //         .map_err(|e| e.into())
-    // }
+    pub fn validate(&self) -> Result<(), BinaryReaderError> {
+        wasmparser::validate(&self.wasm_binary).map(|_v| ())
+    }
 
     pub fn print_wat(&self) -> String {
         wasmprinter::print_bytes(&self.wasm_binary).unwrap()
+    }
+
+    pub fn bytes(&self) -> &[u8] {
+        &self.wasm_binary
     }
 }

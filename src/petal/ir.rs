@@ -1,6 +1,6 @@
 use super::{
     ast::{Expr, Program, Stmt},
-    token::{TokenType},
+    token::TokenType,
 };
 
 type TT = TokenType;
@@ -64,6 +64,8 @@ pub struct IRParam {
 pub struct IRFunction {
     pub name: String,
     pub params: Vec<IRParam>,
+    pub return_ty: Option<WatValueType>,
+    pub is_exported: bool,
     pub body: Chunk,
 }
 
@@ -113,21 +115,24 @@ impl IRGenerator {
             }
         }
 
-        self.drop_chunk_stack(&mut chunk);
-
-        
+        self.drop_chunk_stack(&mut chunk, true);
 
         IRFunction {
             name: String::from("petal_main"),
             params: Vec::new(),
+            return_ty: Some(WatValueType::F64),
+            is_exported: true,
             body: chunk,
         }
     }
 
-    fn drop_chunk_stack(&self, chunk: &mut Chunk) {
-        let stack_size = chunk.iter().fold(0, |acc, instr| acc + instr.stack_count());
+    fn drop_chunk_stack(&self, chunk: &mut Chunk, returns_value: bool) {
+        let mut size_to_drop = chunk.iter().fold(0, |acc, instr| acc + instr.stack_count());
+        if returns_value {
+            size_to_drop -= 1;
+        }
 
-        for _ in 0..stack_size {
+        for _ in 0..size_to_drop {
             chunk.push(WatInstruction::Drop);
         }
     }
@@ -247,11 +252,7 @@ impl InstructionStackCount for Expr {
 
 #[cfg(test)]
 mod tests {
-    use crate::petal::{
-        lexer::Lexer,
-        parser::Parser,
-        precedence::Precedence,
-    };
+    use crate::petal::{lexer::Lexer, parser::Parser, precedence::Precedence};
 
     use super::*;
     use WatInstruction::*;

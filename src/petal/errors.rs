@@ -1,6 +1,6 @@
 use std::io;
 
-use super::{parser::ParserError};
+use super::parser::ParserError;
 use thiserror::Error;
 
 use colored::Colorize;
@@ -22,8 +22,11 @@ pub enum CompilerError {
     #[error("Parser error")]
     ParserError(ParserError),
 
-    #[error("Failed to generate WASM binary: {0}\n\nThe generated binary...\n{1}")]
+    #[error("Failed to generate WASM binary: {0}\n\nThe generated wat...\n{1}")]
     WasmGenerationError(String, String),
+
+    #[error("Failed to validate WASM binary: {0}\n\nThe generated wat...\n{1}")]
+    WasmValidationError(String, String),
 }
 
 // pub struct CompilerError {
