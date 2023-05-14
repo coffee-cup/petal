@@ -36,7 +36,10 @@ pub enum WatInstruction {
     Mult(WatValueType),
     Div(WatValueType),
     // Variables https://developer.mozilla.org/en-US/docs/WebAssembly/Reference/Variables
+    Local(String, WatValueType),
     GetLocal(String),
+    SetLocal(String),
+    // Stack
     Drop,
 }
 
@@ -61,11 +64,17 @@ pub struct IRParam {
     pub ty: WatValueType,
 }
 
+pub struct IRLocal {
+    pub name: String,
+    pub ty: WatValueType,
+}
+
 pub struct IRFunction {
     pub name: String,
     pub params: Vec<IRParam>,
     pub return_ty: Option<WatValueType>,
     pub is_exported: bool,
+    pub locals: Vec<IRLocal>,
     pub body: Chunk,
 }
 
@@ -105,22 +114,31 @@ impl IRGenerator {
 
     fn generate_main_function(&mut self, program: &Program) -> IRFunction {
         let mut chunk = Chunk::new();
+        let mut locals = Vec::new();
 
         for stmt in &program.statements {
             match stmt {
                 Stmt::Func { .. } => todo!("program to ir",),
-                stmt => {
+                Stmt::Let { name, .. } => {
+                    locals.push(IRLocal {
+                        name: name.to_string(),
+                        ty: WatValueType::F64,
+                    });
                     chunk.extend(stmt.to_ir_chunk());
                 }
+                stmt => chunk.extend(stmt.to_ir_chunk()),
             }
         }
 
-        self.drop_chunk_stack(&mut chunk, true);
+        let return_ty = Some(WatValueType::F64);
+
+        self.drop_chunk_stack(&mut chunk, return_ty.is_some());
 
         IRFunction {
             name: String::from("petal_main"),
             params: Vec::new(),
-            return_ty: Some(WatValueType::F64),
+            return_ty,
+            locals,
             is_exported: true,
             body: chunk,
         }
@@ -183,6 +201,11 @@ impl ToWatInstructions for Stmt {
     fn to_ir_chunk(&self) -> Chunk {
         match self {
             Stmt::ExprStmt { expr, .. } => expr.to_ir_chunk(),
+            Stmt::Let { name, init, .. } => {
+                let mut chunk = init.to_ir_chunk();
+                chunk.push(WatInstruction::SetLocal(name.clone()));
+                chunk
+            }
             _ => todo!("to_ir_chunk for {:?}", self),
         }
     }
@@ -225,26 +248,8 @@ impl InstructionStackCount for WatInstruction {
             WatInstruction::Div(_) => -1,
             WatInstruction::GetLocal(_) => 1,
             WatInstruction::Drop => -1,
-            _ => todo!("stack_count for {:?}", self),
-        }
-    }
-}
-
-impl InstructionStackCount for Stmt {
-    fn stack_count(&self) -> i32 {
-        match self {
-            Stmt::ExprStmt { expr, .. } => expr.stack_count(),
-            _ => todo!("stack_count for {:?}", self),
-        }
-    }
-}
-
-impl InstructionStackCount for Expr {
-    fn stack_count(&self) -> i32 {
-        match self {
-            Expr::Number { .. } => 1,
-            Expr::BinaryOp { .. } => -1,
-            Expr::Ident { .. } => 1,
+            WatInstruction::GetLocal(_) => 0,
+            WatInstruction::SetLocal(_) => -1,
             _ => todo!("stack_count for {:?}", self),
         }
     }

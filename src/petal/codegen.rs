@@ -46,6 +46,13 @@ impl ToWat for IRFunction {
             None => String::new(),
         };
 
+        let locals = self
+            .locals
+            .iter()
+            .map(|l| format!("(local ${} {})", l.name, l.ty.to_wat()))
+            .collect::<Vec<_>>()
+            .join("\n");
+
         let body = self
             .body
             .iter()
@@ -55,6 +62,7 @@ impl ToWat for IRFunction {
 
         format!(
             "(func {name} {params} {return_ty}
+{locals}
 {body}
 )",
         )
@@ -89,7 +97,8 @@ impl ToWat for WatInstruction {
             Mult(wat_type) => format!("{}.mul", wat_type.to_wat(),),
             Div(wat_type) => format!("{}.div", wat_type.to_wat(),),
 
-            GetLocal(name) => format!("get_local ${}", name),
+            GetLocal(name) => format!("local.get ${}", name),
+            SetLocal(name) => format!("local.set ${}", name),
 
             Drop => String::from("drop"),
 
