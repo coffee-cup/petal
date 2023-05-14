@@ -1,10 +1,9 @@
-use std::{fs, io::Write};
+
 
 use clap::{Parser, Subcommand};
-use petal::{codegen::ToWat, ir::ToWatInstructions, lexer::Lexer, parser};
-use wast::Wat;
+use petal::Compiler;
 
-use crate::petal::codegen::Codegen;
+
 
 #[macro_use]
 extern crate lazy_static;
@@ -27,6 +26,10 @@ enum Commands {
     Build {
         /// The petal file to compile
         file: String,
+
+        /// Whether to output the WAT string
+        #[arg(short = 'w', long = "wat")]
+        wat: bool,
     },
 }
 
@@ -34,21 +37,19 @@ fn main() {
     let args = Cli::parse();
 
     match args.command {
-        Commands::Build { file } => {
-            let file = std::fs::read_to_string(file).expect("Could not read file");
+        Commands::Build { file, wat } => {
+            let compiler = Compiler::new();
 
-            let mut lexer = Lexer::new(&file);
-            let mut parser = parser::Parser::new(&mut lexer);
-            let program = parser.parse().unwrap();
-
-            let instructions = program.to_ir();
-            let wat_string = instructions
-                .iter()
-                .map(|i| i.to_wat())
-                .collect::<Vec<_>>()
-                .join(" ");
-
-            println!("{}", wat_string);
+            match compiler.compile_file(&file) {
+                Err(e) => {
+                    println!("Error: {}", e);
+                }
+                Ok(wasm) => {
+                    if wat {
+                        println!("{}", wasm.print_wat())
+                    }
+                }
+            }
 
             // let mut codegen = Codegen::new();
             // let wat_string = codegen.generate_module();

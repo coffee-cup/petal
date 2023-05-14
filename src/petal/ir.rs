@@ -1,6 +1,6 @@
 use super::{
     ast::{Expr, Program, Stmt},
-    token::{Token, TokenType},
+    token::{TokenType},
 };
 
 type TT = TokenType;
@@ -37,9 +37,24 @@ pub enum WatInstruction {
     Div(WatValueType),
     // Variables https://developer.mozilla.org/en-US/docs/WebAssembly/Reference/Variables
     GetLocal(String),
+    Drop,
 }
 
 type Chunk = Vec<WatInstruction>;
+
+pub struct IRModule {
+    pub funcs: Vec<IRFunction>,
+}
+
+impl IRModule {
+    pub fn new() -> Self {
+        Self { funcs: Vec::new() }
+    }
+
+    pub fn add_function(&mut self, func: IRFunction) {
+        self.funcs.push(func);
+    }
+}
 
 pub struct IRParam {
     pub name: String,
@@ -52,8 +67,12 @@ pub struct IRFunction {
     pub body: Chunk,
 }
 
-pub trait ToWatInstructions {
+trait ToWatInstructions {
     fn to_ir_chunk(&self) -> Chunk;
+}
+
+pub trait InstructionStackCount {
+    fn stack_count(&self) -> i32;
 }
 
 macro_rules! instrs {
@@ -66,28 +85,79 @@ macro_rules! instrs {
     }};
 }
 
-impl Program {
-    pub fn to_ir(&self) -> Vec<IRFunction> {
-        let mut main_chunk = Chunk::new();
-        let mut funcs: Vec<IRFunction> = Vec::new();
+pub struct IRGenerator {}
 
-        for stmt in &self.statements {
+impl IRGenerator {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    pub fn generate_ir_from_program(&mut self, program: &Program) -> IRModule {
+        let mut ir_module = IRModule::new();
+
+        let main_func = self.generate_main_function(program);
+        ir_module.add_function(main_func);
+
+        ir_module
+    }
+
+    fn generate_main_function(&mut self, program: &Program) -> IRFunction {
+        let mut chunk = Chunk::new();
+
+        for stmt in &program.statements {
             match stmt {
-                Stmt::Fun { .. } => todo!("program to ir",),
-                stmt => main_chunk.extend(stmt.to_ir_chunk()),
+                Stmt::Func { .. } => todo!("program to ir",),
+                stmt => {
+                    chunk.extend(stmt.to_ir_chunk());
+                }
             }
         }
 
-        let main_func = IRFunction {
+        self.drop_chunk_stack(&mut chunk);
+
+        
+
+        IRFunction {
             name: String::from("petal_main"),
             params: Vec::new(),
-            body: main_chunk,
-        };
+            body: chunk,
+        }
+    }
 
-        funcs.push(main_func);
-        funcs
+    fn drop_chunk_stack(&self, chunk: &mut Chunk) {
+        let stack_size = chunk.iter().fold(0, |acc, instr| acc + instr.stack_count());
+
+        for _ in 0..stack_size {
+            chunk.push(WatInstruction::Drop);
+        }
     }
 }
+
+// impl Program {
+//     pub fn to_ir(&self) -> IRModule {
+//         let mut main_chunk = Chunk::new();
+//         let mut funcs: Vec<IRFunction> = Vec::new();
+
+//         for stmt in &self.statements {
+//             match stmt {
+//                 Stmt::Func { .. } => todo!("program to ir",),
+//                 stmt => main_chunk.extend(stmt.to_ir_chunk()),
+//             }
+//         }
+
+//         let main_func = IRFunction {
+//             name: String::from("petal_main"),
+//             params: Vec::new(),
+//             body: main_chunk,
+//         };
+
+//         funcs.push(main_func);
+
+//         let module = IRModule { funcs };
+
+//         module
+//     }
+// }
 
 // impl ToWatInstructions for Program {
 //     fn to_ir_chunk(&self) -> Chunk {
@@ -140,12 +210,46 @@ impl ToWatInstructions for Expr {
     }
 }
 
+impl InstructionStackCount for WatInstruction {
+    fn stack_count(&self) -> i32 {
+        match self {
+            WatInstruction::Const(_) => 1,
+            WatInstruction::Add(_) => -1,
+            WatInstruction::Sub(_) => -1,
+            WatInstruction::Mult(_) => -1,
+            WatInstruction::Div(_) => -1,
+            WatInstruction::GetLocal(_) => 1,
+            WatInstruction::Drop => -1,
+            _ => todo!("stack_count for {:?}", self),
+        }
+    }
+}
+
+impl InstructionStackCount for Stmt {
+    fn stack_count(&self) -> i32 {
+        match self {
+            Stmt::ExprStmt { expr, .. } => expr.stack_count(),
+            _ => todo!("stack_count for {:?}", self),
+        }
+    }
+}
+
+impl InstructionStackCount for Expr {
+    fn stack_count(&self) -> i32 {
+        match self {
+            Expr::Number { .. } => 1,
+            Expr::BinaryOp { .. } => -1,
+            Expr::Ident { .. } => 1,
+            _ => todo!("stack_count for {:?}", self),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::petal::{
         lexer::Lexer,
         parser::Parser,
-        positions::{Pos, Span},
         precedence::Precedence,
     };
 
@@ -179,6 +283,28 @@ mod tests {
                 Div(F64),
                 Sub(F64)
             ]
+        );
+    }
+
+    #[test]
+    fn test_stack_count() {
+        let instrs = vec![
+            Const(WatValue::F64(1.0)),
+            Const(WatValue::F64(2.0)),
+            Const(WatValue::F64(3.0)),
+            Mult(F64),
+            Add(F64),
+            Const(WatValue::F64(4.0)),
+            Const(WatValue::F64(5.0)),
+            Div(F64),
+            Sub(F64),
+        ];
+
+        assert_eq!(
+            instrs
+                .iter()
+                .fold(0, |acc, instr| acc + instr.stack_count()),
+            1
         );
     }
 }

@@ -1,20 +1,50 @@
-use super::positions::Span;
+use std::io;
+
+use super::{parser::ParserError};
+use thiserror::Error;
 
 use colored::Colorize;
 
-pub trait CompilerError {
-    fn span(&self) -> Option<Span>;
-    fn msg(&self) -> String;
+// pub trait CompilerError {
+//     fn span(&self) -> Option<Span>;
+//     fn msg(&self) -> String;
+// }
+
+// struct ErrorWithSpan {
+
+// }
+
+#[derive(Error, Debug)]
+pub enum CompilerError {
+    #[error("File read error: {0}")]
+    FileReadError(#[from] io::Error),
+
+    #[error("Parser error")]
+    ParserError(ParserError),
+
+    #[error("Failed to generate WASM binary: {0}\n\nThe generated binary...\n{1}")]
+    WasmGenerationError(String, String),
 }
 
-pub fn print_error(source: &str, error: &dyn CompilerError) {
-    if let Some(span) = error.span() {
-        let _msg = error.msg();
+// pub struct CompilerError {
+//     msg: String,
+//     span: Option<Span>,
+// }
+
+// impl CompilerError {
+//     pub fn new(msg: String, span: Option<Span>) -> Self {
+//         Self { msg, span }
+//     }
+// }
+
+pub fn print_error(source: &str, error: &ParserError) {
+    if let Some(span) = &error.span {
+        let msg = error.kind.to_string();
         let line = source.lines().nth(span.start.line).unwrap();
         let line_number = format!("{} | ", span.start.line);
         let line_number_len = line_number.len();
 
-        let error_len = error.msg().len();
+        let error_len = msg.len();
 
         println!("\n{}{}", line_number.dimmed(), line);
 
@@ -32,10 +62,10 @@ pub fn print_error(source: &str, error: &dyn CompilerError) {
         println!(
             "{} {}",
             " ".repeat(error_msg_pos as usize),
-            error.msg().red().bold()
+            msg.red().bold()
         );
     } else {
         // No span information, just print the error
-        println!("{}", error.msg().red().bold());
+        println!("{}", error.kind.to_string().red().bold());
     }
 }

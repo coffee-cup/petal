@@ -2,7 +2,6 @@ use std::{collections::HashMap, str::Chars};
 use thiserror::Error;
 
 use super::{
-    errors::CompilerError,
     positions::{Pos, Span},
     token::{Literal, Token, TokenType},
 };
@@ -49,15 +48,21 @@ impl LexerError {
     }
 }
 
-impl CompilerError for LexerError {
-    fn span(&self) -> Option<Span> {
-        self.span.clone()
-    }
+// impl From<LexerError> for CompilerError {
+//     fn from(e: LexerError) -> Self {
+//         CompilerError::new(e.kind.to_string(), e.span)
+//     }
+// }
 
-    fn msg(&self) -> String {
-        self.kind.to_string()
-    }
-}
+// impl CompilerError for LexerError {
+//     fn span(&self) -> Option<Span> {
+//         self.span.clone()
+//     }
+
+//     fn msg(&self) -> String {
+//         self.kind.to_string()
+//     }
+// }
 
 type LexerResult<T> = Result<T, LexerError>;
 
