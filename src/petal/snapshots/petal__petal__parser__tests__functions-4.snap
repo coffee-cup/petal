@@ -5,6 +5,7 @@ expression: "parse_stmt(\"\n        fn foo(foo, bar) {\n            let a = foo 
 Func(
     FuncDecl {
         name: "foo",
+        is_exported: false,
         args: [
             FuncArg {
                 name: "foo",

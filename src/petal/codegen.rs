@@ -40,7 +40,7 @@ impl ToWat for IRFunction {
         let export = if self.is_exported {
             format!("(export \"{}\")", self.name)
         } else {
-            format!("{}", self.name)
+            String::new()
         };
 
         let return_ty = match &self.return_ty {

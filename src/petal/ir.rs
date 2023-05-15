@@ -160,7 +160,7 @@ impl IRGenerator {
             params,
             return_ty,
             locals,
-            is_exported: true,
+            is_exported: func.is_exported,
             body: chunk,
         }
     }
@@ -188,7 +188,7 @@ impl IRGenerator {
         self.drop_chunk_stack(&mut chunk, return_ty.is_some());
 
         IRFunction {
-            name: String::from("petal_main"),
+            name: String::from("_start"),
             params: Vec::new(),
             return_ty,
             locals,

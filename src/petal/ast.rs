@@ -17,6 +17,7 @@ pub struct FuncArg {
 #[derive(PartialEq, Clone, Debug)]
 pub struct FuncDecl {
     pub name: String,
+    pub is_exported: bool,
     pub args: Vec<FuncArg>,
     pub body: Block,
     pub span: Span,

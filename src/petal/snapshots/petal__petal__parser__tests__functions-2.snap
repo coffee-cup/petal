@@ -5,6 +5,7 @@ expression: "parse_stmt(\"fn foo(a) {}\")"
 Func(
     FuncDecl {
         name: "foo",
+        is_exported: false,
         args: [
             FuncArg {
                 name: "a",

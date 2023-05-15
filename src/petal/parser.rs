@@ -343,7 +343,7 @@ impl<'a> Parser<'a> {
 
     fn parse_declaration(&mut self) -> ParserResult<Stmt> {
         let stmt = match self.peek().token_type {
-            TT::Fun => self.parse_function()?,
+            TT::Fun | TT::Export => self.parse_function()?,
             TT::Let => self.parse_let_declaration()?,
             _ => self.parse_statement()?,
         };
@@ -354,6 +354,11 @@ impl<'a> Parser<'a> {
     fn parse_function(&mut self) -> ParserResult<Stmt> {
         let token = self.consume()?;
         let mut span = token.span();
+
+        let is_exported = token.is(TT::Export);
+        if is_exported {
+            self.consume_expected(TT::Fun)?;
+        }
 
         let name = match self.consume_expected(TT::Identifier)?.literal {
             Some(Literal::Identifier(name)) => name,
@@ -376,6 +381,7 @@ impl<'a> Parser<'a> {
 
         Ok(Stmt::Func(FuncDecl {
             name,
+            is_exported,
             args,
             body: block,
             span,
@@ -675,5 +681,6 @@ mod tests {
             let a = foo + bar
         }"
         ));
+        insta::assert_debug_snapshot!(parse_stmt("export fn foo() {}"));
     }
 }

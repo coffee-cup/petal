@@ -1,22 +1,22 @@
 ---
 source: src/petal/parser.rs
-expression: "parse_stmt(\"fn foo() {}\")"
+expression: "parse_stmt(\"export fn foo() {}\")"
 ---
 Func(
     FuncDecl {
         name: "foo",
-        is_exported: false,
+        is_exported: true,
         args: [],
         body: Block {
             statements: [],
             span: Span {
                 start: Pos {
                     line: 0,
-                    col: 10,
+                    col: 17,
                 },
                 end: Pos {
                     line: 0,
-                    col: 11,
+                    col: 18,
                 },
             },
         },
@@ -27,7 +27,7 @@ Func(
             },
             end: Pos {
                 line: 0,
-                col: 11,
+                col: 18,
             },
         },
     },

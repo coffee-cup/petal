@@ -48,28 +48,13 @@ impl LexerError {
     }
 }
 
-// impl From<LexerError> for CompilerError {
-//     fn from(e: LexerError) -> Self {
-//         CompilerError::new(e.kind.to_string(), e.span)
-//     }
-// }
-
-// impl CompilerError for LexerError {
-//     fn span(&self) -> Option<Span> {
-//         self.span.clone()
-//     }
-
-//     fn msg(&self) -> String {
-//         self.kind.to_string()
-//     }
-// }
-
 type LexerResult<T> = Result<T, LexerError>;
 
 lazy_static! {
     static ref KEYWORDS: HashMap<&'static str, TokenType> = {
         let mut m = HashMap::new();
         m.insert("fn", TT::Fun);
+        m.insert("export", TT::Export);
         m.insert("let", TT::Let);
         m.insert("if", TT::If);
         m.insert("else", TT::Else);

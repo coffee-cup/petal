@@ -37,6 +37,7 @@ pub enum TokenType {
 
     // Keywords.
     Fun,
+    Export,
     Let,
     If,
     Else,
@@ -137,6 +138,7 @@ impl fmt::Display for TokenType {
             TokenType::String => write!(f, "string"),
             TokenType::Number => write!(f, "number"),
             TokenType::Fun => write!(f, "fn"),
+            TokenType::Export => write!(f, "export"),
             TokenType::Let => write!(f, "let"),
             TokenType::If => write!(f, "if"),
             TokenType::Else => write!(f, "else"),
