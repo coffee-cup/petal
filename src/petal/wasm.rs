@@ -1,13 +1,13 @@
 use wasmparser::BinaryReaderError;
 
-use super::{codegen::ToWat, ir::IRModule};
+use super::{codegen::ToWat, wat::WatModule};
 
 pub struct Wasm {
     wasm_binary: Vec<u8>,
 }
 
 impl Wasm {
-    pub fn new(ir_module: &IRModule) -> Result<Self, (String, String)> {
+    pub fn new(ir_module: &WatModule) -> Result<Self, (String, String)> {
         let wat_string = ir_module.to_wat();
 
         let wasm_binary = wat::parse_str(&wat_string).map_err(|e| (e.to_string(), wat_string))?;

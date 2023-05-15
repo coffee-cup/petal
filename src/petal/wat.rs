@@ -5,6 +5,8 @@ use super::{
 
 type TT = TokenType;
 
+const MAIN_FUNCTION_NAME: &str = "_start";
+
 #[derive(PartialEq, Clone, Debug)]
 pub enum WatValueType {
     I32,
@@ -47,36 +49,36 @@ pub enum WatInstruction {
 
 type Chunk = Vec<WatInstruction>;
 
-pub struct IRModule {
-    pub funcs: Vec<IRFunction>,
+pub struct WatModule {
+    pub funcs: Vec<WatFunction>,
 }
 
-impl IRModule {
+impl WatModule {
     pub fn new() -> Self {
         Self { funcs: Vec::new() }
     }
 
-    pub fn add_function(&mut self, func: IRFunction) {
+    pub fn add_function(&mut self, func: WatFunction) {
         self.funcs.push(func);
     }
 }
 
-pub struct IRParam {
+pub struct WatParam {
     pub name: String,
     pub ty: WatValueType,
 }
 
-pub struct IRLocal {
+pub struct WatLocal {
     pub name: String,
     pub ty: WatValueType,
 }
 
-pub struct IRFunction {
+pub struct WatFunction {
     pub name: String,
-    pub params: Vec<IRParam>,
+    pub params: Vec<WatParam>,
     pub return_ty: Option<WatValueType>,
     pub is_exported: bool,
-    pub locals: Vec<IRLocal>,
+    pub locals: Vec<WatLocal>,
     pub body: Chunk,
 }
 
@@ -105,8 +107,8 @@ impl IRGenerator {
         Self {}
     }
 
-    pub fn generate_ir_from_program(&mut self, program: &Program) -> IRModule {
-        let mut ir_module = IRModule::new();
+    pub fn generate_ir_from_program(&mut self, program: &Program) -> WatModule {
+        let mut ir_module = WatModule::new();
 
         for stmt in &program.statements {
             match stmt {
@@ -124,14 +126,14 @@ impl IRGenerator {
         ir_module
     }
 
-    fn generate_function(&mut self, func: &FuncDecl) -> IRFunction {
+    fn generate_function(&mut self, func: &FuncDecl) -> WatFunction {
         let mut chunk = Chunk::new();
         let mut locals = Vec::new();
 
         let params = func
             .args
             .iter()
-            .map(|arg| IRParam {
+            .map(|arg| WatParam {
                 name: arg.name.clone(),
                 ty: WatValueType::F64,
             })
@@ -141,7 +143,7 @@ impl IRGenerator {
             match stmt {
                 Stmt::Func { .. } => panic!("Functions cannot appear inside functions"),
                 Stmt::Let { name, .. } => {
-                    locals.push(IRLocal {
+                    locals.push(WatLocal {
                         name: name.to_string(),
                         ty: WatValueType::F64,
                     });
@@ -155,7 +157,7 @@ impl IRGenerator {
 
         self.drop_chunk_stack(&mut chunk, return_ty.is_some());
 
-        IRFunction {
+        WatFunction {
             name: func.name.clone(),
             params,
             return_ty,
@@ -165,7 +167,7 @@ impl IRGenerator {
         }
     }
 
-    fn generate_main_function(&mut self, program: &Program) -> IRFunction {
+    fn generate_main_function(&mut self, program: &Program) -> WatFunction {
         let mut chunk = Chunk::new();
         let mut locals = Vec::new();
 
@@ -173,7 +175,7 @@ impl IRGenerator {
             match stmt {
                 Stmt::Func { .. } => {}
                 Stmt::Let { name, .. } => {
-                    locals.push(IRLocal {
+                    locals.push(WatLocal {
                         name: name.to_string(),
                         ty: WatValueType::F64,
                     });
@@ -187,8 +189,8 @@ impl IRGenerator {
 
         self.drop_chunk_stack(&mut chunk, return_ty.is_some());
 
-        IRFunction {
-            name: String::from("_start"),
+        WatFunction {
+            name: String::from(MAIN_FUNCTION_NAME),
             params: Vec::new(),
             return_ty,
             locals,

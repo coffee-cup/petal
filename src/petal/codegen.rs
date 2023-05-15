@@ -1,12 +1,12 @@
-use crate::petal::ir::WatValue;
+use crate::petal::wat::WatValue;
 
-use super::ir::{IRFunction, IRModule, WatInstruction, WatValueType};
+use super::wat::{WatFunction, WatInstruction, WatModule, WatValueType};
 
 pub trait ToWat {
     fn to_wat(&self) -> String;
 }
 
-impl ToWat for IRModule {
+impl ToWat for WatModule {
     fn to_wat(&self) -> String {
         let funcs = self
             .funcs
@@ -26,7 +26,7 @@ impl ToWat for IRModule {
     }
 }
 
-impl ToWat for IRFunction {
+impl ToWat for WatFunction {
     fn to_wat(&self) -> String {
         let params = self
             .params

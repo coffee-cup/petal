@@ -1,11 +1,10 @@
-use crate::petal::ir::IRGenerator;
+use crate::petal::wat::IRGenerator;
 
 use self::{errors::CompilerError, lexer::Lexer, wasm::Wasm};
 
 mod ast;
 mod codegen;
 mod errors;
-mod ir;
 mod lexer;
 mod parser;
 mod positions;
@@ -13,6 +12,7 @@ mod precedence;
 mod runner;
 mod token;
 mod wasm;
+mod wat;
 
 type CompilerResult<T> = Result<T, CompilerError>;
 
