@@ -42,22 +42,6 @@ impl ParserError {
     }
 }
 
-// impl CompilerError for ParserError {
-//     fn span(&self) -> Option<Span> {
-//         self.span.clone()
-//     }
-
-//     fn msg(&self) -> String {
-//         self.kind.to_string()
-//     }
-// }
-
-// impl From<ParserError> for CompilerError {
-//     fn from(e: ParserError) -> Self {
-//         CompilerError::new(e.kind.to_string(), e.span)
-//     }
-// }
-
 type ParserResult<T> = Result<T, ParserError>;
 
 trait PrefixParselet {

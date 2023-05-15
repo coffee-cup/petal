@@ -35,7 +35,9 @@ impl ToWat for IRFunction {
             .collect::<Vec<_>>()
             .join(" ");
 
-        let name = if self.is_exported {
+        let name = format!("${}", self.name);
+
+        let export = if self.is_exported {
             format!("(export \"{}\")", self.name)
         } else {
             format!("{}", self.name)
@@ -61,7 +63,7 @@ impl ToWat for IRFunction {
             .join("\n");
 
         format!(
-            "(func {name} {params} {return_ty}
+            "(func {name} {export} {params} {return_ty}
 {locals}
 {body}
 )",
@@ -99,6 +101,8 @@ impl ToWat for WatInstruction {
 
             GetLocal(name) => format!("local.get ${}", name),
             SetLocal(name) => format!("local.set ${}", name),
+
+            Call(name, _) => format!("call ${}", name),
 
             Drop => String::from("drop"),
 

@@ -39,6 +39,8 @@ pub enum WatInstruction {
     Local(String, WatValueType),
     GetLocal(String),
     SetLocal(String),
+    // Functions
+    Call(String, usize),
     // Stack
     Drop,
 }
@@ -243,6 +245,22 @@ impl ToWatInstructions for Expr {
                 }
             }
             Expr::Ident { name, .. } => vec![WatInstruction::GetLocal(name.clone())],
+            Expr::Call { callee, args, .. } => {
+                let mut chunk = Chunk::new();
+
+                let name = match *callee.clone() {
+                    Expr::Ident { name, .. } => name,
+                    _ => panic!("Callee must be an identifier"),
+                };
+
+                for arg in args {
+                    chunk.extend(arg.to_ir_chunk());
+                }
+
+                chunk.push(WatInstruction::Call(name, args.len()));
+
+                chunk
+            }
             _ => todo!("to_ir_chunk for {:?}", self),
         }
     }
@@ -260,6 +278,9 @@ impl InstructionStackCount for WatInstruction {
             WatInstruction::Drop => -1,
             WatInstruction::GetLocal(_) => 0,
             WatInstruction::SetLocal(_) => -1,
+
+            // TODO: Need to check if a value is returned
+            WatInstruction::Call(_, arity) => -(*arity as i32) + 1,
             _ => todo!("stack_count for {:?}", self),
         }
     }
