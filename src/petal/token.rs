@@ -107,6 +107,10 @@ impl HasSpan for Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if self.token_type == TokenType::Eof {
+            return write!(f, "<EOF>");
+        }
+
         write!(f, "{}", self.lexeme)
     }
 }

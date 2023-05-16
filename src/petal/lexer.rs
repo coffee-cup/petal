@@ -78,6 +78,10 @@ impl<'a> Lexer<'a> {
         lexer
     }
 
+    pub fn pos(&self) -> Pos {
+        Pos::new(self.line, self.col)
+    }
+
     fn identifier_or_reserved(&mut self) -> Token {
         let mut s = String::new();
 

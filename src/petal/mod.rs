@@ -4,7 +4,7 @@ use self::{errors::CompilerError, lexer::Lexer, wasm::Wasm};
 
 mod ast;
 mod codegen;
-mod errors;
+pub mod errors;
 mod lexer;
 mod parser;
 mod positions;
@@ -25,9 +25,15 @@ impl Compiler {
     pub fn compile_file(&self, file: &str) -> CompilerResult<Wasm> {
         let file = std::fs::read_to_string(file).expect("Could not read file");
 
+        let mut lexer1 = Lexer::new(&file);
+        let tokens = lexer1.map(|t| t.unwrap()).collect::<Vec<_>>();
+        println!("Tokens: {:?}", tokens);
+
         let mut lexer = Lexer::new(&file);
         let mut parser = parser::Parser::new(&mut lexer);
         let program = parser.parse().map_err(CompilerError::ParserError)?;
+
+        println!("{:#?}", program);
 
         let mut ir_generator = IRGenerator::new();
         let ir_module = ir_generator.generate_ir_from_program(&program);

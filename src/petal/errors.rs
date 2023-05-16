@@ -1,18 +1,9 @@
-use std::io;
+use std::{cmp::min, io};
 
 use super::parser::ParserError;
 use thiserror::Error;
 
 use colored::Colorize;
-
-// pub trait CompilerError {
-//     fn span(&self) -> Option<Span>;
-//     fn msg(&self) -> String;
-// }
-
-// struct ErrorWithSpan {
-
-// }
 
 #[derive(Error, Debug)]
 pub enum CompilerError {
@@ -29,32 +20,26 @@ pub enum CompilerError {
     WasmValidationError(String, String),
 }
 
-// pub struct CompilerError {
-//     msg: String,
-//     span: Option<Span>,
-// }
-
-// impl CompilerError {
-//     pub fn new(msg: String, span: Option<Span>) -> Self {
-//         Self { msg, span }
-//     }
-// }
-
 pub fn print_error(source: &str, error: &ParserError) {
     if let Some(span) = &error.span {
         let msg = error.kind.to_string();
-        let line = source.lines().nth(span.start.line).unwrap();
+        let source_lines = source.lines();
+        let source_content = source_lines.collect::<Vec<_>>();
+        let line_idx = min(span.start.line, source_content.len() - 1);
+        let line = source_content[line_idx];
         let line_number = format!("{} | ", span.start.line);
         let line_number_len = line_number.len();
 
+        println!("Span: {:?}", span);
+
         let error_len = msg.len();
 
-        println!("\n{}{}", line_number.dimmed(), line);
+        println!("\n{}{}", line_number.purple(), line);
 
         println!(
             "{}{}{}",
             " ".repeat(line_number_len),
-            " ".repeat(span.start.col),
+            " ".repeat(span.start.col - 1),
             "^".red()
         );
 

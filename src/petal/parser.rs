@@ -1,10 +1,10 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, println, rc::Rc};
 use thiserror::Error;
 
 use super::{
     ast::{Block, Expr, FuncArg, FuncDecl, Program, Stmt},
     lexer::{Lexer, LexerErrorKind},
-    positions::{HasSpan, Span},
+    positions::{HasSpan, Pos, Span},
     precedence::Precedence,
     token::{Literal, Token, TokenType},
 };
@@ -429,7 +429,7 @@ impl<'a> Parser<'a> {
             _ => unreachable!(),
         };
 
-        self.match_expected(TT::Equal)?;
+        self.consume_expected(TT::Equal)?;
         let init = self.parse_expression(Precedence::Lowest)?;
 
         span = span.merge(init.span());
@@ -558,7 +558,7 @@ impl<'a> Parser<'a> {
         self.next_token = self
             .lexer
             .next()
-            .unwrap_or_else(|| Ok(Token::new(TT::Eof)))
+            .unwrap_or_else(|| Ok(Token::new(TT::Eof).with_span(self.lexer.pos().into())))
             .map_err(|lexer_error| {
                 let mut pe = ParserError::new(ParserErrorKind::LexerError(lexer_error.kind));
                 pe.span = lexer_error.span;
