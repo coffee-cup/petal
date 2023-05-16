@@ -1,3 +1,5 @@
+use wast::kw::r#else;
+
 use crate::petal::wat::WatValue;
 
 use super::wat::{WatFunction, WatInstruction, WatModule, WatValueType};
@@ -28,7 +30,8 @@ impl ToWat for WatModule {
 
 impl ToWat for WatFunction {
     fn to_wat(&self) -> String {
-        let params = self
+        let signature = &self.signature;
+        let params = signature
             .params
             .iter()
             .map(|p| format!("(param ${} {})", p.name, p.ty.to_wat()))
@@ -37,13 +40,13 @@ impl ToWat for WatFunction {
 
         let name = format!("${}", self.name);
 
-        let export = if self.is_exported {
+        let export = if signature.is_exported {
             format!("(export \"{}\")", self.name)
         } else {
             String::new()
         };
 
-        let return_ty = match &self.return_ty {
+        let return_ty = match &signature.return_ty {
             Some(ty) => format!("(result {})", ty.to_wat()),
             None => String::new(),
         };
@@ -99,14 +102,47 @@ impl ToWat for WatInstruction {
             Mult(wat_type) => format!("{}.mul", wat_type.to_wat(),),
             Div(wat_type) => format!("{}.div", wat_type.to_wat(),),
 
+            Min(wat_type) => format!("{}.min", wat_type.to_wat(),),
+            Max(wat_type) => format!("{}.max", wat_type.to_wat(),),
+            Ceil(wat_type) => format!("{}.ceil", wat_type.to_wat(),),
+            Floor(wat_type) => format!("{}.floor", wat_type.to_wat(),),
+            Nearest(wat_type) => format!("{}.nearest", wat_type.to_wat(),),
+
+            Extend => format!("i64.extend_i32_s"),
+            Wrap => format!("i32.wrap_i64"),
+            Truncate(from_type, to_type) => {
+                format!("{}.trunc_{}_s", to_type.to_wat(), from_type.to_wat(),)
+            }
+
             GetLocal(name) => format!("local.get ${}", name),
             SetLocal(name) => format!("local.set ${}", name),
 
             Call(name, _) => format!("call ${}", name),
 
+            If(then_block, else_block) => format!(
+                "(if 
+                (then
+                    {}
+                )
+                (else
+                    {}
+                )
+            )",
+                then_block
+                    .iter()
+                    .map(|instr| instr.to_wat())
+                    .collect::<Vec<_>>()
+                    .join("\n"),
+                else_block
+                    .iter()
+                    .map(|instr| instr.to_wat())
+                    .collect::<Vec<_>>()
+                    .join("\n"),
+            ),
+
             Drop => String::from("drop"),
 
-            _ => todo!("Implement IRToWat for WatInstruction"),
+            _ => todo!("Implement IRToWat for {:?}", self),
         }
     }
 }

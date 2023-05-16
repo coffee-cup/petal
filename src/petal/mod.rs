@@ -9,7 +9,6 @@ mod lexer;
 mod parser;
 mod positions;
 mod precedence;
-mod runner;
 mod token;
 mod wasm;
 mod wat;
@@ -32,6 +31,8 @@ impl Compiler {
 
         let mut ir_generator = IRGenerator::new();
         let ir_module = ir_generator.generate_ir_from_program(&program);
+
+        // println!("{:#?}", ir_module);
 
         let wasm = Wasm::new(&ir_module)
             .map_err(|(e, wat_string)| CompilerError::WasmGenerationError(e, wat_string))?;

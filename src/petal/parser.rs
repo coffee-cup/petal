@@ -31,7 +31,7 @@ pub struct ParserError {
 
 impl ParserError {
     pub fn new(kind: ParserErrorKind) -> Self {
-        ParserError { span: None, kind }
+        ParserError { kind, span: None }
     }
 
     pub fn with_span(&self, span: Span) -> Self {
@@ -457,13 +457,14 @@ impl<'a> Parser<'a> {
         let condition = self.parse_expression(Precedence::Lowest)?;
         self.consume_expected(TT::LeftBrace)?;
 
-        let then_block = self.parse_statement()?;
+        // TODO: We should be parsing a block here, not a declaration
+        let then_block = self.parse_declaration()?;
         self.consume_expected(TT::RightBrace)?;
         span = span.merge(then_block.span());
 
         let else_block = if self.match_expected(TT::Else)? {
             self.consume_expected(TT::LeftBrace)?;
-            let else_block = self.parse_statement()?;
+            let else_block = self.parse_declaration()?;
             self.consume_expected(TT::RightBrace)?;
             span = span.merge(else_block.span());
             Some(Box::new(else_block))

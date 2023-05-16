@@ -1,3 +1,5 @@
+use wast::kw::then;
+
 use super::{
     ast::{Expr, FuncDecl, Program, Stmt},
     token::TokenType,
@@ -37,18 +39,30 @@ pub enum WatInstruction {
     Sub(WatValueType),
     Mult(WatValueType),
     Div(WatValueType),
+    // Conversion
+    Extend, // i32 -> i64
+    Wrap,   // i64 -> i32
+    Truncate(WatValueType, WatValueType),
+    // Floating
+    Min(WatValueType),
+    Max(WatValueType),
+    Ceil(WatValueType),
+    Floor(WatValueType),
+    Nearest(WatValueType),
     // Variables https://developer.mozilla.org/en-US/docs/WebAssembly/Reference/Variables
     Local(String, WatValueType),
     GetLocal(String),
     SetLocal(String),
     // Functions
     Call(String, usize),
-    // Stack
+    // Control flow
+    If(Vec<WatInstruction>, Vec<WatInstruction>),
     Drop,
 }
 
 type Chunk = Vec<WatInstruction>;
 
+#[derive(Clone, Debug)]
 pub struct WatModule {
     pub funcs: Vec<WatFunction>,
 }
@@ -63,21 +77,29 @@ impl WatModule {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct WatParam {
     pub name: String,
     pub ty: WatValueType,
 }
 
+#[derive(Clone, Debug)]
 pub struct WatLocal {
     pub name: String,
     pub ty: WatValueType,
 }
 
-pub struct WatFunction {
-    pub name: String,
+#[derive(Clone, Debug)]
+pub struct WatFunctionSignature {
     pub params: Vec<WatParam>,
     pub return_ty: Option<WatValueType>,
     pub is_exported: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct WatFunction {
+    pub name: String,
+    pub signature: WatFunctionSignature,
     pub locals: Vec<WatLocal>,
     pub body: Chunk,
 }
@@ -86,8 +108,12 @@ trait ToWatInstructions {
     fn to_ir_chunk(&self) -> Chunk;
 }
 
-pub trait InstructionStackCount {
+trait InstructionStackCount {
     fn stack_count(&self) -> i32;
+}
+
+trait HasLocals {
+    fn locals(&self) -> Vec<WatLocal>;
 }
 
 macro_rules! instrs {
@@ -142,14 +168,10 @@ impl IRGenerator {
         for stmt in &func.body.statements {
             match stmt {
                 Stmt::Func { .. } => panic!("Functions cannot appear inside functions"),
-                Stmt::Let { name, .. } => {
-                    locals.push(WatLocal {
-                        name: name.to_string(),
-                        ty: WatValueType::F64,
-                    });
-                    chunk.extend(stmt.to_ir_chunk());
+                stmt => {
+                    locals.extend(stmt.locals());
+                    chunk.extend(stmt.to_ir_chunk())
                 }
-                stmt => chunk.extend(stmt.to_ir_chunk()),
             }
         }
 
@@ -157,12 +179,16 @@ impl IRGenerator {
 
         self.drop_chunk_stack(&mut chunk, return_ty.is_some());
 
-        WatFunction {
-            name: func.name.clone(),
+        let signature = WatFunctionSignature {
             params,
             return_ty,
-            locals,
             is_exported: func.is_exported,
+        };
+
+        WatFunction {
+            name: func.name.clone(),
+            signature,
+            locals,
             body: chunk,
         }
     }
@@ -173,15 +199,12 @@ impl IRGenerator {
 
         for stmt in &program.statements {
             match stmt {
+                // Functions are handled above
                 Stmt::Func { .. } => {}
-                Stmt::Let { name, .. } => {
-                    locals.push(WatLocal {
-                        name: name.to_string(),
-                        ty: WatValueType::F64,
-                    });
-                    chunk.extend(stmt.to_ir_chunk());
+                stmt => {
+                    locals.extend(stmt.locals());
+                    chunk.extend(stmt.to_ir_chunk())
                 }
-                stmt => chunk.extend(stmt.to_ir_chunk()),
             }
         }
 
@@ -189,12 +212,16 @@ impl IRGenerator {
 
         self.drop_chunk_stack(&mut chunk, return_ty.is_some());
 
-        WatFunction {
-            name: String::from(MAIN_FUNCTION_NAME),
+        let signature = WatFunctionSignature {
             params: Vec::new(),
             return_ty,
-            locals,
             is_exported: true,
+        };
+
+        WatFunction {
+            name: String::from(MAIN_FUNCTION_NAME),
+            signature,
+            locals,
             body: chunk,
         }
     }
@@ -218,6 +245,27 @@ impl ToWatInstructions for Stmt {
             Stmt::Let { name, init, .. } => {
                 let mut chunk = init.to_ir_chunk();
                 chunk.push(WatInstruction::SetLocal(name.clone()));
+                chunk
+            }
+            Stmt::IfStmt {
+                condition,
+                then_block,
+                else_block,
+                ..
+            } => {
+                let mut chunk = condition.to_ir_chunk();
+                chunk.extend(vec![WatInstruction::Truncate(
+                    WatValueType::F64,
+                    WatValueType::I32,
+                )]);
+
+                let then_block = then_block.to_ir_chunk();
+                let else_block = else_block
+                    .as_ref()
+                    .map(|e| e.to_ir_chunk())
+                    .unwrap_or_else(Vec::new);
+
+                chunk.push(WatInstruction::If(then_block, else_block));
                 chunk
             }
             _ => todo!("to_ir_chunk for {:?}", self),
@@ -268,22 +316,63 @@ impl ToWatInstructions for Expr {
     }
 }
 
+impl HasLocals for Stmt {
+    fn locals(&self) -> Vec<WatLocal> {
+        match self {
+            Stmt::Let { name, .. } => vec![WatLocal {
+                name: name.clone(),
+                ty: WatValueType::F64,
+            }],
+            Stmt::IfStmt {
+                then_block,
+                else_block,
+                ..
+            } => {
+                let mut locals = Vec::new();
+                locals.extend(then_block.locals());
+                locals.extend(
+                    else_block
+                        .as_ref()
+                        .map(|s| s.locals())
+                        .unwrap_or_else(Vec::new),
+                );
+                locals
+            }
+            _ => Vec::new(),
+        }
+    }
+}
+
 impl InstructionStackCount for WatInstruction {
     fn stack_count(&self) -> i32 {
+        use WatInstruction::*;
+
         match self {
-            WatInstruction::Const(_) => 1,
-            WatInstruction::Add(_) => -1,
-            WatInstruction::Sub(_) => -1,
-            WatInstruction::Mult(_) => -1,
-            WatInstruction::Div(_) => -1,
-            WatInstruction::GetLocal(_) => 1,
-            WatInstruction::Drop => -1,
-            WatInstruction::GetLocal(_) => 0,
-            WatInstruction::SetLocal(_) => -1,
+            Const(_) => 1,
+            Add(_) => -1,
+            Sub(_) => -1,
+            Mult(_) => -1,
+            Div(_) => -1,
+            GetLocal(_) => 1,
+            Drop => -1,
+            GetLocal(_) => 0,
+            SetLocal(_) => -1,
+
+            Min(_) => -1,
+            Max(_) => -1,
+            Ceil(_) => -1,
+            Floor(_) => -1,
+            Nearest(_) => -1,
+
+            Extend => -1,
+            Wrap => -1,
+            Truncate(_, _) => -1,
 
             // TODO: Need to check if a value is returned
-            WatInstruction::Call(_, arity) => -(*arity as i32) + 1,
-            _ => todo!("stack_count for {:?}", self),
+            Call(_, arity) => -(*arity as i32) + 1,
+
+            _ => 0,
+            // _ => todo!("stack_count for {:?}", self),
         }
     }
 }

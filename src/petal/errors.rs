@@ -19,7 +19,7 @@ pub enum CompilerError {
     #[error("File read error: {0}")]
     FileReadError(#[from] io::Error),
 
-    #[error("Parser error")]
+    #[error("Parser error: {}", .0.kind)]
     ParserError(ParserError),
 
     #[error("Failed to generate WASM binary: {0}\n\nThe generated wat...\n{1}")]

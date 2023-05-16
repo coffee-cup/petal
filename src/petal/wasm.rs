@@ -9,6 +9,7 @@ pub struct Wasm {
 impl Wasm {
     pub fn new(ir_module: &WatModule) -> Result<Self, (String, String)> {
         let wat_string = ir_module.to_wat();
+        println!("{}", wat_string);
 
         let wasm_binary = wat::parse_str(&wat_string).map_err(|e| (e.to_string(), wat_string))?;
 
