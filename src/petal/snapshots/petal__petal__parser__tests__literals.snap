@@ -1,9 +1,9 @@
 ---
 source: src/petal/parser.rs
-expression: "parse(\"1\")"
+expression: "parse_expr(\"1\")"
 ---
-Number {
-    value: 1.0,
+Integer {
+    value: 1,
     span: Span {
         start: Pos {
             line: 0,

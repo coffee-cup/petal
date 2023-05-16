@@ -1,8 +1,8 @@
 ---
 source: src/petal/parser.rs
-expression: "parse(\"123.456\")"
+expression: "parse_expr(\"123.456\")"
 ---
-Number {
+Float {
     value: 123.456,
     span: Span {
         start: Pos {

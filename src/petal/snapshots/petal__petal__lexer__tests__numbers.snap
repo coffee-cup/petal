@@ -4,11 +4,11 @@ expression: "lex(\"1 123 123.456\".to_string())"
 ---
 [
     Token {
-        token_type: Number,
+        token_type: Integer,
         lexeme: "1",
         literal: Some(
-            Number(
-                1.0,
+            Integer(
+                1,
             ),
         ),
         span: Span {
@@ -23,11 +23,11 @@ expression: "lex(\"1 123 123.456\".to_string())"
         },
     },
     Token {
-        token_type: Number,
+        token_type: Integer,
         lexeme: "123",
         literal: Some(
-            Number(
-                123.0,
+            Integer(
+                123,
             ),
         ),
         span: Span {
@@ -42,10 +42,10 @@ expression: "lex(\"1 123 123.456\".to_string())"
         },
     },
     Token {
-        token_type: Number,
+        token_type: Float,
         lexeme: "123.456",
         literal: Some(
-            Number(
+            Float(
                 123.456,
             ),
         ),

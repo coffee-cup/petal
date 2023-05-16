@@ -276,7 +276,8 @@ impl ToWatInstructions for Stmt {
 impl ToWatInstructions for Expr {
     fn to_ir_chunk(&self) -> Chunk {
         match self {
-            Expr::Number { value, .. } => vec![WatInstruction::Const(WatValue::F64(*value))],
+            Expr::Integer { value, .. } => vec![WatInstruction::Const(WatValue::I64(*value))],
+            Expr::Float { value, .. } => vec![WatInstruction::Const(WatValue::F64(*value))],
             Expr::BinaryOp {
                 left, op, right, ..
             } => {
@@ -393,21 +394,18 @@ mod tests {
 
     #[test]
     fn test_translate_expr() {
-        assert_eq!(
-            parse_expr("1").to_ir_chunk(),
-            vec![Const(WatValue::F64(1.0))]
-        );
+        assert_eq!(parse_expr("1").to_ir_chunk(), vec![Const(WatValue::I64(1))]);
 
         assert_eq!(
             parse_expr("1 + 2 * 3 - 4 / 5").to_ir_chunk(),
             vec![
-                Const(WatValue::F64(1.0)),
-                Const(WatValue::F64(2.0)),
-                Const(WatValue::F64(3.0)),
+                Const(WatValue::I64(1)),
+                Const(WatValue::I64(2)),
+                Const(WatValue::I64(3)),
                 Mult(F64),
                 Add(F64),
-                Const(WatValue::F64(4.0)),
-                Const(WatValue::F64(5.0)),
+                Const(WatValue::I64(4)),
+                Const(WatValue::I64(5)),
                 Div(F64),
                 Sub(F64)
             ]

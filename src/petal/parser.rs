@@ -57,7 +57,11 @@ struct NumberParselet;
 impl PrefixParselet for NumberParselet {
     fn parse(&self, _parser: &mut Parser, token: Token) -> ParserResult<Expr> {
         match token.literal {
-            Some(Literal::Number(value)) => Ok(Expr::Number {
+            Some(Literal::Integer(value)) => Ok(Expr::Integer {
+                value,
+                span: token.span,
+            }),
+            Some(Literal::Float(value)) => Ok(Expr::Float {
                 value,
                 span: token.span,
             }),
@@ -298,7 +302,8 @@ impl<'a> Parser<'a> {
         parser.consume().unwrap();
 
         // Custom parselets
-        register!(parser.prefix_parselets, TT::Number, NumberParselet);
+        register!(parser.prefix_parselets, TT::Integer, NumberParselet);
+        register!(parser.prefix_parselets, TT::Float, NumberParselet);
         register!(parser.prefix_parselets, TT::String, StringParselet);
         register!(parser.prefix_parselets, TT::Identifier, IdentParselet);
         register!(parser.prefix_parselets, TT::Comment, CommentParselet);

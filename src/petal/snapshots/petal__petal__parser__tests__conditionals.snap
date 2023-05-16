@@ -1,10 +1,10 @@
 ---
 source: src/petal/parser.rs
-expression: "parse(\"1 ? 2 : 3\")"
+expression: "parse_expr(\"1 ? 2 : 3\")"
 ---
 Conditional {
-    condition: Number {
-        value: 1.0,
+    condition: Integer {
+        value: 1,
         span: Span {
             start: Pos {
                 line: 0,
@@ -16,8 +16,8 @@ Conditional {
             },
         },
     },
-    then_branch: Number {
-        value: 2.0,
+    then_branch: Integer {
+        value: 2,
         span: Span {
             start: Pos {
                 line: 0,
@@ -29,8 +29,8 @@ Conditional {
             },
         },
     },
-    else_branch: Number {
-        value: 3.0,
+    else_branch: Integer {
+        value: 3,
         span: Span {
             start: Pos {
                 line: 0,

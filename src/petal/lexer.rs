@@ -147,12 +147,21 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        let value = number.parse::<f64>().map_err(|_e| {
-            LexerError::new(LexerErrorKind::InvalidNumber)
-                .with_span(Pos::new(self.line, self.col).into())
-        })?;
+        if seen_dot {
+            let value = number.parse::<f64>().map_err(|_e| {
+                LexerError::new(LexerErrorKind::InvalidNumber)
+                    .with_span(Pos::new(self.line, self.col).into())
+            })?;
 
-        Ok(Token::new(TT::Number).with_literal(Literal::Number(value)))
+            Ok(Token::new(TT::Float).with_literal(Literal::Float(value)))
+        } else {
+            let value = number.parse::<i64>().map_err(|_e| {
+                LexerError::new(LexerErrorKind::InvalidNumber)
+                    .with_span(Pos::new(self.line, self.col).into())
+            })?;
+
+            Ok(Token::new(TT::Integer).with_literal(Literal::Integer(value)))
+        }
     }
 
     fn match_result(&mut self, expected: char, left: TokenType, right: TokenType) -> Token {

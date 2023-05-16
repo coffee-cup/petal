@@ -56,7 +56,13 @@ pub enum Stmt {
 #[derive(PartialEq, Clone, Debug)]
 pub enum Expr {
     // 1
-    Number {
+    Integer {
+        value: i64,
+        span: Span,
+    },
+
+    // 1.1
+    Float {
         value: f64,
         span: Span,
     },
@@ -131,7 +137,8 @@ impl HasSpan for Stmt {
 impl HasSpan for Expr {
     fn span(&self) -> Span {
         match self {
-            Expr::Number { span, .. } => span.clone(),
+            Expr::Integer { span, .. } => span.clone(),
+            Expr::Float { span, .. } => span.clone(),
             Expr::PrefixOp { span, .. } => span.clone(),
             Expr::BinaryOp { span, .. } => span.clone(),
             Expr::PostfixOp { span, .. } => span.clone(),

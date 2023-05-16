@@ -1,10 +1,10 @@
 ---
 source: src/petal/parser.rs
-expression: "parse(\"1 * (2 - 3)\")"
+expression: "parse_expr(\"1 * (2 - 3)\")"
 ---
 BinaryOp {
-    left: Number {
-        value: 1.0,
+    left: Integer {
+        value: 1,
         span: Span {
             start: Pos {
                 line: 0,
@@ -32,8 +32,8 @@ BinaryOp {
         },
     },
     right: BinaryOp {
-        left: Number {
-            value: 2.0,
+        left: Integer {
+            value: 2,
             span: Span {
                 start: Pos {
                     line: 0,
@@ -60,8 +60,8 @@ BinaryOp {
                 },
             },
         },
-        right: Number {
-            value: 3.0,
+        right: Integer {
+            value: 3,
             span: Span {
                 start: Pos {
                     line: 0,
