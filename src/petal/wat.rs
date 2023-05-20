@@ -247,27 +247,27 @@ impl ToWatInstructions for Stmt {
                 chunk.push(WatInstruction::SetLocal(name.clone()));
                 chunk
             }
-            Stmt::IfStmt {
-                condition,
-                then_block,
-                else_block,
-                ..
-            } => {
-                let mut chunk = condition.to_ir_chunk();
-                chunk.extend(vec![WatInstruction::Truncate(
-                    WatValueType::F64,
-                    WatValueType::I32,
-                )]);
+            // Stmt::IfStmt {
+            //     condition,
+            //     then_block,
+            //     else_block,
+            //     ..
+            // } => {
+            //     let mut chunk = condition.to_ir_chunk();
+            //     chunk.extend(vec![WatInstruction::Truncate(
+            //         WatValueType::F64,
+            //         WatValueType::I32,
+            //     )]);
 
-                let then_block = then_block.to_ir_chunk();
-                let else_block = else_block
-                    .as_ref()
-                    .map(|e| e.to_ir_chunk())
-                    .unwrap_or_else(Vec::new);
+            //     let then_block = then_block.to_ir_chunk();
+            //     let else_block = else_block
+            //         .as_ref()
+            //         .map(|e| e.to_ir_chunk())
+            //         .unwrap_or_else(Vec::new);
 
-                chunk.push(WatInstruction::If(then_block, else_block));
-                chunk
-            }
+            //     chunk.push(WatInstruction::If(then_block, else_block));
+            //     chunk
+            // }
             _ => todo!("to_ir_chunk for {:?}", self),
         }
     }
@@ -324,21 +324,21 @@ impl HasLocals for Stmt {
                 name: name.clone(),
                 ty: WatValueType::F64,
             }],
-            Stmt::IfStmt {
-                then_block,
-                else_block,
-                ..
-            } => {
-                let mut locals = Vec::new();
-                locals.extend(then_block.locals());
-                locals.extend(
-                    else_block
-                        .as_ref()
-                        .map(|s| s.locals())
-                        .unwrap_or_else(Vec::new),
-                );
-                locals
-            }
+            // Stmt::IfStmt {
+            //     then_block,
+            //     else_block,
+            //     ..
+            // } => {
+            //     let mut locals = Vec::new();
+            //     locals.extend(then_block.locals());
+            //     locals.extend(
+            //         else_block
+            //             .as_ref()
+            //             .map(|s| s.locals())
+            //             .unwrap_or_else(Vec::new),
+            //     );
+            //     locals
+            // }
             _ => Vec::new(),
         }
     }

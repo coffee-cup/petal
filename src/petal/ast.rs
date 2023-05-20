@@ -31,6 +31,7 @@ pub struct Block {
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Stmt {
+    // fn foo(a, b) { ... }
     Func(FuncDecl),
 
     // let a = 1
@@ -40,10 +41,11 @@ pub enum Stmt {
         span: Span,
     },
 
+    // if a { ... } else { ... }
     IfStmt {
         condition: Expr,
-        then_block: Box<Stmt>,
-        else_block: Option<Box<Stmt>>,
+        then_block: Block,
+        else_block: Option<Block>,
         span: Span,
     },
 
@@ -109,16 +111,16 @@ pub enum Expr {
         span: Span,
     },
 
-    // # comment
-    Comment {
-        value: String,
-        span: Span,
-    },
-
     // foo(1, 2, 3)
     Call {
         callee: Box<Expr>,
         args: Vec<Expr>,
+        span: Span,
+    },
+
+    // # this is a comment
+    Comment {
+        value: String,
         span: Span,
     },
 }
@@ -148,5 +150,11 @@ impl HasSpan for Expr {
             Expr::Comment { span, .. } => span.clone(),
             Expr::Call { span, .. } => span.clone(),
         }
+    }
+}
+
+impl HasSpan for Block {
+    fn span(&self) -> Span {
+        self.span.clone()
     }
 }

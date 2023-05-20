@@ -16,54 +16,82 @@ IfStmt {
             },
         },
     },
-    then_block: ExprStmt {
-        expr: Ident {
-            name: "a",
-            span: Span {
-                start: Pos {
-                    line: 2,
-                    col: 16,
+    then_block: Block {
+        statements: [
+            ExprStmt {
+                expr: Ident {
+                    name: "a",
+                    span: Span {
+                        start: Pos {
+                            line: 2,
+                            col: 16,
+                        },
+                        end: Pos {
+                            line: 2,
+                            col: 16,
+                        },
+                    },
                 },
-                end: Pos {
-                    line: 2,
-                    col: 16,
+                span: Span {
+                    start: Pos {
+                        line: 2,
+                        col: 16,
+                    },
+                    end: Pos {
+                        line: 2,
+                        col: 16,
+                    },
                 },
             },
-        },
+        ],
         span: Span {
             start: Pos {
-                line: 2,
-                col: 16,
+                line: 1,
+                col: 20,
             },
             end: Pos {
-                line: 2,
-                col: 16,
+                line: 3,
+                col: 12,
             },
         },
     },
     else_block: Some(
-        ExprStmt {
-            expr: Ident {
-                name: "b",
-                span: Span {
-                    start: Pos {
-                        line: 4,
-                        col: 16,
+        Block {
+            statements: [
+                ExprStmt {
+                    expr: Ident {
+                        name: "b",
+                        span: Span {
+                            start: Pos {
+                                line: 4,
+                                col: 16,
+                            },
+                            end: Pos {
+                                line: 4,
+                                col: 16,
+                            },
+                        },
                     },
-                    end: Pos {
-                        line: 4,
-                        col: 16,
+                    span: Span {
+                        start: Pos {
+                            line: 4,
+                            col: 16,
+                        },
+                        end: Pos {
+                            line: 4,
+                            col: 16,
+                        },
                     },
                 },
-            },
+            ],
             span: Span {
                 start: Pos {
-                    line: 4,
-                    col: 16,
+                    line: 3,
+                    col: 19,
                 },
                 end: Pos {
-                    line: 4,
-                    col: 16,
+                    line: 5,
+                    col: 12,
                 },
             },
         },
@@ -74,8 +102,8 @@ IfStmt {
             col: 12,
         },
         end: Pos {
-            line: 4,
-            col: 16,
+            line: 5,
+            col: 12,
         },
     },
 }

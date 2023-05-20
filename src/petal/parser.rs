@@ -382,7 +382,7 @@ impl<'a> Parser<'a> {
 
         self.consume_expected(TT::RightParen)?;
         let block = self.parse_block()?;
-        span = span.merge(block.span.clone());
+        span = span.merge(block.span().clone());
 
         Ok(Stmt::Func(FuncDecl {
             name,
@@ -460,26 +460,21 @@ impl<'a> Parser<'a> {
         let mut span = token.span();
 
         let condition = self.parse_expression(Precedence::Lowest)?;
-        self.consume_expected(TT::LeftBrace)?;
 
-        // TODO: We should be parsing a block here, not a declaration
-        let then_block = self.parse_declaration()?;
-        self.consume_expected(TT::RightBrace)?;
+        let then_block = self.parse_block()?;
         span = span.merge(then_block.span());
 
         let else_block = if self.match_expected(TT::Else)? {
-            self.consume_expected(TT::LeftBrace)?;
-            let else_block = self.parse_declaration()?;
-            self.consume_expected(TT::RightBrace)?;
+            let else_block = self.parse_block()?;
             span = span.merge(else_block.span());
-            Some(Box::new(else_block))
+            Some(else_block)
         } else {
             None
         };
 
         Ok(Stmt::IfStmt {
             condition,
-            then_block: Box::new(then_block),
+            then_block,
             else_block,
             span,
         })
