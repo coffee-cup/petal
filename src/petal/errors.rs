@@ -20,7 +20,7 @@ pub enum CompilerError {
     WasmValidationError(String, String),
 }
 
-pub fn print_error(source: &str, error: &ParserError) {
+pub fn print_parser_error(source: &str, error: &ParserError) {
     if let Some(span) = &error.span {
         let msg = error.kind.to_string();
         let source_lines = source.lines();
