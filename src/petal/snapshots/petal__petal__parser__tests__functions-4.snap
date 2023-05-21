@@ -1,6 +1,6 @@
 ---
 source: src/petal/parser.rs
-expression: "parse_stmt(\"\n        fn foo(foo, bar) {\n            let a = foo + bar\n        }\")"
+expression: "parse_stmt(\"\n        fn foo(foo: Int, bar: Int) {\n            let a = foo + bar\n        }\")"
 ---
 Func(
     FuncDecl {
@@ -20,23 +20,48 @@ Func(
                         col: 18,
                     },
                 },
-                ty: None,
+                ty: TypeAnnotation {
+                    name: "Int",
+                    span: Span {
+                        start: Pos {
+                            line: 1,
+                            col: 21,
+                        },
+                        end: Pos {
+                            line: 1,
+                            col: 23,
+                        },
+                    },
+                },
             },
             FuncArg {
                 name: "bar",
                 span: Span {
                     start: Pos {
                         line: 1,
-                        col: 21,
+                        col: 26,
                     },
                     end: Pos {
                         line: 1,
-                        col: 23,
+                        col: 28,
                     },
                 },
-                ty: None,
+                ty: TypeAnnotation {
+                    name: "Int",
+                    span: Span {
+                        start: Pos {
+                            line: 1,
+                            col: 31,
+                        },
+                        end: Pos {
+                            line: 1,
+                            col: 33,
+                        },
+                    },
+                },
             },
         ],
+        return_ty: None,
         body: Block {
             statements: [
                 Let(
@@ -112,7 +137,7 @@ Func(
             span: Span {
                 start: Pos {
                     line: 1,
-                    col: 26,
+                    col: 36,
                 },
                 end: Pos {
                     line: 3,

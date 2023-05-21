@@ -445,6 +445,11 @@ impl<'a> Parser<'a> {
             }
         }
 
+        let mut return_ty = None;
+        if self.match_expected(TT::Colon)? {
+            return_ty = Some(self.parse_type()?);
+        }
+
         self.consume_expected(TT::RightParen)?;
         let block = self.parse_block()?;
         span = span.merge(block.span().clone());
@@ -454,6 +459,7 @@ impl<'a> Parser<'a> {
             is_exported,
             type_params,
             args,
+            return_ty,
             body: block,
             span,
         }))
@@ -468,10 +474,8 @@ impl<'a> Parser<'a> {
             _ => unreachable!(),
         };
 
-        let mut ty = None;
-        if self.match_expected(TT::Colon)? {
-            ty = Some(self.parse_type()?);
-        }
+        self.consume_expected(TT::Colon)?;
+        let ty = self.parse_type()?;
 
         Ok(FuncArg { name, span, ty })
     }
@@ -792,11 +796,11 @@ mod tests {
     #[test]
     fn test_functions() {
         insta::assert_debug_snapshot!(parse_stmt("fn foo() {}"));
-        insta::assert_debug_snapshot!(parse_stmt("fn foo(a) {}"));
-        insta::assert_debug_snapshot!(parse_stmt("fn foo(a, b) {}"));
+        insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
+        insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int, b: String) {}"));
         insta::assert_debug_snapshot!(parse_stmt(
             "
-        fn foo(foo, bar) {
+        fn foo(foo: Int, bar: Int) {
             let a = foo + bar
         }"
         ));

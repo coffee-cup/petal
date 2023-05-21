@@ -32,7 +32,7 @@ pub struct StructField {
 pub struct FuncArg {
     pub name: String,
     pub span: Span,
-    pub ty: Option<TypeAnnotation>,
+    pub ty: TypeAnnotation,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -41,6 +41,7 @@ pub struct FuncDecl {
     pub is_exported: bool,
     pub type_params: Vec<TypeAnnotation>,
     pub args: Vec<FuncArg>,
+    pub return_ty: Option<TypeAnnotation>,
     pub body: Block,
     pub span: Span,
 }

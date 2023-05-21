@@ -8,6 +8,7 @@ Func(
         is_exported: true,
         type_params: [],
         args: [],
+        return_ty: None,
         body: Block {
             statements: [],
             span: Span {
