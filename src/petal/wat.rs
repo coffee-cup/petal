@@ -1,7 +1,7 @@
 use wast::kw::then;
 
 use super::{
-    ast::{Expr, FuncDecl, Program, Stmt},
+    ast::{Expr, FuncDecl, LetDecl, Program, Stmt},
     token::TokenType,
 };
 
@@ -242,7 +242,7 @@ impl ToWatInstructions for Stmt {
     fn to_ir_chunk(&self) -> Chunk {
         match self {
             Stmt::ExprStmt { expr, .. } => expr.to_ir_chunk(),
-            Stmt::Let { name, init, .. } => {
+            Stmt::Let(LetDecl { name, init, .. }) => {
                 let mut chunk = init.to_ir_chunk();
                 chunk.push(WatInstruction::SetLocal(name.clone()));
                 chunk
@@ -320,7 +320,7 @@ impl ToWatInstructions for Expr {
 impl HasLocals for Stmt {
     fn locals(&self) -> Vec<WatLocal> {
         match self {
-            Stmt::Let { name, .. } => vec![WatLocal {
+            Stmt::Let(LetDecl { name, .. }) => vec![WatLocal {
                 name: name.clone(),
                 ty: WatValueType::F64,
             }],

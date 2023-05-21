@@ -19,6 +19,7 @@ Func(
                         col: 8,
                     },
                 },
+                ty: None,
             },
             FuncArg {
                 name: "b",
@@ -32,6 +33,7 @@ Func(
                         col: 11,
                     },
                 },
+                ty: None,
             },
         ],
         body: Block {

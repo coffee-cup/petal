@@ -2,14 +2,27 @@
 source: src/petal/parser.rs
 expression: "parse_stmt(\"let a = b\")"
 ---
-Let {
-    name: "a",
-    init: Ident {
-        name: "b",
+Let(
+    LetDecl {
+        name: "a",
+        ty: None,
+        init: Ident {
+            name: "b",
+            span: Span {
+                start: Pos {
+                    line: 0,
+                    col: 9,
+                },
+                end: Pos {
+                    line: 0,
+                    col: 9,
+                },
+            },
+        },
         span: Span {
             start: Pos {
                 line: 0,
-                col: 9,
+                col: 1,
             },
             end: Pos {
                 line: 0,
@@ -17,14 +30,4 @@ Let {
             },
         },
     },
-    span: Span {
-        start: Pos {
-            line: 0,
-            col: 1,
-        },
-        end: Pos {
-            line: 0,
-            col: 9,
-        },
-    },
-}
+)

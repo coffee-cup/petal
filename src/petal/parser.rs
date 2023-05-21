@@ -2,7 +2,7 @@ use std::{collections::HashMap, println, rc::Rc};
 use thiserror::Error;
 
 use super::{
-    ast::{Block, Expr, FuncArg, FuncDecl, Program, Stmt},
+    ast::{Block, Expr, FuncArg, FuncDecl, LetDecl, Program, Stmt, Type},
     lexer::{Lexer, LexerErrorKind},
     positions::{HasSpan, Pos, Span},
     precedence::Precedence,
@@ -402,7 +402,26 @@ impl<'a> Parser<'a> {
             _ => unreachable!(),
         };
 
-        Ok(FuncArg { name, span })
+        let mut ty = None;
+        if self.match_expected(TT::Colon)? {
+            ty = Some(self.parse_type()?);
+        }
+
+        Ok(FuncArg { name, span, ty })
+    }
+
+    fn parse_type(&mut self) -> ParserResult<Type> {
+        // TODO: map error to expected type
+        let token = self.consume_expected(TT::Identifier)?;
+        let span = token.span();
+
+        let name = match token.literal {
+            Some(Literal::Identifier(name)) => name,
+            _ => unreachable!(),
+        };
+
+        // TODO: ensure that the type starts with a capital letter
+        Ok(Type { name, span })
     }
 
     fn parse_block(&mut self) -> ParserResult<Block> {
@@ -429,12 +448,22 @@ impl<'a> Parser<'a> {
             _ => unreachable!(),
         };
 
+        let mut ty = None;
+        if self.match_expected(TT::Colon)? {
+            ty = Some(self.parse_type()?);
+        }
+
         self.consume_expected(TT::Equal)?;
         let init = self.parse_expression(Precedence::Lowest)?;
 
         span = span.merge(init.span());
 
-        Ok(Stmt::Let { name, init, span })
+        Ok(Stmt::Let(LetDecl {
+            name,
+            ty,
+            init,
+            span,
+        }))
     }
 
     fn parse_statement(&mut self) -> ParserResult<Stmt> {
@@ -528,7 +557,7 @@ impl<'a> Parser<'a> {
     }
 
     fn match_expected(&mut self, token_type: TokenType) -> ParserResult<bool> {
-        if self.next_token.token_type == token_type {
+        if self.next_token.is(token_type) {
             self.consume()?;
             return Ok(true);
         }
@@ -649,6 +678,7 @@ mod tests {
     fn test_let_declarations() {
         insta::assert_debug_snapshot!(parse_stmt("let a = b"));
         insta::assert_debug_snapshot!(parse_stmt("let a = b + c * d"));
+        insta::assert_debug_snapshot!(parse_stmt("let a: Int = b"));
     }
 
     #[test]
@@ -683,5 +713,7 @@ mod tests {
         }"
         ));
         insta::assert_debug_snapshot!(parse_stmt("export fn foo() {}"));
+
+        insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
     }
 }

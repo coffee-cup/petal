@@ -9,9 +9,16 @@ pub struct Program {
 }
 
 #[derive(PartialEq, Clone, Debug)]
+pub struct Type {
+    pub name: String,
+    pub span: Span,
+}
+
+#[derive(PartialEq, Clone, Debug)]
 pub struct FuncArg {
     pub name: String,
     pub span: Span,
+    pub ty: Option<Type>,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -20,6 +27,14 @@ pub struct FuncDecl {
     pub is_exported: bool,
     pub args: Vec<FuncArg>,
     pub body: Block,
+    pub span: Span,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct LetDecl {
+    pub name: String,
+    pub ty: Option<Type>,
+    pub init: Expr,
     pub span: Span,
 }
 
@@ -35,11 +50,7 @@ pub enum Stmt {
     Func(FuncDecl),
 
     // let a = 1
-    Let {
-        name: String,
-        init: Expr,
-        span: Span,
-    },
+    Let(LetDecl),
 
     // if a { ... } else { ... }
     IfStmt {
@@ -129,7 +140,7 @@ impl HasSpan for Stmt {
     fn span(&self) -> Span {
         match self {
             Stmt::Func(decl) => decl.span.clone(),
-            Stmt::Let { span, .. } => span.clone(),
+            Stmt::Let(decl) => decl.span.clone(),
             Stmt::IfStmt { span, .. } => span.clone(),
             Stmt::ExprStmt { span, .. } => span.clone(),
         }

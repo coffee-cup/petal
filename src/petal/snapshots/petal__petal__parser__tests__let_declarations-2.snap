@@ -2,72 +2,85 @@
 source: src/petal/parser.rs
 expression: "parse_stmt(\"let a = b + c * d\")"
 ---
-Let {
-    name: "a",
-    init: BinaryOp {
-        left: Ident {
-            name: "b",
-            span: Span {
-                start: Pos {
-                    line: 0,
-                    col: 9,
-                },
-                end: Pos {
-                    line: 0,
-                    col: 9,
-                },
-            },
-        },
-        op: Token {
-            token_type: Plus,
-            lexeme: "+",
-            literal: None,
-            span: Span {
-                start: Pos {
-                    line: 0,
-                    col: 11,
-                },
-                end: Pos {
-                    line: 0,
-                    col: 11,
-                },
-            },
-        },
-        right: BinaryOp {
+Let(
+    LetDecl {
+        name: "a",
+        ty: None,
+        init: BinaryOp {
             left: Ident {
-                name: "c",
+                name: "b",
                 span: Span {
                     start: Pos {
                         line: 0,
-                        col: 13,
+                        col: 9,
                     },
                     end: Pos {
                         line: 0,
-                        col: 13,
+                        col: 9,
                     },
                 },
             },
             op: Token {
-                token_type: Star,
-                lexeme: "*",
+                token_type: Plus,
+                lexeme: "+",
                 literal: None,
                 span: Span {
                     start: Pos {
                         line: 0,
-                        col: 15,
+                        col: 11,
                     },
                     end: Pos {
                         line: 0,
-                        col: 15,
+                        col: 11,
                     },
                 },
             },
-            right: Ident {
-                name: "d",
+            right: BinaryOp {
+                left: Ident {
+                    name: "c",
+                    span: Span {
+                        start: Pos {
+                            line: 0,
+                            col: 13,
+                        },
+                        end: Pos {
+                            line: 0,
+                            col: 13,
+                        },
+                    },
+                },
+                op: Token {
+                    token_type: Star,
+                    lexeme: "*",
+                    literal: None,
+                    span: Span {
+                        start: Pos {
+                            line: 0,
+                            col: 15,
+                        },
+                        end: Pos {
+                            line: 0,
+                            col: 15,
+                        },
+                    },
+                },
+                right: Ident {
+                    name: "d",
+                    span: Span {
+                        start: Pos {
+                            line: 0,
+                            col: 17,
+                        },
+                        end: Pos {
+                            line: 0,
+                            col: 17,
+                        },
+                    },
+                },
                 span: Span {
                     start: Pos {
                         line: 0,
-                        col: 17,
+                        col: 13,
                     },
                     end: Pos {
                         line: 0,
@@ -78,7 +91,7 @@ Let {
             span: Span {
                 start: Pos {
                     line: 0,
-                    col: 13,
+                    col: 9,
                 },
                 end: Pos {
                     line: 0,
@@ -89,7 +102,7 @@ Let {
         span: Span {
             start: Pos {
                 line: 0,
-                col: 9,
+                col: 1,
             },
             end: Pos {
                 line: 0,
@@ -97,14 +110,4 @@ Let {
             },
         },
     },
-    span: Span {
-        start: Pos {
-            line: 0,
-            col: 1,
-        },
-        end: Pos {
-            line: 0,
-            col: 17,
-        },
-    },
-}
+)

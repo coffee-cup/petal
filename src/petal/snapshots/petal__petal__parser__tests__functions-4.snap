@@ -19,6 +19,7 @@ Func(
                         col: 17,
                     },
                 },
+                ty: None,
             },
             FuncArg {
                 name: "bar",
@@ -32,47 +33,61 @@ Func(
                         col: 22,
                     },
                 },
+                ty: None,
             },
         ],
         body: Block {
             statements: [
-                Let {
-                    name: "a",
-                    init: BinaryOp {
-                        left: Ident {
-                            name: "foo",
+                Let(
+                    LetDecl {
+                        name: "a",
+                        ty: None,
+                        init: BinaryOp {
+                            left: Ident {
+                                name: "foo",
+                                span: Span {
+                                    start: Pos {
+                                        line: 2,
+                                        col: 20,
+                                    },
+                                    end: Pos {
+                                        line: 2,
+                                        col: 22,
+                                    },
+                                },
+                            },
+                            op: Token {
+                                token_type: Plus,
+                                lexeme: "+",
+                                literal: None,
+                                span: Span {
+                                    start: Pos {
+                                        line: 2,
+                                        col: 24,
+                                    },
+                                    end: Pos {
+                                        line: 2,
+                                        col: 24,
+                                    },
+                                },
+                            },
+                            right: Ident {
+                                name: "bar",
+                                span: Span {
+                                    start: Pos {
+                                        line: 2,
+                                        col: 26,
+                                    },
+                                    end: Pos {
+                                        line: 2,
+                                        col: 28,
+                                    },
+                                },
+                            },
                             span: Span {
                                 start: Pos {
                                     line: 2,
                                     col: 20,
-                                },
-                                end: Pos {
-                                    line: 2,
-                                    col: 22,
-                                },
-                            },
-                        },
-                        op: Token {
-                            token_type: Plus,
-                            lexeme: "+",
-                            literal: None,
-                            span: Span {
-                                start: Pos {
-                                    line: 2,
-                                    col: 24,
-                                },
-                                end: Pos {
-                                    line: 2,
-                                    col: 24,
-                                },
-                            },
-                        },
-                        right: Ident {
-                            name: "bar",
-                            span: Span {
-                                start: Pos {
-                                    line: 2,
-                                    col: 26,
                                 },
                                 end: Pos {
                                     line: 2,
@@ -83,7 +98,7 @@ Func(
                         span: Span {
                             start: Pos {
                                 line: 2,
-                                col: 20,
+                                col: 12,
                             },
                             end: Pos {
                                 line: 2,
@@ -91,17 +106,7 @@ Func(
                             },
                         },
                     },
-                    span: Span {
-                        start: Pos {
-                            line: 2,
-                            col: 12,
-                        },
-                        end: Pos {
-                            line: 2,
-                            col: 28,
-                        },
-                    },
-                },
+                ),
             ],
             span: Span {
                 start: Pos {
