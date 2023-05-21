@@ -10,6 +10,8 @@ mod parser;
 mod positions;
 mod precedence;
 mod token;
+mod typechecking;
+mod types;
 mod wasm;
 mod wat;
 
@@ -27,7 +29,7 @@ impl Compiler {
 
         let mut lexer1 = Lexer::new(&file);
         let tokens = lexer1.map(|t| t.unwrap()).collect::<Vec<_>>();
-        println!("Tokens: {:?}", tokens);
+        println!("Tokens: {:#?}", tokens);
 
         let mut lexer = Lexer::new(&file);
         let mut parser = parser::Parser::new(&mut lexer);

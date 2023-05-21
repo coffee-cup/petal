@@ -39,6 +39,7 @@ pub struct FuncArg {
 pub struct FuncDecl {
     pub name: String,
     pub is_exported: bool,
+    pub type_params: Vec<TypeAnnotation>,
     pub args: Vec<FuncArg>,
     pub body: Block,
     pub span: Span,

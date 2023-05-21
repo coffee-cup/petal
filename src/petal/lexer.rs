@@ -136,7 +136,7 @@ impl<'a> Lexer<'a> {
                 Some('.') => {
                     if seen_dot {
                         return Err(LexerError::new(LexerErrorKind::InvalidNumber)
-                            .with_span(Pos::new(self.line, self.col - 1).into()));
+                            .with_span(Pos::new(self.line, self.col).into()));
                     }
 
                     seen_dot = true;
@@ -209,7 +209,7 @@ impl<'a> Lexer<'a> {
     fn advance(&mut self) {
         if self.current == Some('\n') {
             self.line += 1;
-            self.col = 0;
+            self.col = 1;
         } else {
             self.col += 1;
         }

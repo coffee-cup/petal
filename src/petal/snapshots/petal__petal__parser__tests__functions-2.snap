@@ -6,6 +6,7 @@ Func(
     FuncDecl {
         name: "foo",
         is_exported: false,
+        type_params: [],
         args: [
             FuncArg {
                 name: "a",

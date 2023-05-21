@@ -1,15 +1,14 @@
 ---
 source: src/petal/parser.rs
-expression: "parse_stmt(\"fn foo(a: Int) {}\")"
+expression: "parse_stmt(\"fn foo<T>(a: T) {}\")"
 ---
 Func(
     FuncDecl {
         name: "foo",
         is_exported: false,
-        type_params: [],
-        args: [
-            FuncArg {
-                name: "a",
+        type_params: [
+            TypeAnnotation {
+                name: "T",
                 span: Span {
                     start: Pos {
                         line: 0,
@@ -20,17 +19,32 @@ Func(
                         col: 8,
                     },
                 },
+            },
+        ],
+        args: [
+            FuncArg {
+                name: "a",
+                span: Span {
+                    start: Pos {
+                        line: 0,
+                        col: 11,
+                    },
+                    end: Pos {
+                        line: 0,
+                        col: 11,
+                    },
+                },
                 ty: Some(
                     TypeAnnotation {
-                        name: "Int",
+                        name: "T",
                         span: Span {
                             start: Pos {
                                 line: 0,
-                                col: 11,
+                                col: 14,
                             },
                             end: Pos {
                                 line: 0,
-                                col: 13,
+                                col: 14,
                             },
                         },
                     },
@@ -42,11 +56,11 @@ Func(
             span: Span {
                 start: Pos {
                     line: 0,
-                    col: 16,
+                    col: 17,
                 },
                 end: Pos {
                     line: 0,
-                    col: 17,
+                    col: 18,
                 },
             },
         },
@@ -57,7 +71,7 @@ Func(
             },
             end: Pos {
                 line: 0,
-                col: 17,
+                col: 18,
             },
         },
     },

@@ -421,6 +421,20 @@ impl<'a> Parser<'a> {
             _ => unreachable!(),
         };
 
+        let mut type_params = Vec::new();
+        if self.match_expected(TT::Less)? {
+            while !self.peek().is(TT::Greater) && !self.is_at_end() {
+                let ty = self.parse_type()?;
+                type_params.push(ty);
+
+                if self.peek().is(TT::Comma) {
+                    self.consume()?;
+                }
+            }
+
+            self.consume_expected(TT::Greater)?;
+        }
+
         self.consume_expected(TT::LeftParen)?;
 
         let mut args: Vec<FuncArg> = Vec::new();
@@ -438,6 +452,7 @@ impl<'a> Parser<'a> {
         Ok(Stmt::Func(FuncDecl {
             name,
             is_exported,
+            type_params,
             args,
             body: block,
             span,
@@ -560,6 +575,8 @@ impl<'a> Parser<'a> {
         })
     }
 
+    /// Parse the next expression using the provided precedence
+    /// This is the core of the Pratt parser
     pub fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<Expr> {
         let token = self.consume()?;
 
@@ -592,6 +609,7 @@ impl<'a> Parser<'a> {
         Ok(left)
     }
 
+    /// Get the infix precedence of the next token
     fn get_precedence(&self) -> Precedence {
         self.infix_parselets
             .get(&self.next_token.token_type)
@@ -599,14 +617,18 @@ impl<'a> Parser<'a> {
             .unwrap_or(Precedence::Lowest)
     }
 
+    /// Returns the next token without consuming it
     fn peek(&self) -> &Token {
         &self.next_token
     }
 
+    /// Returns whether or not we are at the end of the token stream
     fn is_at_end(&self) -> bool {
         self.next_token.token_type == TT::Eof
     }
 
+    /// Consumes the next token if it matches the expected token type.
+    /// Returns true if the token was consumed, false otherwise.
     fn match_expected(&mut self, token_type: TokenType) -> ParserResult<bool> {
         if self.next_token.is(token_type) {
             self.consume()?;
@@ -616,6 +638,8 @@ impl<'a> Parser<'a> {
         Ok(false)
     }
 
+    /// Consumes the next token if it matches the expected token type.
+    /// Returns the consumed token if it was consumed, an error otherwise.
     fn consume_expected(&mut self, token_type: TokenType) -> ParserResult<Token> {
         if self.next_token.token_type != token_type {
             return Err(ParserError::new(ParserErrorKind::ExpectedToken(
@@ -628,6 +652,7 @@ impl<'a> Parser<'a> {
         self.consume()
     }
 
+    /// Consumes the next token and returns it
     fn consume(&mut self) -> ParserResult<Token> {
         self.current_token = self.next_token.clone();
         self.next_token = self
@@ -778,5 +803,8 @@ mod tests {
         insta::assert_debug_snapshot!(parse_stmt("export fn foo() {}"));
 
         insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
+
+        insta::assert_debug_snapshot!(parse_stmt("fn foo<T>() {}"));
+        insta::assert_debug_snapshot!(parse_stmt("fn foo<T>(a: T) {}"));
     }
 }

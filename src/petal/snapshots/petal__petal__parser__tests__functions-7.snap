@@ -1,15 +1,14 @@
 ---
 source: src/petal/parser.rs
-expression: "parse_stmt(\"fn foo(a: Int) {}\")"
+expression: "parse_stmt(\"fn foo<T>() {}\")"
 ---
 Func(
     FuncDecl {
         name: "foo",
         is_exported: false,
-        type_params: [],
-        args: [
-            FuncArg {
-                name: "a",
+        type_params: [
+            TypeAnnotation {
+                name: "T",
                 span: Span {
                     start: Pos {
                         line: 0,
@@ -20,33 +19,19 @@ Func(
                         col: 8,
                     },
                 },
-                ty: Some(
-                    TypeAnnotation {
-                        name: "Int",
-                        span: Span {
-                            start: Pos {
-                                line: 0,
-                                col: 11,
-                            },
-                            end: Pos {
-                                line: 0,
-                                col: 13,
-                            },
-                        },
-                    },
-                ),
             },
         ],
+        args: [],
         body: Block {
             statements: [],
             span: Span {
                 start: Pos {
                     line: 0,
-                    col: 16,
+                    col: 13,
                 },
                 end: Pos {
                     line: 0,
-                    col: 17,
+                    col: 14,
                 },
             },
         },
@@ -57,7 +42,7 @@ Func(
             },
             end: Pos {
                 line: 0,
-                col: 17,
+                col: 14,
             },
         },
     },

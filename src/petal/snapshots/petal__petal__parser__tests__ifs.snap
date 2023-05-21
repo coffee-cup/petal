@@ -8,11 +8,11 @@ IfStmt {
         span: Span {
             start: Pos {
                 line: 1,
-                col: 15,
+                col: 16,
             },
             end: Pos {
                 line: 1,
-                col: 18,
+                col: 19,
             },
         },
     },
@@ -24,22 +24,22 @@ IfStmt {
                     span: Span {
                         start: Pos {
                             line: 2,
-                            col: 16,
+                            col: 17,
                         },
                         end: Pos {
                             line: 2,
-                            col: 16,
+                            col: 17,
                         },
                     },
                 },
                 span: Span {
                     start: Pos {
                         line: 2,
-                        col: 16,
+                        col: 17,
                     },
                     end: Pos {
                         line: 2,
-                        col: 16,
+                        col: 17,
                     },
                 },
             },
@@ -47,11 +47,11 @@ IfStmt {
         span: Span {
             start: Pos {
                 line: 1,
-                col: 20,
+                col: 21,
             },
             end: Pos {
                 line: 3,
-                col: 12,
+                col: 13,
             },
         },
     },
@@ -59,11 +59,11 @@ IfStmt {
     span: Span {
         start: Pos {
             line: 1,
-            col: 12,
+            col: 13,
         },
         end: Pos {
             line: 3,
-            col: 12,
+            col: 13,
         },
     },
 }

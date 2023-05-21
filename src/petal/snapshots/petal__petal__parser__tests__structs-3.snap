@@ -13,22 +13,22 @@ Struct(
                     span: Span {
                         start: Pos {
                             line: 1,
-                            col: 19,
+                            col: 20,
                         },
                         end: Pos {
                             line: 1,
-                            col: 21,
+                            col: 22,
                         },
                     },
                 },
                 span: Span {
                     start: Pos {
                         line: 1,
-                        col: 12,
+                        col: 13,
                     },
                     end: Pos {
                         line: 1,
-                        col: 21,
+                        col: 22,
                     },
                 },
             },
@@ -39,22 +39,22 @@ Struct(
                     span: Span {
                         start: Pos {
                             line: 2,
-                            col: 19,
+                            col: 20,
                         },
                         end: Pos {
                             line: 2,
-                            col: 24,
+                            col: 25,
                         },
                     },
                 },
                 span: Span {
                     start: Pos {
                         line: 2,
-                        col: 12,
+                        col: 13,
                     },
                     end: Pos {
                         line: 2,
-                        col: 24,
+                        col: 25,
                     },
                 },
             },
@@ -66,7 +66,7 @@ Struct(
             },
             end: Pos {
                 line: 3,
-                col: 8,
+                col: 9,
             },
         },
     },

@@ -6,17 +6,18 @@ Func(
     FuncDecl {
         name: "foo",
         is_exported: false,
+        type_params: [],
         args: [
             FuncArg {
                 name: "foo",
                 span: Span {
                     start: Pos {
                         line: 1,
-                        col: 15,
+                        col: 16,
                     },
                     end: Pos {
                         line: 1,
-                        col: 17,
+                        col: 18,
                     },
                 },
                 ty: None,
@@ -26,11 +27,11 @@ Func(
                 span: Span {
                     start: Pos {
                         line: 1,
-                        col: 20,
+                        col: 21,
                     },
                     end: Pos {
                         line: 1,
-                        col: 22,
+                        col: 23,
                     },
                 },
                 ty: None,
@@ -48,11 +49,11 @@ Func(
                                 span: Span {
                                     start: Pos {
                                         line: 2,
-                                        col: 20,
+                                        col: 21,
                                     },
                                     end: Pos {
                                         line: 2,
-                                        col: 22,
+                                        col: 23,
                                     },
                                 },
                             },
@@ -63,11 +64,11 @@ Func(
                                 span: Span {
                                     start: Pos {
                                         line: 2,
-                                        col: 24,
+                                        col: 25,
                                     },
                                     end: Pos {
                                         line: 2,
-                                        col: 24,
+                                        col: 25,
                                     },
                                 },
                             },
@@ -76,33 +77,33 @@ Func(
                                 span: Span {
                                     start: Pos {
                                         line: 2,
-                                        col: 26,
+                                        col: 27,
                                     },
                                     end: Pos {
                                         line: 2,
-                                        col: 28,
+                                        col: 29,
                                     },
                                 },
                             },
                             span: Span {
                                 start: Pos {
                                     line: 2,
-                                    col: 20,
+                                    col: 21,
                                 },
                                 end: Pos {
                                     line: 2,
-                                    col: 28,
+                                    col: 29,
                                 },
                             },
                         },
                         span: Span {
                             start: Pos {
                                 line: 2,
-                                col: 12,
+                                col: 13,
                             },
                             end: Pos {
                                 line: 2,
-                                col: 28,
+                                col: 29,
                             },
                         },
                     },
@@ -111,22 +112,22 @@ Func(
             span: Span {
                 start: Pos {
                     line: 1,
-                    col: 25,
+                    col: 26,
                 },
                 end: Pos {
                     line: 3,
-                    col: 8,
+                    col: 9,
                 },
             },
         },
         span: Span {
             start: Pos {
                 line: 1,
-                col: 8,
+                col: 9,
             },
             end: Pos {
                 line: 3,
-                col: 8,
+                col: 9,
             },
         },
     },
