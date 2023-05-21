@@ -411,16 +411,19 @@ impl<'a> Parser<'a> {
         let token = self.consume()?;
         let mut span = token.span();
 
+        // Export keyword
         let is_exported = token.is(TT::Export);
         if is_exported {
             self.consume_expected(TT::Fun)?;
         }
 
+        // Function name
         let name = match self.consume_expected(TT::Identifier)?.literal {
             Some(Literal::Identifier(name)) => name,
             _ => unreachable!(),
         };
 
+        // Generic type parameters
         let mut type_params = Vec::new();
         if self.match_expected(TT::Less)? {
             while !self.peek().is(TT::Greater) && !self.is_at_end() {
@@ -435,8 +438,8 @@ impl<'a> Parser<'a> {
             self.consume_expected(TT::Greater)?;
         }
 
+        // Function args
         self.consume_expected(TT::LeftParen)?;
-
         let mut args: Vec<FuncArg> = Vec::new();
         while !self.peek().is(TT::RightParen) && !self.is_at_end() {
             args.push(self.parse_function_arg()?);
@@ -444,13 +447,15 @@ impl<'a> Parser<'a> {
                 self.consume()?;
             }
         }
+        self.consume_expected(TT::RightParen)?;
 
+        // Return type
         let mut return_ty = None;
         if self.match_expected(TT::Colon)? {
             return_ty = Some(self.parse_type()?);
         }
 
-        self.consume_expected(TT::RightParen)?;
+        // Function body
         let block = self.parse_block()?;
         span = span.merge(block.span().clone());
 
@@ -810,5 +815,7 @@ mod tests {
 
         insta::assert_debug_snapshot!(parse_stmt("fn foo<T>() {}"));
         insta::assert_debug_snapshot!(parse_stmt("fn foo<T>(a: T) {}"));
+
+        insta::assert_debug_snapshot!(parse_stmt("fn foo(): Int {}"));
     }
 }
