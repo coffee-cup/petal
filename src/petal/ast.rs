@@ -9,8 +9,22 @@ pub struct Program {
 }
 
 #[derive(PartialEq, Clone, Debug)]
-pub struct Type {
+pub struct TypeAnnotation {
     pub name: String,
+    pub span: Span,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct StructDecl {
+    pub name: String,
+    pub fields: Vec<StructField>,
+    pub span: Span,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct StructField {
+    pub name: String,
+    pub ty: TypeAnnotation,
     pub span: Span,
 }
 
@@ -18,7 +32,7 @@ pub struct Type {
 pub struct FuncArg {
     pub name: String,
     pub span: Span,
-    pub ty: Option<Type>,
+    pub ty: Option<TypeAnnotation>,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -33,7 +47,7 @@ pub struct FuncDecl {
 #[derive(PartialEq, Clone, Debug)]
 pub struct LetDecl {
     pub name: String,
-    pub ty: Option<Type>,
+    pub ty: Option<TypeAnnotation>,
     pub init: Expr,
     pub span: Span,
 }
@@ -46,6 +60,9 @@ pub struct Block {
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum Stmt {
+    // struct Foo { ... }
+    Struct(StructDecl),
+
     // fn foo(a, b) { ... }
     Func(FuncDecl),
 
@@ -139,6 +156,7 @@ pub enum Expr {
 impl HasSpan for Stmt {
     fn span(&self) -> Span {
         match self {
+            Stmt::Struct(decl) => decl.span.clone(),
             Stmt::Func(decl) => decl.span.clone(),
             Stmt::Let(decl) => decl.span.clone(),
             Stmt::IfStmt { span, .. } => span.clone(),
@@ -165,6 +183,12 @@ impl HasSpan for Expr {
 }
 
 impl HasSpan for Block {
+    fn span(&self) -> Span {
+        self.span.clone()
+    }
+}
+
+impl HasSpan for TypeAnnotation {
     fn span(&self) -> Span {
         self.span.clone()
     }

@@ -1,0 +1,73 @@
+---
+source: src/petal/parser.rs
+expression: "parse_stmt(\"struct Foo {\n            hello: Int,\n            world: String\n        }\")"
+---
+Struct(
+    StructDecl {
+        name: "Foo",
+        fields: [
+            StructField {
+                name: "hello",
+                ty: TypeAnnotation {
+                    name: "Int",
+                    span: Span {
+                        start: Pos {
+                            line: 1,
+                            col: 19,
+                        },
+                        end: Pos {
+                            line: 1,
+                            col: 21,
+                        },
+                    },
+                },
+                span: Span {
+                    start: Pos {
+                        line: 1,
+                        col: 12,
+                    },
+                    end: Pos {
+                        line: 1,
+                        col: 21,
+                    },
+                },
+            },
+            StructField {
+                name: "world",
+                ty: TypeAnnotation {
+                    name: "String",
+                    span: Span {
+                        start: Pos {
+                            line: 2,
+                            col: 19,
+                        },
+                        end: Pos {
+                            line: 2,
+                            col: 24,
+                        },
+                    },
+                },
+                span: Span {
+                    start: Pos {
+                        line: 2,
+                        col: 12,
+                    },
+                    end: Pos {
+                        line: 2,
+                        col: 24,
+                    },
+                },
+            },
+        ],
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 1,
+            },
+            end: Pos {
+                line: 3,
+                col: 8,
+            },
+        },
+    },
+)

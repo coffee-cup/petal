@@ -6,7 +6,7 @@ Let(
     LetDecl {
         name: "a",
         ty: Some(
-            Type {
+            TypeAnnotation {
                 name: "Int",
                 span: Span {
                     start: Pos {

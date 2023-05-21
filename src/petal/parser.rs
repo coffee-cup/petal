@@ -2,7 +2,10 @@ use std::{collections::HashMap, println, rc::Rc};
 use thiserror::Error;
 
 use super::{
-    ast::{Block, Expr, FuncArg, FuncDecl, LetDecl, Program, Stmt, Type},
+    ast::{
+        Block, Expr, FuncArg, FuncDecl, LetDecl, Program, Stmt, StructDecl, StructField,
+        TypeAnnotation,
+    },
     lexer::{Lexer, LexerErrorKind},
     positions::{HasSpan, Pos, Span},
     precedence::Precedence,
@@ -348,12 +351,60 @@ impl<'a> Parser<'a> {
 
     fn parse_declaration(&mut self) -> ParserResult<Stmt> {
         let stmt = match self.peek().token_type {
+            TT::Struct => self.parse_struct_decl()?,
             TT::Fun | TT::Export => self.parse_function()?,
             TT::Let => self.parse_let_declaration()?,
             _ => self.parse_statement()?,
         };
 
         Ok(stmt)
+    }
+
+    fn parse_struct_decl(&mut self) -> ParserResult<Stmt> {
+        let token = self.consume()?;
+        let mut span = token.span();
+
+        let name = match self.consume_expected(TT::Identifier)?.literal {
+            Some(Literal::Identifier(name)) => name,
+            _ => unreachable!(),
+        };
+
+        self.consume_expected(TT::LeftBrace)?;
+
+        let mut fields = Vec::new();
+        while self.peek().is(TT::Identifier) {
+            let field = self.parse_struct_field()?;
+            fields.push(field);
+
+            if self.peek().is(TT::RightBrace) {
+                break;
+            }
+
+            self.consume_expected(TT::Comma)?;
+        }
+
+        let token = self.consume_expected(TT::RightBrace)?;
+
+        span = span.merge(token.span());
+
+        Ok(Stmt::Struct(StructDecl { name, span, fields }))
+    }
+
+    fn parse_struct_field(&mut self) -> ParserResult<StructField> {
+        let token = self.consume_expected(TT::Identifier)?;
+        let mut span = token.span().clone();
+
+        let name = match token.literal {
+            Some(Literal::Identifier(name)) => name,
+            _ => unreachable!(),
+        };
+
+        self.consume_expected(TT::Colon)?;
+
+        let ty = self.parse_type()?;
+        span = span.merge(ty.span());
+
+        Ok(StructField { name, ty, span })
     }
 
     fn parse_function(&mut self) -> ParserResult<Stmt> {
@@ -410,7 +461,7 @@ impl<'a> Parser<'a> {
         Ok(FuncArg { name, span, ty })
     }
 
-    fn parse_type(&mut self) -> ParserResult<Type> {
+    fn parse_type(&mut self) -> ParserResult<TypeAnnotation> {
         // TODO: map error to expected type
         let token = self.consume_expected(TT::Identifier)?;
         let span = token.span();
@@ -421,7 +472,7 @@ impl<'a> Parser<'a> {
         };
 
         // TODO: ensure that the type starts with a capital letter
-        Ok(Type { name, span })
+        Ok(TypeAnnotation { name, span })
     }
 
     fn parse_block(&mut self) -> ParserResult<Block> {
@@ -698,6 +749,18 @@ mod tests {
                 b
             }
         "
+        ));
+    }
+
+    #[test]
+    fn test_structs() {
+        insta::assert_debug_snapshot!(parse_stmt("struct Foo {}"));
+        insta::assert_debug_snapshot!(parse_stmt("struct Foo { hello: Int }"));
+        insta::assert_debug_snapshot!(parse_stmt(
+            "struct Foo {
+            hello: Int,
+            world: String
+        }"
         ));
     }
 

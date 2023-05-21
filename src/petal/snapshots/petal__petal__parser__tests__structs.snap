@@ -1,0 +1,20 @@
+---
+source: src/petal/parser.rs
+expression: "parse_stmt(\"struct Foo {}\")"
+---
+Struct(
+    StructDecl {
+        name: "Foo",
+        fields: [],
+        span: Span {
+            start: Pos {
+                line: 0,
+                col: 1,
+            },
+            end: Pos {
+                line: 0,
+                col: 13,
+            },
+        },
+    },
+)

@@ -37,6 +37,7 @@ pub enum TokenType {
     Float,
 
     // Keywords.
+    Struct,
     Fun,
     Export,
     Let,
@@ -146,6 +147,7 @@ impl fmt::Display for TokenType {
             String => write!(f, "string"),
             Integer => write!(f, "integer"),
             Float => write!(f, "float"),
+            Struct => write!(f, "struct"),
             Fun => write!(f, "fn"),
             Export => write!(f, "export"),
             Let => write!(f, "let"),

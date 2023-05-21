@@ -53,6 +53,7 @@ type LexerResult<T> = Result<T, LexerError>;
 lazy_static! {
     static ref KEYWORDS: HashMap<&'static str, TokenType> = {
         let mut m = HashMap::new();
+        m.insert("struct", TT::Struct);
         m.insert("fn", TT::Fun);
         m.insert("export", TT::Export);
         m.insert("let", TT::Let);
