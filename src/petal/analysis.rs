@@ -112,27 +112,35 @@ impl SymbolTable {
     }
 }
 
+pub struct TypeTable(HashMap<String, MonoType>);
+
 pub struct Analysis {
     symbol_table: SymbolTable,
+    type_table: TypeTable,
 }
 
 impl Analysis {
     pub fn new() -> Self {
-        let mut symbol_table = SymbolTable::new();
+        let symbol_table = SymbolTable::new();
+        let mut type_table: HashMap<String, MonoType> = HashMap::new();
 
         // Load global types
-        symbol_table.insert_mono("Int".into(), MonoType::int());
-        symbol_table.insert_mono("Float".into(), MonoType::float());
-        symbol_table.insert_mono("Bool".into(), MonoType::bool());
-        symbol_table.insert_mono("String".into(), MonoType::string());
+        type_table.insert("Int".into(), MonoType::int());
+        type_table.insert("Float".into(), MonoType::float());
+        type_table.insert("Bool".into(), MonoType::bool());
+        type_table.insert("String".into(), MonoType::string());
 
-        Self { symbol_table }
+        Self {
+            symbol_table,
+            type_table: TypeTable(type_table),
+        }
     }
 
     pub fn analysis_program(&mut self, program: &Program) -> AnalysisResult<()> {
         self.load_function_declarations(program)?;
 
-        println!("\n{}", self.symbol_table);
+        println!("\n=== Types:\n{}", self.type_table);
+        println!("=== Symbols:\n{}", self.symbol_table);
 
         Ok(())
     }
@@ -143,14 +151,14 @@ impl Analysis {
             // Get the type of the arguments
             let mut param_tys = Vec::new();
             for param in &func.args {
-                let (ty, _) = self.type_for_annotation(&param.ty)?;
+                let ty = self.type_for_annotation(&param.ty)?;
                 param_tys.push(ty);
             }
 
             // Get the return type
             let return_ty = match &func.return_ty {
                 Some(annotation) => {
-                    let (ty, _) = self.type_for_annotation(annotation)?;
+                    let ty = self.type_for_annotation(annotation)?;
                     ty
                 }
                 None => MonoType::unit(),
@@ -168,24 +176,38 @@ impl Analysis {
         Ok(())
     }
 
-    fn type_for_annotation(
-        &mut self,
-        annotation: &TypeAnnotation,
-    ) -> AnalysisResult<(MonoType, SymbolId)> {
-        let (ty, id) = match self.symbol_table.get(&annotation.name) {
-            Some((ty, id)) => ((ty, id)),
-            None => {
-                return err!(
-                    AnalysisErrorKind::UndefinedType(annotation.name.clone(),),
-                    annotation.span()
-                )
-            }
-        };
-
-        match ty {
-            PolyType::Mono(ty) => Ok((ty.clone(), id)),
-            PolyType::Quantifier(_) => panic!("Type annotation should not be a quantifier"),
+    fn type_for_annotation(&mut self, annotation: &TypeAnnotation) -> AnalysisResult<MonoType> {
+        match self.type_table.0.get(&annotation.name) {
+            Some(ty) => Ok(ty.clone()),
+            None => err!(
+                AnalysisErrorKind::UndefinedType(annotation.name.clone(),),
+                annotation.span()
+            ),
         }
+        // let (ty, id) = match self.symbol_table.get(&annotation.name) {
+        //     Some((ty, id)) => ((ty, id)),
+        //     None => {
+        //         return err!(
+        //             AnalysisErrorKind::UndefinedType(annotation.name.clone(),),
+        //             annotation.span()
+        //         )
+        //     }
+        // };
+
+        // match ty {
+        //     PolyType::Mono(ty) => Ok((ty.clone(), id)),
+        //     PolyType::Quantifier(_) => panic!("Type annotation should not be a quantifier"),
+        // }
+    }
+}
+
+impl Display for TypeTable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (name, ty) in &self.0 {
+            writeln!(f, "{}: {}", name, ty)?;
+        }
+
+        Ok(())
     }
 }
 
