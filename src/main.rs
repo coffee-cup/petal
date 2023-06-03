@@ -43,14 +43,11 @@ fn main() {
             let compiler = Compiler::new();
 
             match compiler.compile_file(&file) {
-                Err(CompilerError::ParserError(e)) => {
+                Err(e) => {
                     // We should not need to re-read the file here
                     let file = std::fs::read_to_string(file).expect("Could not read file");
 
-                    petal::errors::print_parser_error(&file, &e);
-                }
-                Err(e) => {
-                    println!("{}", e);
+                    petal::errors::print_compiler_error(&file, &e);
                 }
                 Ok(wasm) => {
                     if wat {
