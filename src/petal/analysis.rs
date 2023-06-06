@@ -346,7 +346,10 @@ impl Analysis {
                 })
             }
             Stmt::Let(let_decl) => {
-                if self.symbol_table.get(&let_decl.name.name).is_some() {
+                if self
+                    .symbol_table
+                    .defined_in_current_scope(&let_decl.name.name)
+                {
                     return err!(
                         AnalysisErrorKind::VariableAlreadyDeclared(let_decl.name.name.clone()),
                         let_decl.name.span()
