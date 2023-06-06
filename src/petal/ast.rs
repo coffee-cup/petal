@@ -1,11 +1,66 @@
+use std::ops::Deref;
+
 use super::{
-    positions::{HasSpan, Span},
+    positions::{HasSpan, Pos, Span},
     token::Token,
 };
+
+pub type ExprId = usize;
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct AstNode<T> {
+    pub data: T,
+    pub span: Span,
+    pub id: ExprId,
+}
+
+impl Deref for AstNode<Expr> {
+    type Target = Expr;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+
+fn test() {
+    let x = AstNode {
+        data: Expr::Integer {
+            value: 1,
+            span: Pos::new(0, 0).into(),
+        },
+        span: Pos::new(0, 0).into(),
+        id: 0,
+    };
+}
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Program {
     pub statements: Vec<Stmt>,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct Identifier {
+    pub name: String,
+    pub span: Span,
+    pub symbol_id: Option<usize>,
+}
+
+impl Identifier {
+    pub fn new(name: String, span: Span) -> Self {
+        Self {
+            name,
+            span,
+            symbol_id: None,
+        }
+    }
+
+    pub fn with_symbol_id(&self, symbol_id: usize) -> Self {
+        Self {
+            name: self.name.clone(),
+            span: self.span.clone(),
+            symbol_id: Some(symbol_id),
+        }
+    }
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -30,14 +85,14 @@ pub struct StructField {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct FuncArg {
-    pub name: String,
+    pub name: Identifier,
     pub span: Span,
     pub ty: TypeAnnotation,
 }
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct FuncDecl {
-    pub name: String,
+    pub name: Identifier,
     pub is_exported: bool,
     pub type_params: Vec<TypeAnnotation>,
     pub args: Vec<FuncArg>,
@@ -48,7 +103,7 @@ pub struct FuncDecl {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct LetDecl {
-    pub name: String,
+    pub name: Identifier,
     pub ty: Option<TypeAnnotation>,
     pub init: Expr,
     pub span: Span,
@@ -106,10 +161,7 @@ pub enum Expr {
     },
 
     // foo
-    Ident {
-        name: String,
-        span: Span,
-    },
+    Ident(Identifier),
 
     // -1
     PrefixOp {
@@ -155,6 +207,18 @@ pub enum Expr {
     },
 }
 
+impl Program {
+    pub fn functions(&self) -> Vec<&FuncDecl> {
+        self.statements
+            .iter()
+            .filter_map(|stmt| match stmt {
+                Stmt::Func(decl) => Some(decl),
+                _ => None,
+            })
+            .collect()
+    }
+}
+
 impl HasSpan for Stmt {
     fn span(&self) -> Span {
         match self {
@@ -176,7 +240,7 @@ impl HasSpan for Expr {
             Expr::BinaryOp { span, .. } => span.clone(),
             Expr::PostfixOp { span, .. } => span.clone(),
             Expr::Conditional { span, .. } => span.clone(),
-            Expr::Ident { span, .. } => span.clone(),
+            Expr::Ident(id) => id.span(),
             Expr::String { span, .. } => span.clone(),
             Expr::Comment { span, .. } => span.clone(),
             Expr::Call { span, .. } => span.clone(),
@@ -191,6 +255,18 @@ impl HasSpan for Block {
 }
 
 impl HasSpan for TypeAnnotation {
+    fn span(&self) -> Span {
+        self.span.clone()
+    }
+}
+
+impl HasSpan for FuncDecl {
+    fn span(&self) -> Span {
+        self.span.clone()
+    }
+}
+
+impl HasSpan for Identifier {
     fn span(&self) -> Span {
         self.span.clone()
     }

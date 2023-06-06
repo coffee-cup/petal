@@ -1,7 +1,7 @@
 use wast::kw::then;
 
 use super::{
-    ast::{Expr, FuncDecl, LetDecl, Program, Stmt},
+    ast::{Expr, FuncDecl, Identifier, LetDecl, Program, Stmt},
     token::TokenType,
 };
 
@@ -160,7 +160,7 @@ impl IRGenerator {
             .args
             .iter()
             .map(|arg| WatParam {
-                name: arg.name.clone(),
+                name: arg.name.name.clone(),
                 ty: WatValueType::F64,
             })
             .collect();
@@ -186,7 +186,7 @@ impl IRGenerator {
         };
 
         WatFunction {
-            name: func.name.clone(),
+            name: func.name.name.clone(),
             signature,
             locals,
             body: chunk,
@@ -244,7 +244,7 @@ impl ToWatInstructions for Stmt {
             Stmt::ExprStmt { expr, .. } => expr.to_ir_chunk(),
             Stmt::Let(LetDecl { name, init, .. }) => {
                 let mut chunk = init.to_ir_chunk();
-                chunk.push(WatInstruction::SetLocal(name.clone()));
+                chunk.push(WatInstruction::SetLocal(name.name.clone()));
                 chunk
             }
             // Stmt::IfStmt {
@@ -295,12 +295,12 @@ impl ToWatInstructions for Expr {
                     _ => todo!("to_ir_chunk for {:?}", self),
                 }
             }
-            Expr::Ident { name, .. } => vec![WatInstruction::GetLocal(name.clone())],
+            Expr::Ident(Identifier { name, .. }) => vec![WatInstruction::GetLocal(name.clone())],
             Expr::Call { callee, args, .. } => {
                 let mut chunk = Chunk::new();
 
                 let name = match *callee.clone() {
-                    Expr::Ident { name, .. } => name,
+                    Expr::Ident(Identifier { name, .. }) => name,
                     _ => panic!("Callee must be an identifier"),
                 };
 
@@ -321,7 +321,7 @@ impl HasLocals for Stmt {
     fn locals(&self) -> Vec<WatLocal> {
         match self {
             Stmt::Let(LetDecl { name, .. }) => vec![WatLocal {
-                name: name.clone(),
+                name: name.name.clone(),
                 ty: WatValueType::F64,
             }],
             // Stmt::IfStmt {

@@ -1,5 +1,6 @@
 use std::{
-    collections::{BTreeSet, HashMap},
+    collections::{BTreeMap, BTreeSet, HashMap},
+    fmt::Display,
     unreachable,
 };
 
@@ -132,6 +133,77 @@ impl Types for PolyType {
 
     fn apply(&self, sub: &Substitution) -> Self {
         todo!()
+    }
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct TypeContext {
+    /// Maps type names to their definitions
+    types: BTreeMap<TyVar, PolyType>,
+}
+
+impl TypeContext {
+    pub fn new() -> Self {
+        Self {
+            types: BTreeMap::new(),
+        }
+    }
+
+    pub fn insert(&mut self, name: TyVar, ty: PolyType) {
+        self.types.insert(name, ty);
+    }
+
+    pub fn insert_mono(&mut self, name: TyVar, ty: MonoType) {
+        self.types.insert(name, PolyType::Mono(ty));
+    }
+
+    pub fn get(&self, name: &TyVar) -> Option<PolyType> {
+        self.types.get(name).cloned()
+    }
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct Constraint {
+    lhs: MonoType,
+    rhs: MonoType,
+}
+
+impl Constraint {
+    pub fn new(lhs: MonoType, rhs: MonoType) -> Self {
+        Self { lhs, rhs }
+    }
+}
+
+pub struct Typechecker {
+    ty_gen: TypeVarGen,
+    constraints: Vec<Constraint>,
+}
+
+impl Typechecker {
+    pub fn new() -> Self {
+        Self {
+            ty_gen: TypeVarGen::new(),
+            constraints: Vec::new(),
+        }
+    }
+
+    pub fn associate_types(&mut self, lhs: MonoType, rhs: MonoType) {
+        self.constraints.push(Constraint::new(lhs, rhs))
+    }
+
+    pub fn gen_type_var(&mut self) -> MonoType {
+        let t = self.ty_gen.next();
+        MonoType::Variable(t)
+    }
+}
+
+impl Display for TypeContext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (name, ty) in &self.types {
+            writeln!(f, "{}: {}", name, ty)?;
+        }
+
+        Ok(())
     }
 }
 
