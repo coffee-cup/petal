@@ -232,6 +232,8 @@ impl Analysis {
 
         self.apply_substition_to_symbol_table(&sub);
 
+        // TODO: Check that we have no more type variables left after solving constraints
+
         Ok(())
     }
 
@@ -432,11 +434,11 @@ impl Analysis {
                     self.typechecker.gen_type_var()
                 };
 
+                let init = self.rewrite_expr_with_symbols(&let_decl.init)?;
+
                 let sym = self
                     .symbol_table
                     .insert_mono(let_decl.name.name.clone(), ty);
-
-                let init = self.rewrite_expr_with_symbols(&let_decl.init)?;
 
                 Stmt::Let(LetDecl {
                     name: let_decl.name.with_symbol_id(sym.id),
@@ -499,6 +501,7 @@ impl Analysis {
             Expr::Ident(ident) => {
                 let sym = self.symbol_table.get(&ident.name).ok_or_else(|| {
                     AnalysisError::new(AnalysisErrorKind::UndeclaredVariable(ident.name.clone()))
+                        .with_span(ident.span())
                 })?;
                 Expr::Ident(ident.with_symbol_id(sym.id))
             }

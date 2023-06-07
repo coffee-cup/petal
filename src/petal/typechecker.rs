@@ -253,7 +253,7 @@ pub enum Constraint {
     /// lhs = rhs
     Equal(MonoType, MonoType),
 
-    /// lhs <: rhs
+    /// lhs <= rhs
     Subtype(MonoType, MonoType),
 }
 
