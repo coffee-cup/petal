@@ -10,7 +10,7 @@ use crate::petal::ast::Stmt;
 use super::{
     ast::{Block, Expr, FuncArg, FuncDecl, Identifier, LetDecl, Program, TypeAnnotation},
     positions::{HasSpan, Span},
-    typechecker::{Constraint, TypeContext, Typechecker},
+    typechecker::{Constraint, Substitution, TypeContext, Typechecker, Types},
     types::{FunctionAppType, MonoType, PolyType, StructType},
 };
 
@@ -33,6 +33,12 @@ pub enum AnalysisErrorKind {
 
     #[error("Variable {0} already defined")]
     VariableAlreadyDeclared(String),
+
+    #[error("Variable {0} does not have an symbol associated with it")]
+    IdentifierDoesNotHaveSymbol(String),
+
+    #[error("Symbol {0} not found in symbol table")]
+    SymbolNotFound(String),
 }
 
 #[derive(Clone, Debug)]
@@ -145,6 +151,10 @@ impl SymbolTable {
         None
     }
 
+    pub fn get_by_id(&mut self, id: SymbolId) -> Option<Symbol> {
+        self.symbols.get(&id).map(|sym| sym.clone())
+    }
+
     pub fn defined_in_current_scope(&self, name: &String) -> bool {
         self.scopes
             .last()
@@ -182,14 +192,6 @@ impl Analysis {
     pub fn new() -> Self {
         let symbol_table = SymbolTable::new();
 
-        // let mut type_ctx = TypeContext::new();
-
-        // Load global types
-        // type_ctx.insert_mono("Int".into(), MonoType::int());
-        // type_ctx.insert_mono("Float".into(), MonoType::float());
-        // type_ctx.insert_mono("Bool".into(), MonoType::bool());
-        // type_ctx.insert_mono("String".into(), MonoType::string());
-
         let mut type_symbols = SymbolTable::new();
         type_symbols.insert_mono("Int".into(), MonoType::int());
         type_symbols.insert_mono("Float".into(), MonoType::float());
@@ -206,57 +208,40 @@ impl Analysis {
     }
 
     pub fn analysis_program(&mut self, program: &Program) -> AnalysisResult<()> {
-        // self.load_function_declarations(program)?;
+        let program = self.rewrite_program_with_symbols(program)?;
+        println!("=== Symbols:\n{}", self.symbol_table);
 
-        // println!("\n=== Types:\n{}", self.type_ctx);
-
-        let program = self.rewrite_program(program)?;
+        self.typecheck_program(&program)?;
 
         println!("=== Symbols:\n{}", self.symbol_table);
 
         Ok(())
     }
 
-    /// Generate types for all the top-level function declarations and load into the symbol table
-    // fn load_function_declarations(&mut self, program: &Program) -> AnalysisResult<()> {
-    //     for func in program.functions() {
-    //         // Check if the function has already been declared
-    //         if self.symbol_table.get(&func.name.name).is_some() {
-    //             return err!(
-    //                 AnalysisErrorKind::FunctionAlreadyDeclared(func.name.name.clone()),
-    //                 func.name.span()
-    //             );
-    //         }
+    fn typecheck_program(&mut self, program: &Program) -> AnalysisResult<()> {
+        for stmt in &program.statements {
+            self.stmt_constraints(&stmt)?;
+        }
 
-    //         // Get the type of the arguments
-    //         let mut param_tys = Vec::new();
-    //         for param in &func.args {
-    //             let ty = self.type_for_annotation(&param.ty)?;
-    //             param_tys.push(ty);
-    //         }
+        println!("\n=== Constraints:");
+        self.typechecker.print_constraints();
+        println!("");
 
-    //         // Get the return type
-    //         let return_ty = match &func.return_ty {
-    //             Some(annotation) => {
-    //                 let ty = self.type_for_annotation(annotation)?;
-    //                 ty
-    //             }
-    //             None => MonoType::unit(),
-    //         };
+        let sub = self.typechecker.solve_constraints();
+        println!("\n=== Substitutions:\n{:#?}\n", sub);
 
-    //         let func_ty = FunctionAppType {
-    //             params: param_tys,
-    //             return_ty: Box::new(return_ty),
-    //         };
+        self.apply_substition_to_symbol_table(&sub);
 
-    //         self.symbol_table.insert(
-    //             func.name.name.clone(),
-    //             PolyType::Mono(MonoType::FunApp(func_ty)),
-    //         );
-    //     }
+        Ok(())
+    }
 
-    //     Ok(())
-    // }
+    fn apply_substition_to_symbol_table(&mut self, sub: &Substitution) {
+        for (_, sym) in self.symbol_table.symbols.iter_mut() {
+            if let Some(ty) = &mut sym.ty {
+                *ty = ty.apply(sub);
+            }
+        }
+    }
 
     fn get_type_of_function_decl(&mut self, func: &FuncDecl) -> AnalysisResult<PolyType> {
         // Get the type of the arguments
@@ -283,15 +268,100 @@ impl Analysis {
         Ok(PolyType::Mono(MonoType::FunApp(func_ty)))
     }
 
-    fn generate_constraints(
-        &mut self,
-        mut constraints: &Vec<Constraint>,
-    ) -> AnalysisResult<MonoType> {
-        todo!()
+    fn symbol_for_ident(&mut self, name: &Identifier) -> AnalysisResult<Symbol> {
+        if let Some(sym_id) = name.symbol_id {
+            self.symbol_table.get_by_id(sym_id).ok_or_else(|| {
+                AnalysisError::new(AnalysisErrorKind::SymbolNotFound(name.name.clone()))
+            })
+        } else {
+            err!(AnalysisErrorKind::IdentifierDoesNotHaveSymbol(
+                name.name.clone()
+            ))
+        }
+    }
+
+    fn stmt_constraints(&mut self, stmt: &Stmt) -> AnalysisResult<()> {
+        match stmt {
+            Stmt::Struct(_) => todo!(),
+            Stmt::Func(_) => todo!(),
+            Stmt::Let(let_decl) => {
+                let sym = self.symbol_for_ident(&let_decl.name)?;
+                let var_ty = match &sym.ty {
+                    Some(PolyType::Mono(ty @ MonoType::Variable(_))) => ty.clone(),
+                    _ => return err!(AnalysisErrorKind::UnknownError),
+                };
+
+                let expr_ty = self.expr_constraints(&let_decl.init)?;
+                self.typechecker.associate_types(var_ty, expr_ty);
+            }
+            Stmt::IfStmt {
+                condition,
+                then_block,
+                else_block,
+                ..
+            } => {
+                let condition_ty = self.expr_constraints(condition)?;
+                self.typechecker
+                    .associate_types(condition_ty, MonoType::bool());
+                self.block_constraints(then_block)?;
+
+                if let Some(else_block) = else_block {
+                    self.block_constraints(else_block)?;
+                }
+            }
+            Stmt::ExprStmt { expr, .. } => {
+                let _ty = self.expr_constraints(expr)?;
+            }
+        };
+
+        Ok(())
+    }
+
+    fn block_constraints(&mut self, block: &Block) -> AnalysisResult<()> {
+        for stmt in &block.statements {
+            self.stmt_constraints(stmt)?;
+        }
+
+        Ok(())
+    }
+
+    fn expr_constraints(&mut self, expr: &Expr) -> AnalysisResult<MonoType> {
+        match expr {
+            Expr::Integer { .. } => Ok(MonoType::int()),
+            Expr::Float { .. } => Ok(MonoType::float()),
+            Expr::String { .. } => Ok(MonoType::string()),
+            Expr::Ident(ident) => {
+                let sym = self.symbol_for_ident(ident)?;
+                let ty = match &sym.ty {
+                    Some(ty) => ty.clone(),
+                    None => return err!(AnalysisErrorKind::UnknownError, ident.span()),
+                };
+
+                let instantiated = self.typechecker.instantiate(ty);
+
+                Ok(instantiated)
+            }
+            Expr::PrefixOp { op, right, span } => todo!(),
+            Expr::BinaryOp {
+                left,
+                op,
+                right,
+                span,
+            } => todo!(),
+            Expr::PostfixOp { op, left, span } => todo!(),
+            Expr::Conditional {
+                condition,
+                then_branch,
+                else_branch,
+                span,
+            } => todo!(),
+            Expr::Call { callee, args, span } => todo!(),
+            Expr::Comment { span, .. } => err!(AnalysisErrorKind::UnknownError, span.clone()),
+        }
     }
 
     /// Rewrite the program to include symbols
-    fn rewrite_program(&mut self, program: &Program) -> AnalysisResult<Program> {
+    fn rewrite_program_with_symbols(&mut self, program: &Program) -> AnalysisResult<Program> {
         let mut statements = Vec::new();
 
         for stmt in &program.statements {
@@ -554,10 +624,19 @@ impl Analysis {
     }
 }
 
+impl Display for Symbol {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.ty {
+            Some(ty) => write!(f, "{}@{}: {}", self.name, self.id, ty),
+            None => write!(f, "{}@{}", self.name, self.id),
+        }
+    }
+}
+
 impl Display for SymbolTable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (name, sym) in &self.symbols {
-            writeln!(f, "{}@{}: {:?}", sym.name, sym.id, sym)?;
+        for (_, sym) in &self.symbols {
+            writeln!(f, "{}", sym)?;
         }
 
         Ok(())

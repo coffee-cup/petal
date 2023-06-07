@@ -84,7 +84,7 @@ impl Substitution {
     }
 }
 
-trait Types {
+pub trait Types {
     /// Returns a list of all free type variables in the type
     fn free_variables(&self) -> BTreeSet<TyVar>;
 
@@ -113,7 +113,27 @@ impl Types for MonoType {
     }
 
     fn apply(&self, sub: &Substitution) -> Self {
-        todo!()
+        use MonoType::*;
+
+        match self {
+            Variable(var) => sub.get(var).unwrap_or_else(|| self.clone()),
+            Struct(decl) => {
+                let params = decl.params.iter().map(|param| param.apply(sub)).collect();
+                Struct(StructType {
+                    params,
+                    ..decl.clone()
+                })
+            }
+            FunApp(decl) => {
+                let params = decl.params.iter().map(|param| param.apply(sub)).collect();
+                let return_ty = decl.return_ty.apply(sub);
+
+                FunApp(FunctionAppType {
+                    params,
+                    return_ty: Box::new(return_ty),
+                })
+            }
+        }
     }
 }
 
@@ -132,7 +152,73 @@ impl Types for PolyType {
     }
 
     fn apply(&self, sub: &Substitution) -> Self {
-        todo!()
+        match self {
+            PolyType::Mono(ty) => PolyType::Mono(ty.apply(sub)),
+            PolyType::Quantifier(forall) => {
+                let mut sub = sub.clone();
+                for q in &forall.quantifiers {
+                    sub.remove(q);
+                }
+                PolyType::Quantifier(TypeQuantifier {
+                    quantifiers: forall.quantifiers.clone(),
+                    ty: forall.ty.apply(&sub),
+                })
+            }
+        }
+    }
+}
+
+impl Types for TypeContext {
+    fn free_variables(&self) -> BTreeSet<TyVar> {
+        self.types
+            .values()
+            .flat_map(|ty| ty.free_variables())
+            .collect()
+    }
+
+    fn apply(&self, sub: &Substitution) -> Self {
+        let mut types = BTreeMap::new();
+        for (key, value) in self.types.iter() {
+            types.insert(key.clone(), value.apply(sub));
+        }
+
+        Self { types }
+    }
+}
+
+impl MonoType {
+    /// Quantify all free variables in the type
+    pub fn generalise(&self, ctx: &mut TypeContext) -> PolyType {
+        let quantifiers = self
+            .free_variables()
+            .difference(&ctx.free_variables())
+            .cloned()
+            .collect::<Vec<_>>();
+
+        if quantifiers.is_empty() {
+            return PolyType::Mono(self.clone());
+        }
+
+        PolyType::Quantifier(TypeQuantifier {
+            quantifiers,
+            ty: self.clone(),
+        })
+    }
+}
+
+impl PolyType {
+    /// Replace all the forall quantifiers with type variables
+    pub fn instantiate(&self, ty_gen: &mut TypeVarGen) -> MonoType {
+        match self {
+            PolyType::Mono(ty) => ty.clone(),
+            PolyType::Quantifier(forall) => {
+                let mut sub = Substitution::new();
+                for q in &forall.quantifiers {
+                    sub.insert(q.clone(), MonoType::Variable(ty_gen.next()));
+                }
+                forall.ty.apply(&sub)
+            }
+        }
     }
 }
 
@@ -163,14 +249,21 @@ impl TypeContext {
 }
 
 #[derive(PartialEq, Clone, Debug)]
-pub struct Constraint {
-    lhs: MonoType,
-    rhs: MonoType,
+pub enum Constraint {
+    /// lhs = rhs
+    Equal(MonoType, MonoType),
+
+    /// lhs <: rhs
+    Subtype(MonoType, MonoType),
 }
 
 impl Constraint {
-    pub fn new(lhs: MonoType, rhs: MonoType) -> Self {
-        Self { lhs, rhs }
+    pub fn equal(lhs: MonoType, rhs: MonoType) -> Self {
+        Self::Equal(lhs, rhs)
+    }
+
+    pub fn subtype(lhs: MonoType, rhs: MonoType) -> Self {
+        Self::Subtype(lhs, rhs)
     }
 }
 
@@ -187,13 +280,187 @@ impl Typechecker {
         }
     }
 
+    pub fn solve_constraints(&self) -> Substitution {
+        let mut sub = Substitution::new();
+
+        for constraint in &self.constraints {
+            match constraint {
+                Constraint::Equal(lhs, rhs) => {
+                    let sub2 = self.unify_equality_constraint(lhs.clone(), rhs.clone());
+                    println!("Substitution: {:?}", sub2);
+                    sub = sub.combine(sub2);
+                }
+                Constraint::Subtype(lhs, rhs) => todo!(),
+            }
+        }
+
+        sub
+    }
+
+    pub fn unify_equality_constraint(&self, lhs: MonoType, rhs: MonoType) -> Substitution {
+        use MonoType::*;
+
+        println!("Unifying {} and {}", lhs, rhs);
+
+        match (lhs, rhs) {
+            (Variable(v1), Variable(v2)) => {
+                if v1 == v2 {
+                    Substitution::new()
+                } else {
+                    let mut sub = Substitution::new();
+                    sub.insert(v1, Variable(v2));
+                    sub
+                }
+            }
+            (Variable(v), ty) | (ty, Variable(v)) => {
+                if occurs_check(&ty, &Variable(v.clone())) {
+                    panic!("Infinite type");
+                } else {
+                    let mut sub = Substitution::new();
+                    sub.insert(v, ty);
+                    sub
+                }
+            }
+            (FunApp(f1), FunApp(f2)) => {
+                if f1.params.len() != f2.params.len() {
+                    panic!(
+                        "Functions have different number of arguments: {} and {}",
+                        f1.params.len(),
+                        f2.params.len()
+                    );
+                }
+
+                let mut sub = Substitution::new();
+                for (a, b) in f1.params.iter().zip(f2.params.iter()) {
+                    sub = sub.combine(unify(a.apply(&sub), b.apply(&sub)));
+                }
+
+                sub = sub.combine(unify(f1.return_ty.apply(&sub), f2.return_ty.apply(&sub)));
+                sub
+            }
+            (Struct(t1), Struct(t2)) => {
+                if t1.name != t2.name {
+                    panic!(
+                        "The structs have different names: {} and {}",
+                        t1.name, t2.name
+                    );
+                }
+
+                let mut sub = Substitution::new();
+                for (a, b) in t1.params.iter().zip(t2.params.iter()) {
+                    sub = sub.combine(unify(a.apply(&sub), b.apply(&sub)));
+                }
+
+                sub
+            }
+            (v1, v2) => {
+                if v1 != v2 {
+                    panic!("Types {:?} and {:?} do not unify", v1, v2)
+                }
+                Substitution::new()
+            }
+        }
+    }
+
     pub fn associate_types(&mut self, lhs: MonoType, rhs: MonoType) {
-        self.constraints.push(Constraint::new(lhs, rhs))
+        self.constraints.push(Constraint::equal(lhs, rhs));
+    }
+
+    pub fn subtype(&mut self, lhs: MonoType, rhs: MonoType) {
+        self.constraints.push(Constraint::subtype(lhs, rhs));
+    }
+
+    pub fn instantiate(&mut self, poly: PolyType) -> MonoType {
+        poly.instantiate(&mut self.ty_gen)
     }
 
     pub fn gen_type_var(&mut self) -> MonoType {
         let t = self.ty_gen.next();
         MonoType::Variable(t)
+    }
+
+    pub fn print_constraints(&self) {
+        for constraint in &self.constraints {
+            println!("{}", constraint);
+        }
+    }
+}
+
+/// Returns a substitution that can be applied to both types to make them equal
+fn unify(a: MonoType, b: MonoType) -> Substitution {
+    use MonoType::*;
+
+    match (a, b) {
+        (Variable(v1), Variable(v2)) => {
+            if v1 == v2 {
+                Substitution::new()
+            } else {
+                let mut sub = Substitution::new();
+                sub.insert(v1, Variable(v2));
+                sub
+            }
+        }
+        (Variable(v), ty) | (ty, Variable(v)) => {
+            if occurs_check(&ty, &Variable(v.clone())) {
+                panic!("Infinite type");
+            } else {
+                let mut sub = Substitution::new();
+                sub.insert(v, ty);
+                sub
+            }
+        }
+        (FunApp(f1), FunApp(f2)) => {
+            if f1.params.len() != f2.params.len() {
+                panic!(
+                    "Functions have different number of arguments: {} and {}",
+                    f1.params.len(),
+                    f2.params.len()
+                );
+            }
+
+            let mut sub = Substitution::new();
+            for (a, b) in f1.params.iter().zip(f2.params.iter()) {
+                sub = sub.combine(unify(a.apply(&sub), b.apply(&sub)));
+            }
+
+            sub = sub.combine(unify(f1.return_ty.apply(&sub), f2.return_ty.apply(&sub)));
+            sub
+        }
+        (Struct(t1), Struct(t2)) => {
+            if t1.name != t2.name {
+                panic!(
+                    "The structs have different names: {} and {}",
+                    t1.name, t2.name
+                );
+            }
+
+            let mut sub = Substitution::new();
+            for (a, b) in t1.params.iter().zip(t2.params.iter()) {
+                sub = sub.combine(unify(a.apply(&sub), b.apply(&sub)));
+            }
+
+            sub
+        }
+        (v1, v2) => {
+            if v1 != v2 {
+                panic!("Types {:?} and {:?} do not unify", v1, v2)
+            }
+            Substitution::new()
+        }
+    }
+}
+
+/// Returns true if the right type variable occurs in the left type
+/// or if the left and right types are equal
+fn occurs_check(left: &MonoType, right: &MonoType) -> bool {
+    use MonoType::*;
+
+    match left {
+        FunApp(FunctionAppType { params, return_ty }) => {
+            params.iter().any(|param| occurs_check(param, right)) || occurs_check(return_ty, right)
+        }
+        Struct(StructType { params, .. }) => params.iter().any(|param| occurs_check(param, right)),
+        _ => left == right,
     }
 }
 
@@ -204,6 +471,15 @@ impl Display for TypeContext {
         }
 
         Ok(())
+    }
+}
+
+impl Display for Constraint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Constraint::Equal(lhs, rhs) => write!(f, "{} = {}", lhs, rhs),
+            Constraint::Subtype(lhs, rhs) => write!(f, "{} <: {}", lhs, rhs),
+        }
     }
 }
 
