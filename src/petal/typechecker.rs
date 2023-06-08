@@ -253,8 +253,8 @@ pub enum Constraint {
     /// lhs = rhs
     Equal(MonoType, MonoType),
 
-    /// lhs <= rhs
-    Subtype(MonoType, MonoType),
+    /// lhs in [t1, t2, ...]
+    Oneof(MonoType, Vec<MonoType>),
 }
 
 impl Constraint {
@@ -262,8 +262,8 @@ impl Constraint {
         Self::Equal(lhs, rhs)
     }
 
-    pub fn subtype(lhs: MonoType, rhs: MonoType) -> Self {
-        Self::Subtype(lhs, rhs)
+    pub fn oneof(lhs: MonoType, tys: &[MonoType]) -> Self {
+        Self::Oneof(lhs, tys.to_vec())
     }
 }
 
@@ -290,7 +290,7 @@ impl Typechecker {
                     println!("Substitution: {:?}", sub2);
                     sub = sub.combine(sub2);
                 }
-                Constraint::Subtype(lhs, rhs) => todo!(),
+                Constraint::Oneof(lhs, tys) => todo!(),
             }
         }
 
@@ -332,23 +332,24 @@ impl Typechecker {
 
                 let mut sub = Substitution::new();
                 for (a, b) in f1.params.iter().zip(f2.params.iter()) {
-                    sub = sub.combine(unify(a.apply(&sub), b.apply(&sub)));
+                    sub = sub.combine(self.unify_equality_constraint(a.apply(&sub), b.apply(&sub)));
                 }
 
-                sub = sub.combine(unify(f1.return_ty.apply(&sub), f2.return_ty.apply(&sub)));
+                sub =
+                    sub.combine(self.unify_equality_constraint(
+                        f1.return_ty.apply(&sub),
+                        f2.return_ty.apply(&sub),
+                    ));
                 sub
             }
             (Struct(t1), Struct(t2)) => {
                 if t1.name != t2.name {
-                    panic!(
-                        "The structs have different names: {} and {}",
-                        t1.name, t2.name
-                    );
+                    panic!("The types {} and {} are different", t1.name, t2.name);
                 }
 
                 let mut sub = Substitution::new();
                 for (a, b) in t1.params.iter().zip(t2.params.iter()) {
-                    sub = sub.combine(unify(a.apply(&sub), b.apply(&sub)));
+                    sub = sub.combine(self.unify_equality_constraint(a.apply(&sub), b.apply(&sub)));
                 }
 
                 sub
@@ -366,10 +367,6 @@ impl Typechecker {
         self.constraints.push(Constraint::equal(lhs, rhs));
     }
 
-    pub fn subtype(&mut self, lhs: MonoType, rhs: MonoType) {
-        self.constraints.push(Constraint::subtype(lhs, rhs));
-    }
-
     pub fn instantiate(&mut self, poly: PolyType) -> MonoType {
         poly.instantiate(&mut self.ty_gen)
     }
@@ -382,70 +379,6 @@ impl Typechecker {
     pub fn print_constraints(&self) {
         for constraint in &self.constraints {
             println!("{}", constraint);
-        }
-    }
-}
-
-/// Returns a substitution that can be applied to both types to make them equal
-fn unify(a: MonoType, b: MonoType) -> Substitution {
-    use MonoType::*;
-
-    match (a, b) {
-        (Variable(v1), Variable(v2)) => {
-            if v1 == v2 {
-                Substitution::new()
-            } else {
-                let mut sub = Substitution::new();
-                sub.insert(v1, Variable(v2));
-                sub
-            }
-        }
-        (Variable(v), ty) | (ty, Variable(v)) => {
-            if occurs_check(&ty, &Variable(v.clone())) {
-                panic!("Infinite type");
-            } else {
-                let mut sub = Substitution::new();
-                sub.insert(v, ty);
-                sub
-            }
-        }
-        (FunApp(f1), FunApp(f2)) => {
-            if f1.params.len() != f2.params.len() {
-                panic!(
-                    "Functions have different number of arguments: {} and {}",
-                    f1.params.len(),
-                    f2.params.len()
-                );
-            }
-
-            let mut sub = Substitution::new();
-            for (a, b) in f1.params.iter().zip(f2.params.iter()) {
-                sub = sub.combine(unify(a.apply(&sub), b.apply(&sub)));
-            }
-
-            sub = sub.combine(unify(f1.return_ty.apply(&sub), f2.return_ty.apply(&sub)));
-            sub
-        }
-        (Struct(t1), Struct(t2)) => {
-            if t1.name != t2.name {
-                panic!(
-                    "The structs have different names: {} and {}",
-                    t1.name, t2.name
-                );
-            }
-
-            let mut sub = Substitution::new();
-            for (a, b) in t1.params.iter().zip(t2.params.iter()) {
-                sub = sub.combine(unify(a.apply(&sub), b.apply(&sub)));
-            }
-
-            sub
-        }
-        (v1, v2) => {
-            if v1 != v2 {
-                panic!("Types {:?} and {:?} do not unify", v1, v2)
-            }
-            Substitution::new()
         }
     }
 }
@@ -478,7 +411,15 @@ impl Display for Constraint {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Constraint::Equal(lhs, rhs) => write!(f, "{} = {}", lhs, rhs),
-            Constraint::Subtype(lhs, rhs) => write!(f, "{} <: {}", lhs, rhs),
+            Constraint::Oneof(lhs, tys) => write!(
+                f,
+                "{} in {}",
+                lhs,
+                tys.iter()
+                    .map(|ty| ty.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
         }
     }
 }

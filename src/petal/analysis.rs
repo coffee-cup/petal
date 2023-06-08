@@ -284,8 +284,8 @@ impl Analysis {
 
     fn stmt_constraints(&mut self, stmt: &Stmt) -> AnalysisResult<()> {
         match stmt {
-            Stmt::Struct(_) => todo!(),
-            Stmt::Func(_) => todo!(),
+            Stmt::Struct(_) => {}
+            Stmt::Func(_) => {}
             Stmt::Let(let_decl) => {
                 let sym = self.symbol_for_ident(&let_decl.name)?;
                 let var_ty = match &sym.ty {
@@ -357,7 +357,32 @@ impl Analysis {
                 else_branch,
                 span,
             } => todo!(),
-            Expr::Call { callee, args, span } => todo!(),
+            Expr::Call { callee, args, span } => {
+                let callee_ty = self.expr_constraints(callee)?;
+
+                let arg_tys = args
+                    .iter()
+                    .map(|arg| self.expr_constraints(arg))
+                    .collect::<AnalysisResult<Vec<_>>>()?;
+
+                let return_ty = self.typechecker.gen_type_var();
+
+                // Based on the argument types and return type, this is what the callee type should be
+                let expected_left_ty = MonoType::FunApp(FunctionAppType {
+                    params: arg_tys.clone(),
+                    return_ty: Box::new(return_ty.clone()),
+                });
+
+                println!("callee_ty: {}", callee_ty);
+                println!("expected_left_ty: {}", expected_left_ty);
+
+                self.typechecker
+                    .associate_types(callee_ty, expected_left_ty);
+
+                Ok(return_ty)
+            }
+
+            // Comments should be statements since they don't return a value
             Expr::Comment { span, .. } => err!(AnalysisErrorKind::UnknownError, span.clone()),
         }
     }
@@ -395,16 +420,15 @@ impl Analysis {
                     .args
                     .iter()
                     .map(|arg| {
-                        // TODO: Should we assign a type variable here?
-                        let ty = self.typechecker.gen_type_var();
+                        let ty = self.type_for_annotation(&arg.ty)?;
                         let arg_sym = self.symbol_table.insert_mono(arg.name.name.clone(), ty);
 
-                        FuncArg {
+                        Ok(FuncArg {
                             name: arg.name.with_symbol_id(arg_sym.id),
                             ..arg.clone()
-                        }
+                        })
                     })
-                    .collect::<Vec<_>>();
+                    .collect::<AnalysisResult<Vec<_>>>()?;
 
                 let body = self.rewrite_block_with_symbols(&func.body)?;
 
