@@ -1,6 +1,6 @@
 ---
 source: src/petal/parser.rs
-expression: "parse_stmt(\"fn foo() {}\")"
+expression: "parse_stmt(\"fn foo(): Int {}\")"
 ---
 Func(
     FuncDecl {
@@ -8,17 +8,31 @@ Func(
         is_exported: false,
         type_params: [],
         args: [],
-        return_ty: None,
+        return_ty: Some(
+            TypeAnnotation {
+                name: "Int",
+                span: Span {
+                    start: Pos {
+                        line: 0,
+                        col: 11,
+                    },
+                    end: Pos {
+                        line: 0,
+                        col: 13,
+                    },
+                },
+            },
+        ),
         body: Block {
             statements: [],
             span: Span {
                 start: Pos {
                     line: 0,
-                    col: 10,
+                    col: 15,
                 },
                 end: Pos {
                     line: 0,
-                    col: 11,
+                    col: 16,
                 },
             },
         },
@@ -29,7 +43,7 @@ Func(
             },
             end: Pos {
                 line: 0,
-                col: 11,
+                col: 16,
             },
         },
     },

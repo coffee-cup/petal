@@ -3,8 +3,8 @@ use thiserror::Error;
 
 use super::{
     ast::{
-        Block, Expr, FuncArg, FuncDecl, LetDecl, Program, Stmt, StructDecl, StructField,
-        TypeAnnotation,
+        Block, Expr, ExprId, FuncArg, FuncDecl, Identifier, LetDecl, Program, Stmt, StructDecl,
+        StructField, TypeAnnotation,
     },
     lexer::{Lexer, LexerErrorKind},
     positions::{HasSpan, Pos, Span},
@@ -92,12 +92,9 @@ impl PrefixParselet for StringParselet {
 
 struct IdentParselet;
 impl PrefixParselet for IdentParselet {
-    fn parse(&self, _parser: &mut Parser, token: Token) -> ParserResult<Expr> {
+    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr> {
         match token.literal {
-            Some(Literal::Identifier(name)) => Ok(Expr::Ident {
-                name,
-                span: token.span,
-            }),
+            Some(Literal::Identifier(name)) => Ok(Expr::Ident(Identifier::new(name, token.span))),
             _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
                 token.to_string(),
             ))),
@@ -163,7 +160,8 @@ impl InfixParselet for CallParselet {
             parser.match_expected(TT::Comma)?;
         }
 
-        parser.consume_expected(TT::RightParen)?;
+        let t = parser.consume_expected(TT::RightParen)?;
+        span = span.merge(t.span());
 
         Ok(Expr::Call {
             callee: Box::new(left),
@@ -287,6 +285,7 @@ pub struct Parser<'a> {
     lexer: &'a mut Lexer<'a>,
     current_token: Token,
     next_token: Token,
+    id_gen: ExprId,
     prefix_parselets: HashMap<TokenType, Rc<dyn PrefixParselet>>,
     infix_parselets: HashMap<TokenType, Rc<dyn InfixParselet>>,
 }
@@ -297,6 +296,7 @@ impl<'a> Parser<'a> {
             lexer,
             current_token: Token::new(TT::Eof),
             next_token: Token::new(TT::Eof),
+            id_gen: 0,
             prefix_parselets: HashMap::new(),
             infix_parselets: HashMap::new(),
         };
@@ -411,16 +411,15 @@ impl<'a> Parser<'a> {
         let token = self.consume()?;
         let mut span = token.span();
 
+        // Export keyword
         let is_exported = token.is(TT::Export);
         if is_exported {
             self.consume_expected(TT::Fun)?;
         }
 
-        let name = match self.consume_expected(TT::Identifier)?.literal {
-            Some(Literal::Identifier(name)) => name,
-            _ => unreachable!(),
-        };
+        let name = self.parse_identifier()?;
 
+        // Generic type parameters
         let mut type_params = Vec::new();
         if self.match_expected(TT::Less)? {
             while !self.peek().is(TT::Greater) && !self.is_at_end() {
@@ -435,8 +434,8 @@ impl<'a> Parser<'a> {
             self.consume_expected(TT::Greater)?;
         }
 
+        // Function args
         self.consume_expected(TT::LeftParen)?;
-
         let mut args: Vec<FuncArg> = Vec::new();
         while !self.peek().is(TT::RightParen) && !self.is_at_end() {
             args.push(self.parse_function_arg()?);
@@ -444,8 +443,15 @@ impl<'a> Parser<'a> {
                 self.consume()?;
             }
         }
-
         self.consume_expected(TT::RightParen)?;
+
+        // Return type
+        let mut return_ty = None;
+        if self.match_expected(TT::Colon)? {
+            return_ty = Some(self.parse_type()?);
+        }
+
+        // Function body
         let block = self.parse_block()?;
         span = span.merge(block.span().clone());
 
@@ -454,24 +460,30 @@ impl<'a> Parser<'a> {
             is_exported,
             type_params,
             args,
+            return_ty,
             body: block,
             span,
         }))
     }
 
-    fn parse_function_arg(&mut self) -> ParserResult<FuncArg> {
-        let name_token = self.consume_expected(TT::Identifier)?;
-        let span = name_token.span();
+    fn parse_identifier(&mut self) -> ParserResult<Identifier> {
+        let token = self.consume_expected(TT::Identifier)?;
+        let span = token.span();
 
-        let name = match name_token.literal {
+        let name = match token.literal {
             Some(Literal::Identifier(name)) => name,
             _ => unreachable!(),
         };
 
-        let mut ty = None;
-        if self.match_expected(TT::Colon)? {
-            ty = Some(self.parse_type()?);
-        }
+        Ok(Identifier::new(name, span))
+    }
+
+    fn parse_function_arg(&mut self) -> ParserResult<FuncArg> {
+        let name = self.parse_identifier()?;
+        let span = name.span();
+
+        self.consume_expected(TT::Colon)?;
+        let ty = self.parse_type()?;
 
         Ok(FuncArg { name, span, ty })
     }
@@ -509,10 +521,7 @@ impl<'a> Parser<'a> {
         let token = self.consume()?;
         let mut span = token.span();
 
-        let name = match self.consume_expected(TT::Identifier)?.literal {
-            Some(Literal::Identifier(name)) => name,
-            _ => unreachable!(),
-        };
+        let name = self.parse_identifier()?;
 
         let mut ty = None;
         if self.match_expected(TT::Colon)? {
@@ -667,6 +676,13 @@ impl<'a> Parser<'a> {
 
         Ok(self.current_token.clone())
     }
+
+    /// Get a unique ID for an expression
+    fn gen_id(&mut self) -> ExprId {
+        let id = self.id_gen;
+        self.id_gen += 1;
+        id
+    }
 }
 
 #[cfg(test)]
@@ -792,11 +808,11 @@ mod tests {
     #[test]
     fn test_functions() {
         insta::assert_debug_snapshot!(parse_stmt("fn foo() {}"));
-        insta::assert_debug_snapshot!(parse_stmt("fn foo(a) {}"));
-        insta::assert_debug_snapshot!(parse_stmt("fn foo(a, b) {}"));
+        insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
+        insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int, b: String) {}"));
         insta::assert_debug_snapshot!(parse_stmt(
             "
-        fn foo(foo, bar) {
+        fn foo(foo: Int, bar: Int) {
             let a = foo + bar
         }"
         ));
@@ -806,5 +822,7 @@ mod tests {
 
         insta::assert_debug_snapshot!(parse_stmt("fn foo<T>() {}"));
         insta::assert_debug_snapshot!(parse_stmt("fn foo<T>(a: T) {}"));
+
+        insta::assert_debug_snapshot!(parse_stmt("fn foo(): Int {}"));
     }
 }

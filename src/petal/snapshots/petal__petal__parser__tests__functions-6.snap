@@ -20,23 +20,22 @@ Func(
                         col: 8,
                     },
                 },
-                ty: Some(
-                    TypeAnnotation {
-                        name: "Int",
-                        span: Span {
-                            start: Pos {
-                                line: 0,
-                                col: 11,
-                            },
-                            end: Pos {
-                                line: 0,
-                                col: 13,
-                            },
+                ty: TypeAnnotation {
+                    name: "Int",
+                    span: Span {
+                        start: Pos {
+                            line: 0,
+                            col: 11,
+                        },
+                        end: Pos {
+                            line: 0,
+                            col: 13,
                         },
                     },
-                ),
+                },
             },
         ],
+        return_ty: None,
         body: Block {
             statements: [],
             span: Span {

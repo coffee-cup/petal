@@ -1,7 +1,8 @@
-use crate::petal::wat::IRGenerator;
+use crate::petal::{analysis::Analysis, wat::IRGenerator};
 
 use self::{errors::CompilerError, lexer::Lexer, wasm::Wasm};
 
+mod analysis;
 mod ast;
 mod codegen;
 pub mod errors;
@@ -10,7 +11,7 @@ mod parser;
 mod positions;
 mod precedence;
 mod token;
-mod typechecking;
+mod typechecker;
 mod types;
 mod wasm;
 mod wat;
@@ -29,7 +30,7 @@ impl Compiler {
 
         let mut lexer1 = Lexer::new(&file);
         let tokens = lexer1.map(|t| t.unwrap()).collect::<Vec<_>>();
-        println!("Tokens: {:#?}", tokens);
+        // println!("Tokens: {:#?}", tokens);
 
         let mut lexer = Lexer::new(&file);
         let mut parser = parser::Parser::new(&mut lexer);
@@ -37,17 +38,27 @@ impl Compiler {
 
         println!("{:#?}", program);
 
-        let mut ir_generator = IRGenerator::new();
-        let ir_module = ir_generator.generate_ir_from_program(&program);
+        let mut analysis = Analysis::new();
+        analysis
+            .analysis_program(&program)
+            .map_err(CompilerError::AnalysisError)?;
+
+        // let mut typechecker = Typechecker::new(&program);
+        // typechecker.check().map_err(CompilerError::TypecheckError)?;
+
+        Err(CompilerError::Unknown)
+
+        // let mut ir_generator = IRGenerator::new();
+        // let ir_module = ir_generator.generate_ir_from_program(&program);
 
         // println!("{:#?}", ir_module);
 
-        let wasm = Wasm::new(&ir_module)
-            .map_err(|(e, wat_string)| CompilerError::WasmGenerationError(e, wat_string))?;
+        // let wasm = Wasm::new(&ir_module)
+        //     .map_err(|(e, wat_string)| CompilerError::WasmGenerationError(e, wat_string))?;
 
-        wasm.validate()
-            .map_err(|e| CompilerError::WasmValidationError(e.to_string(), wasm.print_wat()))?;
+        // wasm.validate()
+        //     .map_err(|e| CompilerError::WasmValidationError(e.to_string(), wasm.print_wat()))?;
 
-        Ok(wasm)
+        // Ok(wasm)
     }
 }
