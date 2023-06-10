@@ -160,7 +160,7 @@ impl IRGenerator {
             .args
             .iter()
             .map(|arg| WatParam {
-                name: arg.name.name.clone(),
+                name: arg.ident.name.clone(),
                 ty: WatValueType::F64,
             })
             .collect();
@@ -186,7 +186,7 @@ impl IRGenerator {
         };
 
         WatFunction {
-            name: func.name.name.clone(),
+            name: func.ident.name.clone(),
             signature,
             locals,
             body: chunk,
@@ -242,7 +242,9 @@ impl ToWatInstructions for Stmt {
     fn to_ir_chunk(&self) -> Chunk {
         match self {
             Stmt::ExprStmt { expr, .. } => expr.to_ir_chunk(),
-            Stmt::Let(LetDecl { name, init, .. }) => {
+            Stmt::Let(LetDecl {
+                ident: name, init, ..
+            }) => {
                 let mut chunk = init.to_ir_chunk();
                 chunk.push(WatInstruction::SetLocal(name.name.clone()));
                 chunk
@@ -320,7 +322,7 @@ impl ToWatInstructions for Expr {
 impl HasLocals for Stmt {
     fn locals(&self) -> Vec<WatLocal> {
         match self {
-            Stmt::Let(LetDecl { name, .. }) => vec![WatLocal {
+            Stmt::Let(LetDecl { ident: name, .. }) => vec![WatLocal {
                 name: name.name.clone(),
                 ty: WatValueType::F64,
             }],

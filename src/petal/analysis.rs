@@ -298,7 +298,7 @@ impl Analysis {
             Stmt::Struct(_) => {}
             Stmt::Func(_) => {}
             Stmt::Let(let_decl) => {
-                let sym = self.symbol_for_ident(&let_decl.name)?;
+                let sym = self.symbol_for_ident(&let_decl.ident)?;
                 let var_ty = match &sym.ty {
                     Some(PolyType::Mono(ty @ MonoType::Variable(_))) => ty.clone(),
                     _ => return err!(AnalysisErrorKind::UnknownError),
@@ -422,15 +422,15 @@ impl Analysis {
             Stmt::Func(func) => {
                 // TODO: This won't handle calling functions that haven't been declared yet
                 // TODO:: We first need to load all the function declarations into the symbol table
-                if self.symbol_table.get(&func.name.name).is_some() {
+                if self.symbol_table.get(&func.ident.name).is_some() {
                     return err!(
-                        AnalysisErrorKind::FunctionAlreadyDeclared(func.name.name.clone()),
-                        func.name.span()
+                        AnalysisErrorKind::FunctionAlreadyDeclared(func.ident.name.clone()),
+                        func.ident.span()
                     );
                 }
 
                 let func_ty = self.get_type_of_function_decl(func)?;
-                let func_sym = self.symbol_table.insert(func.name.name.clone(), func_ty);
+                let func_sym = self.symbol_table.insert(func.ident.name.clone(), func_ty);
 
                 self.symbol_table.enter_scope();
                 let args = func
@@ -438,10 +438,10 @@ impl Analysis {
                     .iter()
                     .map(|arg| {
                         let ty = self.type_for_annotation(&arg.ty)?;
-                        let arg_sym = self.symbol_table.insert_mono(arg.name.name.clone(), ty);
+                        let arg_sym = self.symbol_table.insert_mono(arg.ident.name.clone(), ty);
 
                         Ok(FuncArg {
-                            name: arg.name.with_symbol_id(arg_sym.id),
+                            ident: arg.ident.with_symbol_id(arg_sym.id),
                             ..arg.clone()
                         })
                     })
@@ -452,7 +452,7 @@ impl Analysis {
                 self.symbol_table.leave_scope();
 
                 Stmt::Func(FuncDecl {
-                    name: func.name.with_symbol_id(func_sym.id),
+                    ident: func.ident.with_symbol_id(func_sym.id),
                     args,
                     body,
                     ..func.clone()
@@ -461,28 +461,28 @@ impl Analysis {
             Stmt::Let(let_decl) => {
                 if self
                     .symbol_table
-                    .defined_in_current_scope(&let_decl.name.name)
+                    .defined_in_current_scope(&let_decl.ident.name)
                 {
                     return err!(
-                        AnalysisErrorKind::VariableAlreadyDeclared(let_decl.name.name.clone()),
-                        let_decl.name.span()
+                        AnalysisErrorKind::VariableAlreadyDeclared(let_decl.ident.name.clone()),
+                        let_decl.ident.span()
                     );
                 }
 
                 let ty = if let Some(ty) = &let_decl.ty {
                     self.type_for_annotation(&ty)?
                 } else {
-                    self.typechecker.gen_type_var(let_decl.name.span())
+                    self.typechecker.gen_type_var(let_decl.ident.span())
                 };
 
                 let init = self.rewrite_expr_with_symbols(&let_decl.init)?;
 
                 let sym = self
                     .symbol_table
-                    .insert_mono(let_decl.name.name.clone(), ty);
+                    .insert_mono(let_decl.ident.name.clone(), ty);
 
                 Stmt::Let(LetDecl {
-                    name: let_decl.name.with_symbol_id(sym.id),
+                    ident: let_decl.ident.with_symbol_id(sym.id),
                     init,
                     ..let_decl.clone()
                 })
