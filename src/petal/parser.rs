@@ -160,7 +160,8 @@ impl InfixParselet for CallParselet {
             parser.match_expected(TT::Comma)?;
         }
 
-        parser.consume_expected(TT::RightParen)?;
+        let t = parser.consume_expected(TT::RightParen)?;
+        span = span.merge(t.span());
 
         Ok(Expr::Call {
             callee: Box::new(left),

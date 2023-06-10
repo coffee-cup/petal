@@ -1,9 +1,31 @@
 use std::{cmp::min, io};
 
-use super::{analysis::AnalysisError, parser::ParserError, typechecker::TypecheckingError};
+use super::{
+    analysis::AnalysisError, parser::ParserError, positions::Span, typechecker::TypecheckingError,
+};
 use thiserror::Error;
 
 use colored::Colorize;
+
+#[derive(Clone, Debug)]
+pub struct ErrorContext {
+    msg: String,
+    span: Span,
+}
+
+#[derive(Clone, Debug)]
+pub struct CompilerCodeError {
+    context: Vec<ErrorContext>,
+    error_msg: String,
+    span: Span,
+}
+
+#[derive(Clone, Debug)]
+pub enum CompilerError2 {
+    Unknown,
+
+    CodeError(CompilerCodeError),
+}
 
 #[derive(Error, Debug)]
 pub enum CompilerError {
@@ -19,9 +41,6 @@ pub enum CompilerError {
     #[error("Analysis error: {}", .0.kind)]
     AnalysisError(AnalysisError),
 
-    #[error("Typechecking error: {}", .0.kind)]
-    TypecheckError(TypecheckingError),
-
     #[error("Failed to generate WASM binary: {0}\n\nThe generated wat...\n{1}")]
     WasmGenerationError(String, String),
 
@@ -33,12 +52,7 @@ fn print_basic_error(error: &CompilerError) {
     println!("{}", error.to_string().red());
 }
 
-macro_rules! print_error {
-    ($error:ident) => {{
-        print_basic_error(&$error);
-        return;
-    }};
-}
+pub fn print_compiler_code_error(source: &str, error: &CompilerCodeError) {}
 
 pub fn print_compiler_error(source: &str, error: &CompilerError) {
     use CompilerError::*;
@@ -46,7 +60,10 @@ pub fn print_compiler_error(source: &str, error: &CompilerError) {
     let (msg, span) = match error {
         ParserError(e) => (e.kind.to_string(), e.span.clone()),
         AnalysisError(e) => (e.kind.to_string(), e.span.clone()),
-        _ => print_error!(error),
+        _ => {
+            print_basic_error(&error);
+            return;
+        }
     };
 
     if let Some(span) = &span {

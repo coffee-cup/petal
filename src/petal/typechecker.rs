@@ -16,6 +16,9 @@ use super::{
 pub enum TypecheckingErrorKind {
     #[error("Unknown error")]
     Unknown,
+
+    #[error("Mismatched types {0} and {1}")]
+    MismatchedTypes(MonoType, MonoType),
 }
 
 #[derive(Debug, Clone)]
@@ -24,7 +27,20 @@ pub struct TypecheckingError {
     pub span: Option<Span>,
 }
 
-type TypecheckingResult<T> = Result<T, TypecheckingError>;
+impl TypecheckingError {
+    pub fn new(kind: TypecheckingErrorKind) -> Self {
+        Self { kind, span: None }
+    }
+
+    pub fn with_span(&self, span: Span) -> Self {
+        Self {
+            span: Some(span),
+            ..self.clone()
+        }
+    }
+}
+
+type TypeResult<T> = Result<T, TypecheckingError>;
 
 #[derive(Clone, Debug)]
 struct TypeVarGen {
@@ -251,15 +267,19 @@ impl TypeContext {
 #[derive(PartialEq, Clone, Debug)]
 pub enum Constraint {
     /// lhs = rhs
-    Equal(MonoType, MonoType),
+    Equal {
+        lhs: MonoType,
+        rhs: MonoType,
+        origin: Span,
+    },
 
     /// lhs in [t1, t2, ...]
     Oneof(MonoType, Vec<MonoType>),
 }
 
 impl Constraint {
-    pub fn equal(lhs: MonoType, rhs: MonoType) -> Self {
-        Self::Equal(lhs, rhs)
+    pub fn equal(lhs: MonoType, rhs: MonoType, origin: Span) -> Self {
+        Self::Equal { lhs, rhs, origin }
     }
 
     pub fn oneof(lhs: MonoType, tys: &[MonoType]) -> Self {
@@ -270,6 +290,9 @@ impl Constraint {
 pub struct Typechecker {
     ty_gen: TypeVarGen,
     constraints: Vec<Constraint>,
+
+    /// Maps the source of type variables to a location in the source code
+    type_spans: HashMap<TyVar, Span>,
 }
 
 impl Typechecker {
@@ -277,16 +300,20 @@ impl Typechecker {
         Self {
             ty_gen: TypeVarGen::new(),
             constraints: Vec::new(),
+            type_spans: HashMap::new(),
         }
     }
 
-    pub fn solve_constraints(&self) -> Substitution {
+    pub fn solve_constraints(&self) -> TypeResult<Substitution> {
         let mut sub = Substitution::new();
 
         for constraint in &self.constraints {
             match constraint {
-                Constraint::Equal(lhs, rhs) => {
-                    let sub2 = self.unify_equality_constraint(lhs.clone(), rhs.clone());
+                Constraint::Equal { lhs, rhs, origin } => {
+                    println!("Unifying {} and {}", lhs.apply(&sub), rhs.apply(&sub));
+
+                    let sub2 =
+                        self.unify_equality_constraint(lhs.apply(&sub), rhs.apply(&sub), origin)?;
                     println!("Substitution: {:?}", sub2);
                     sub = sub.combine(sub2);
                 }
@@ -294,21 +321,24 @@ impl Typechecker {
             }
         }
 
-        sub
+        Ok(sub)
     }
 
-    pub fn unify_equality_constraint(&self, lhs: MonoType, rhs: MonoType) -> Substitution {
+    pub fn unify_equality_constraint(
+        &self,
+        lhs: MonoType,
+        rhs: MonoType,
+        origin: &Span,
+    ) -> TypeResult<Substitution> {
         use MonoType::*;
 
-        println!("Unifying {} and {}", lhs, rhs);
-
-        match (lhs, rhs) {
+        let sub = match (&lhs, &rhs) {
             (Variable(v1), Variable(v2)) => {
                 if v1 == v2 {
                     Substitution::new()
                 } else {
                     let mut sub = Substitution::new();
-                    sub.insert(v1, Variable(v2));
+                    sub.insert(v1.clone(), Variable(v2.clone()));
                     sub
                 }
             }
@@ -317,7 +347,7 @@ impl Typechecker {
                     panic!("Infinite type");
                 } else {
                     let mut sub = Substitution::new();
-                    sub.insert(v, ty);
+                    sub.insert(v.clone(), ty.clone());
                     sub
                 }
             }
@@ -332,24 +362,36 @@ impl Typechecker {
 
                 let mut sub = Substitution::new();
                 for (a, b) in f1.params.iter().zip(f2.params.iter()) {
-                    sub = sub.combine(self.unify_equality_constraint(a.apply(&sub), b.apply(&sub)));
+                    sub = sub.combine(self.unify_equality_constraint(
+                        a.apply(&sub),
+                        b.apply(&sub),
+                        origin,
+                    )?);
                 }
 
-                sub =
-                    sub.combine(self.unify_equality_constraint(
-                        f1.return_ty.apply(&sub),
-                        f2.return_ty.apply(&sub),
-                    ));
+                sub = sub.combine(self.unify_equality_constraint(
+                    f1.return_ty.apply(&sub),
+                    f2.return_ty.apply(&sub),
+                    origin,
+                )?);
                 sub
             }
             (Struct(t1), Struct(t2)) => {
                 if t1.name != t2.name {
-                    panic!("The types {} and {} are different", t1.name, t2.name);
+                    println!("{:?}", self.type_spans);
+                    return Err(
+                        TypecheckingError::new(TypecheckingErrorKind::MismatchedTypes(lhs, rhs))
+                            .with_span(origin.clone()),
+                    );
                 }
 
                 let mut sub = Substitution::new();
                 for (a, b) in t1.params.iter().zip(t2.params.iter()) {
-                    sub = sub.combine(self.unify_equality_constraint(a.apply(&sub), b.apply(&sub)));
+                    sub = sub.combine(self.unify_equality_constraint(
+                        a.apply(&sub),
+                        b.apply(&sub),
+                        origin,
+                    )?);
                 }
 
                 sub
@@ -360,19 +402,24 @@ impl Typechecker {
                 }
                 Substitution::new()
             }
-        }
+        };
+
+        Ok(sub)
     }
 
-    pub fn associate_types(&mut self, lhs: MonoType, rhs: MonoType) {
-        self.constraints.push(Constraint::equal(lhs, rhs));
+    pub fn associate_types(&mut self, lhs: MonoType, rhs: MonoType, origin: Span) {
+        self.constraints.push(Constraint::equal(lhs, rhs, origin));
     }
 
     pub fn instantiate(&mut self, poly: PolyType) -> MonoType {
         poly.instantiate(&mut self.ty_gen)
     }
 
-    pub fn gen_type_var(&mut self) -> MonoType {
+    pub fn gen_type_var(&mut self, span: Span) -> MonoType {
         let t = self.ty_gen.next();
+
+        self.type_spans.insert(t.clone(), span);
+
         MonoType::Variable(t)
     }
 
@@ -410,7 +457,7 @@ impl Display for TypeContext {
 impl Display for Constraint {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Constraint::Equal(lhs, rhs) => write!(f, "{} = {}", lhs, rhs),
+            Constraint::Equal { lhs, rhs, .. } => write!(f, "{} = {}", lhs, rhs),
             Constraint::Oneof(lhs, tys) => write!(
                 f,
                 "{} in {}",

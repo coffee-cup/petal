@@ -10,7 +10,9 @@ use crate::petal::ast::Stmt;
 use super::{
     ast::{Block, Expr, FuncArg, FuncDecl, Identifier, LetDecl, Program, TypeAnnotation},
     positions::{HasSpan, Span},
-    typechecker::{Constraint, Substitution, TypeContext, Typechecker, Types},
+    typechecker::{
+        Constraint, Substitution, TypeContext, Typechecker, TypecheckingErrorKind, Types,
+    },
     types::{FunctionAppType, MonoType, PolyType, StructType},
 };
 
@@ -39,6 +41,9 @@ pub enum AnalysisErrorKind {
 
     #[error("Symbol {0} not found in symbol table")]
     SymbolNotFound(String),
+
+    #[error("{0}")]
+    TypecheckError(#[from] TypecheckingErrorKind),
 }
 
 #[derive(Clone, Debug)]
@@ -227,7 +232,13 @@ impl Analysis {
         self.typechecker.print_constraints();
         println!("");
 
-        let sub = self.typechecker.solve_constraints();
+        let sub = self.typechecker.solve_constraints().map_err(|e| {
+            let mut err = AnalysisError::new(AnalysisErrorKind::TypecheckError(e.kind));
+            if let Some(span) = &e.span {
+                err = err.with_span(span.clone());
+            }
+            err
+        })?;
         println!("\n=== Substitutions:\n{:#?}\n", sub);
 
         self.apply_substition_to_symbol_table(&sub);
@@ -294,7 +305,8 @@ impl Analysis {
                 };
 
                 let expr_ty = self.expr_constraints(&let_decl.init)?;
-                self.typechecker.associate_types(var_ty, expr_ty);
+                self.typechecker
+                    .associate_types(var_ty, expr_ty, let_decl.span.clone());
             }
             Stmt::IfStmt {
                 condition,
@@ -304,7 +316,7 @@ impl Analysis {
             } => {
                 let condition_ty = self.expr_constraints(condition)?;
                 self.typechecker
-                    .associate_types(condition_ty, MonoType::bool());
+                    .associate_types(condition_ty, MonoType::bool(), condition.span());
                 self.block_constraints(then_block)?;
 
                 if let Some(else_block) = else_block {
@@ -329,7 +341,12 @@ impl Analysis {
 
     fn expr_constraints(&mut self, expr: &Expr) -> AnalysisResult<MonoType> {
         match expr {
-            Expr::Integer { .. } => Ok(MonoType::int()),
+            Expr::Integer { .. } => {
+                let ty = self.typechecker.gen_type_var(expr.span());
+                self.typechecker
+                    .associate_types(ty.clone(), MonoType::int(), expr.span());
+                Ok(ty)
+            }
             Expr::Float { .. } => Ok(MonoType::float()),
             Expr::String { .. } => Ok(MonoType::string()),
             Expr::Ident(ident) => {
@@ -365,7 +382,7 @@ impl Analysis {
                     .map(|arg| self.expr_constraints(arg))
                     .collect::<AnalysisResult<Vec<_>>>()?;
 
-                let return_ty = self.typechecker.gen_type_var();
+                let return_ty = self.typechecker.gen_type_var(expr.span());
 
                 // Based on the argument types and return type, this is what the callee type should be
                 let expected_left_ty = MonoType::FunApp(FunctionAppType {
@@ -377,7 +394,7 @@ impl Analysis {
                 println!("expected_left_ty: {}", expected_left_ty);
 
                 self.typechecker
-                    .associate_types(callee_ty, expected_left_ty);
+                    .associate_types(callee_ty, expected_left_ty, expr.span());
 
                 Ok(return_ty)
             }
@@ -455,7 +472,7 @@ impl Analysis {
                 let ty = if let Some(ty) = &let_decl.ty {
                     self.type_for_annotation(&ty)?
                 } else {
-                    self.typechecker.gen_type_var()
+                    self.typechecker.gen_type_var(let_decl.name.span())
                 };
 
                 let init = self.rewrite_expr_with_symbols(&let_decl.init)?;
