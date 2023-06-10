@@ -1,8 +1,6 @@
 use std::{cmp::min, io};
 
-use super::{
-    analysis::AnalysisError, parser::ParserError, positions::Span, typechecker::TypecheckingError,
-};
+use super::{parser::ParserError, positions::Span, typechecker::TypecheckingError};
 use thiserror::Error;
 
 use colored::Colorize;
@@ -38,9 +36,8 @@ pub enum CompilerError {
     #[error("Parser error: {}", .0.kind)]
     ParserError(ParserError),
 
-    #[error("Analysis error: {}", .0.kind)]
-    AnalysisError(AnalysisError),
-
+    // #[error("Analysis error: {}", .0.kind)]
+    // AnalysisError(AnalysisError),
     #[error("Failed to generate WASM binary: {0}\n\nThe generated wat...\n{1}")]
     WasmGenerationError(String, String),
 
@@ -59,7 +56,7 @@ pub fn print_compiler_error(source: &str, error: &CompilerError) {
 
     let (msg, span) = match error {
         ParserError(e) => (e.kind.to_string(), e.span.clone()),
-        AnalysisError(e) => (e.kind.to_string(), e.span.clone()),
+        // AnalysisError(e) => (e.kind.to_string(), e.span.clone()),
         _ => {
             print_basic_error(&error);
             return;

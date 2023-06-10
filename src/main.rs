@@ -50,9 +50,9 @@ fn main() {
                     petal::errors::print_compiler_error(&file, &e);
                 }
                 Ok(wasm) => {
-                    if wat {
-                        println!("{}", wasm.print_wat())
-                    }
+                    // if wat {
+                    //     println!("{}", wasm.print_wat())
+                    // }
 
                     // Ensure that the output directory exists
                     std::fs::create_dir_all(&output).expect("Unable to create output directory");
@@ -60,11 +60,11 @@ fn main() {
                     let file_name = file.clone().replace("petal", "wasm");
 
                     // Save the WASM binary to the output directory
-                    let mut file = std::fs::File::create(format!("{}/{}", output, file_name))
-                        .expect("Unable to create output file");
+                    // let mut file = std::fs::File::create(format!("{}/{}", output, file_name))
+                    //     .expect("Unable to create output file");
 
-                    file.write_all(wasm.bytes())
-                        .expect("Unable to write the .wasm binary");
+                    // file.write_all(wasm.bytes())
+                    //     .expect("Unable to write the .wasm binary");
                 }
             }
         }

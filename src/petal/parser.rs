@@ -350,19 +350,6 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_program(&mut self) -> ParserResult<()> {
-        // Parse all declarations
-        self.parse_top_level_decls()?;
-
-        // while !self.is_at_end() {
-        //     let decl = self.parse_declaration()?;
-        //     statements.push(decl);
-        // }
-
-        Ok(())
-    }
-
-    /// Parse all top-level declarations like structs and functions
-    fn parse_top_level_decls(&mut self) -> ParserResult<()> {
         while !self.is_at_end() {
             match self.peek().token_type {
                 TT::Struct => {
@@ -371,7 +358,9 @@ impl<'a> Parser<'a> {
                 TT::Fun | TT::Export => {
                     self.parse_function()?;
                 }
-                _ => {}
+                _ => {
+                    self.parse_declaration()?;
+                }
             };
         }
 
@@ -418,7 +407,7 @@ impl<'a> Parser<'a> {
         self.consume_expected(TT::Colon)?;
 
         let ty = self.parse_type()?;
-        span = span.merge(ty.span);
+        span = span.merge(ty.span.clone());
 
         Ok(StructField { ident, ty, span })
     }
@@ -497,17 +486,13 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_function_arg(&mut self) -> ParserResult<FuncArg> {
-        let name = self.parse_identifier()?;
-        let span = name.span;
+        let ident = self.parse_identifier()?;
+        let span = ident.span.clone();
 
         self.consume_expected(TT::Colon)?;
         let ty = self.parse_type()?;
 
-        Ok(FuncArg {
-            ident: name,
-            span,
-            ty,
-        })
+        Ok(FuncArg { ident, span, ty })
     }
 
     fn parse_type(&mut self) -> ParserResult<TypeAnnotation> {
@@ -541,7 +526,14 @@ impl<'a> Parser<'a> {
             .new_statement(Stmt::BlockStmt(Block { statements }), span))
     }
 
-    fn parse_let_declaration(&mut self) -> ParserResult<Stmt> {
+    fn parse_declaration(&mut self) -> ParserResult<StmtId> {
+        match self.peek().token_type {
+            TT::Let => self.parse_let_declaration(),
+            _ => self.parse_statement(),
+        }
+    }
+
+    fn parse_let_declaration(&mut self) -> ParserResult<StmtId> {
         let token = self.consume()?;
         let mut span = token.span();
 
@@ -557,12 +549,14 @@ impl<'a> Parser<'a> {
 
         span = span.merge(self.program.ast.expressions[init].span.clone());
 
-        Ok(Stmt::Let(LetDecl {
-            ident: name,
-            ty,
-            init,
+        Ok(self.program.new_statement(
+            Stmt::Let(LetDecl {
+                ident: name,
+                ty,
+                init,
+            }),
             span,
-        }))
+        ))
     }
 
     fn parse_statement(&mut self) -> ParserResult<StmtId> {
@@ -701,144 +695,153 @@ impl<'a> Parser<'a> {
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
+#[cfg(test)]
+mod tests {
+    use crate::petal::ast::ExprNode;
 
-//     fn parse_stmt(s: &str) -> Stmt {
-//         let mut lexer = Lexer::new(s);
-//         let mut parser = Parser::new(&mut lexer);
-//         parser.parse_declaration().unwrap()
-//     }
+    use super::*;
 
-//     fn parse_expr(s: &str) -> Expr {
-//         let mut lexer = Lexer::new(s);
-//         let mut parser = Parser::new(&mut lexer);
-//         parser.parse_expression(Precedence::Lowest).unwrap()
-//     }
+    // fn parse_stmt(s: &str) -> Stmt {
+    //     let mut lexer = Lexer::new(s);
+    //     let mut parser = Parser::new(&mut lexer);
+    //     parser.parse_declaration().unwrap()
+    // }
 
-//     #[test]
-//     fn test_literals() {
-//         insta::assert_debug_snapshot!(parse_expr("1"));
-//         insta::assert_debug_snapshot!(parse_expr("123.456"));
-//         insta::assert_debug_snapshot!(parse_expr("\"hello\""));
-//     }
+    fn parse_expr(s: &str) -> Vec<ExprNode> {
+        let mut lexer = Lexer::new(s);
+        let mut parser = Parser::new(&mut lexer);
+        parser.parse_expression(Precedence::Lowest).unwrap();
 
-//     #[test]
-//     fn test_identifiers() {
-//         insta::assert_debug_snapshot!(parse_expr("a"));
-//         insta::assert_debug_snapshot!(parse_expr("foo"));
-//     }
+        let mut nodes = Vec::new();
+        for (_, expr) in parser.program.ast.expressions.iter() {
+            nodes.push(expr.clone())
+        }
 
-//     #[test]
-//     fn test_unary_prec() {
-//         insta::assert_debug_snapshot!(parse_expr("-ab"));
-//         insta::assert_debug_snapshot!(parse_expr("!foo"));
-//         insta::assert_debug_snapshot!(parse_expr("!-a"));
-//     }
+        nodes
+    }
 
-//     #[test]
-//     fn test_binary_prec() {
-//         insta::assert_debug_snapshot!(parse_expr("1 + 2 + 3"));
-//         insta::assert_debug_snapshot!(parse_expr("1 + 2 * 3"));
-//         insta::assert_debug_snapshot!(parse_expr("1 * 2 + 3"));
-//         insta::assert_debug_snapshot!(parse_expr("1 ^ 2"));
-//     }
+    #[test]
+    fn test_literals() {
+        insta::assert_debug_snapshot!(parse_expr("1"));
+        insta::assert_debug_snapshot!(parse_expr("123.456"));
+        insta::assert_debug_snapshot!(parse_expr("\"hello\""));
+    }
 
-//     #[test]
-//     fn test_unary_binary_prec() {
-//         insta::assert_debug_snapshot!(parse_expr("-a * b"));
-//         insta::assert_debug_snapshot!(parse_expr("!a ^ b"));
-//     }
+    // #[test]
+    // fn test_identifiers() {
+    //     insta::assert_debug_snapshot!(parse_expr("a"));
+    //     insta::assert_debug_snapshot!(parse_expr("foo"));
+    // }
 
-//     #[test]
-//     fn test_binary_associativity() {
-//         insta::assert_debug_snapshot!(parse_expr("a + b - c"));
-//         insta::assert_debug_snapshot!(parse_expr("a * b / c"));
-//         insta::assert_debug_snapshot!(parse_expr("a ^ b ^ c"));
-//     }
+    // #[test]
+    // fn test_unary_prec() {
+    //     insta::assert_debug_snapshot!(parse_expr("-ab"));
+    //     insta::assert_debug_snapshot!(parse_expr("!foo"));
+    //     insta::assert_debug_snapshot!(parse_expr("!-a"));
+    // }
 
-//     #[test]
-//     fn test_conditionals() {
-//         insta::assert_debug_snapshot!(parse_expr("1 ? 2 : 3"));
-//         insta::assert_debug_snapshot!(parse_expr("1 ? 2 : 3 ? 4 : 5"));
-//         insta::assert_debug_snapshot!(parse_expr("a + b ? c * d : e / f",));
-//     }
+    // #[test]
+    // fn test_binary_prec() {
+    //     insta::assert_debug_snapshot!(parse_expr("1 + 2 + 3"));
+    //     insta::assert_debug_snapshot!(parse_expr("1 + 2 * 3"));
+    //     insta::assert_debug_snapshot!(parse_expr("1 * 2 + 3"));
+    //     insta::assert_debug_snapshot!(parse_expr("1 ^ 2"));
+    // }
 
-//     #[test]
-//     fn test_groups() {
-//         insta::assert_debug_snapshot!(parse_expr("(foo)"));
-//         insta::assert_debug_snapshot!(parse_expr("(1 + 2) * 3"));
-//         insta::assert_debug_snapshot!(parse_expr("1 * (2 - 3)"));
-//         insta::assert_debug_snapshot!(parse_expr("a ^ (b + c)"));
-//         insta::assert_debug_snapshot!(parse_expr("(a ^ b) ^ c"));
-//     }
+    // #[test]
+    // fn test_unary_binary_prec() {
+    //     insta::assert_debug_snapshot!(parse_expr("-a * b"));
+    //     insta::assert_debug_snapshot!(parse_expr("!a ^ b"));
+    // }
 
-//     #[test]
-//     fn test_calls() {
-//         insta::assert_debug_snapshot!(parse_expr("foo()"));
-//         insta::assert_debug_snapshot!(parse_expr("foo(a, 1, \"hello\")"));
-//         insta::assert_debug_snapshot!(parse_expr("a(b) + c(d)"));
-//         insta::assert_debug_snapshot!(parse_expr("a(b)(c)"));
-//     }
+    // #[test]
+    // fn test_binary_associativity() {
+    //     insta::assert_debug_snapshot!(parse_expr("a + b - c"));
+    //     insta::assert_debug_snapshot!(parse_expr("a * b / c"));
+    //     insta::assert_debug_snapshot!(parse_expr("a ^ b ^ c"));
+    // }
 
-//     #[test]
-//     fn test_let_declarations() {
-//         insta::assert_debug_snapshot!(parse_stmt("let a = b"));
-//         insta::assert_debug_snapshot!(parse_stmt("let a = b + c * d"));
-//         insta::assert_debug_snapshot!(parse_stmt("let a: Int = b"));
-//     }
+    // #[test]
+    // fn test_conditionals() {
+    //     insta::assert_debug_snapshot!(parse_expr("1 ? 2 : 3"));
+    //     insta::assert_debug_snapshot!(parse_expr("1 ? 2 : 3 ? 4 : 5"));
+    //     insta::assert_debug_snapshot!(parse_expr("a + b ? c * d : e / f",));
+    // }
 
-//     #[test]
-//     fn test_ifs() {
-//         insta::assert_debug_snapshot!(parse_stmt(
-//             "
-//             if cond {
-//                 a
-//             }
-//         "
-//         ));
-//         insta::assert_debug_snapshot!(parse_stmt(
-//             "
-//             if cond {
-//                 a
-//             } else {
-//                 b
-//             }
-//         "
-//         ));
-//     }
+    // #[test]
+    // fn test_groups() {
+    //     insta::assert_debug_snapshot!(parse_expr("(foo)"));
+    //     insta::assert_debug_snapshot!(parse_expr("(1 + 2) * 3"));
+    //     insta::assert_debug_snapshot!(parse_expr("1 * (2 - 3)"));
+    //     insta::assert_debug_snapshot!(parse_expr("a ^ (b + c)"));
+    //     insta::assert_debug_snapshot!(parse_expr("(a ^ b) ^ c"));
+    // }
 
-//     #[test]
-//     fn test_structs() {
-//         insta::assert_debug_snapshot!(parse_stmt("struct Foo {}"));
-//         insta::assert_debug_snapshot!(parse_stmt("struct Foo { hello: Int }"));
-//         insta::assert_debug_snapshot!(parse_stmt(
-//             "struct Foo {
-//             hello: Int,
-//             world: String
-//         }"
-//         ));
-//     }
+    // #[test]
+    // fn test_calls() {
+    //     insta::assert_debug_snapshot!(parse_expr("foo()"));
+    //     insta::assert_debug_snapshot!(parse_expr("foo(a, 1, \"hello\")"));
+    //     insta::assert_debug_snapshot!(parse_expr("a(b) + c(d)"));
+    //     insta::assert_debug_snapshot!(parse_expr("a(b)(c)"));
+    // }
 
-//     #[test]
-//     fn test_functions() {
-//         insta::assert_debug_snapshot!(parse_stmt("fn foo() {}"));
-//         insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
-//         insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int, b: String) {}"));
-//         insta::assert_debug_snapshot!(parse_stmt(
-//             "
-//         fn foo(foo: Int, bar: Int) {
-//             let a = foo + bar
-//         }"
-//         ));
-//         insta::assert_debug_snapshot!(parse_stmt("export fn foo() {}"));
+    // #[test]
+    // fn test_let_declarations() {
+    //     insta::assert_debug_snapshot!(parse_stmt("let a = b"));
+    //     insta::assert_debug_snapshot!(parse_stmt("let a = b + c * d"));
+    //     insta::assert_debug_snapshot!(parse_stmt("let a: Int = b"));
+    // }
 
-//         insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
+    // #[test]
+    // fn test_ifs() {
+    //     insta::assert_debug_snapshot!(parse_stmt(
+    //         "
+    //         if cond {
+    //             a
+    //         }
+    //     "
+    //     ));
+    //     insta::assert_debug_snapshot!(parse_stmt(
+    //         "
+    //         if cond {
+    //             a
+    //         } else {
+    //             b
+    //         }
+    //     "
+    //     ));
+    // }
 
-//         insta::assert_debug_snapshot!(parse_stmt("fn foo<T>() {}"));
-//         insta::assert_debug_snapshot!(parse_stmt("fn foo<T>(a: T) {}"));
+    // #[test]
+    // fn test_structs() {
+    //     insta::assert_debug_snapshot!(parse_stmt("struct Foo {}"));
+    //     insta::assert_debug_snapshot!(parse_stmt("struct Foo { hello: Int }"));
+    //     insta::assert_debug_snapshot!(parse_stmt(
+    //         "struct Foo {
+    //         hello: Int,
+    //         world: String
+    //     }"
+    //     ));
+    // }
 
-//         insta::assert_debug_snapshot!(parse_stmt("fn foo(): Int {}"));
-//     }
-// }
+    // #[test]
+    // fn test_functions() {
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo() {}"));
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int, b: String) {}"));
+    //     insta::assert_debug_snapshot!(parse_stmt(
+    //         "
+    //     fn foo(foo: Int, bar: Int) {
+    //         let a = foo + bar
+    //     }"
+    //     ));
+    //     insta::assert_debug_snapshot!(parse_stmt("export fn foo() {}"));
+
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
+
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo<T>() {}"));
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo<T>(a: T) {}"));
+
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo(): Int {}"));
+    // }
+}

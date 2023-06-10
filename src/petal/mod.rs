@@ -1,10 +1,10 @@
-use crate::petal::{analysis::Analysis, wat::IRGenerator};
+// use crate::petal::analysis::Analysis;
 
-use self::{errors::CompilerError, lexer::Lexer, wasm::Wasm};
+use self::{errors::CompilerError, lexer::Lexer};
 
-mod analysis;
+// mod analysis;
 mod ast;
-mod codegen;
+// mod codegen;
 pub mod errors;
 mod lexer;
 mod parser;
@@ -13,8 +13,8 @@ mod precedence;
 mod token;
 mod typechecker;
 mod types;
-mod wasm;
-mod wat;
+// mod wasm;
+// mod wat;
 
 type CompilerResult<T> = Result<T, CompilerError>;
 
@@ -25,7 +25,7 @@ impl Compiler {
         Self {}
     }
 
-    pub fn compile_file(&self, file: &str) -> CompilerResult<Wasm> {
+    pub fn compile_file(&self, file: &str) -> CompilerResult<()> {
         let file = std::fs::read_to_string(file).expect("Could not read file");
 
         let mut lexer1 = Lexer::new(&file);
@@ -36,12 +36,13 @@ impl Compiler {
         let mut parser = parser::Parser::new(&mut lexer);
         let program = parser.parse().map_err(CompilerError::ParserError)?;
 
-        println!("{:#?}", program);
+        // println!("{:#?}", program);
+        println!("{:?}", program.ast.expressions);
 
-        let mut analysis = Analysis::new();
-        analysis
-            .analysis_program(&program)
-            .map_err(CompilerError::AnalysisError)?;
+        // let mut analysis = Analysis::new();
+        // analysis
+        //     .analysis_program(&program)
+        //     .map_err(CompilerError::AnalysisError)?;
 
         // let mut typechecker = Typechecker::new(&program);
         // typechecker.check().map_err(CompilerError::TypecheckError)?;

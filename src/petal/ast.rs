@@ -48,6 +48,7 @@ impl Program {
     }
 
     pub fn new_statement(&mut self, stmt: Stmt, span: Span) -> StmtId {
+        println!("New statement: {:?}", stmt);
         self.ast.statements.insert(StmtNode { stmt, span })
     }
 
@@ -109,7 +110,6 @@ pub struct LetDecl {
     pub ident: Identifier,
     pub ty: Option<TypeAnnotation>,
     pub init: ExprId,
-    pub span: Span,
 }
 
 #[derive(PartialEq, Clone, Debug)]
