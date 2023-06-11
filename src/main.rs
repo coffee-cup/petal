@@ -47,7 +47,7 @@ fn main() {
                     // We should not need to re-read the file here
                     let file = std::fs::read_to_string(file).expect("Could not read file");
 
-                    petal::errors::print_compiler_error(&file, &e);
+                    petal::errors::print_compiler_error(&file, e);
                 }
                 Ok(wasm) => {
                     // if wat {

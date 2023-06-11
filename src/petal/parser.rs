@@ -1,3 +1,4 @@
+use miette::{Diagnostic, SourceSpan};
 use std::{collections::HashMap, println, rc::Rc};
 use thiserror::Error;
 
@@ -8,44 +9,67 @@ use super::{
     },
     lexer::{Lexer, LexerErrorKind},
     precedence::Precedence,
-    source_info::{HasSpan, Pos, Span},
+    source_info::{Pos, Span},
     token::{Literal, Token, TokenType},
 };
 
 type TT = TokenType;
 
-#[derive(Error, Clone, Debug)]
+#[derive(Clone, Debug)]
+pub struct ParseContext {
+    pub msg: String,
+    pub span: Span,
+}
+
+#[derive(Diagnostic, Error, Clone, Debug)]
 pub enum ParserErrorKind {
     #[error("{0}")]
     LexerError(#[from] LexerErrorKind),
 
-    #[error("Unexpected token {0}")]
-    UnexpectedToken(String),
+    #[error("Unexpected token")]
+    UnexpectedToken {
+        token: String,
 
-    #[error("Expected {0}, found {1}")]
-    ExpectedToken(TokenType, String),
+        #[label("We came across this token, {token}, and don't know how to parse it")]
+        span: Span,
+    },
+
+    #[error("Expected {expected}, found {found}")]
+    ExpectedToken {
+        expected: TokenType,
+
+        found: String,
+
+        context_msg: String,
+
+        #[label = "and expected to find {expected}, but found {found} instead"]
+        span: SourceSpan,
+
+        #[label("We were parsing {context_msg}")]
+        context_span: Option<SourceSpan>,
+    },
 }
 
-#[derive(Debug, Clone)]
-pub struct ParserError {
-    pub span: Option<Span>,
-    pub kind: ParserErrorKind,
-}
+// #[derive(Debug, Clone)]
+// pub struct ParserError {
+//     pub span: Option<Span>,
+//     pub kind: ParserErrorKind,
+// }
 
-impl ParserError {
-    pub fn new(kind: ParserErrorKind) -> Self {
-        ParserError { kind, span: None }
-    }
+// impl ParserError {
+//     pub fn new(kind: ParserErrorKind) -> Self {
+//         ParserError { kind, span: None }
+//     }
 
-    pub fn with_span(&self, span: Span) -> Self {
-        ParserError {
-            span: Some(span),
-            ..self.clone()
-        }
-    }
-}
+//     pub fn with_span(&self, span: Span) -> Self {
+//         ParserError {
+//             span: Some(span),
+//             ..self.clone()
+//         }
+//     }
+// }
 
-type ParserResult<T> = Result<T, ParserError>;
+type ParserResult<T> = Result<T, ParserErrorKind>;
 
 trait PrefixParselet {
     fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<ExprId>;
@@ -66,9 +90,10 @@ impl PrefixParselet for NumberParselet {
             Some(Literal::Float(value)) => Ok(parser
                 .program
                 .new_expression(Expr::Float(value), token.span)),
-            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
-                token.to_string(),
-            ))),
+            _ => Err(ParserErrorKind::UnexpectedToken {
+                token: token.to_string(),
+                span: token.span(),
+            }),
         }
     }
 }
@@ -80,9 +105,10 @@ impl PrefixParselet for StringParselet {
             Some(Literal::String(value)) => Ok(parser
                 .program
                 .new_expression(Expr::String(value), token.span)),
-            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
-                token.to_string(),
-            ))),
+            _ => Err(ParserErrorKind::UnexpectedToken {
+                token: token.to_string(),
+                span: token.span(),
+            }),
         }
     }
 }
@@ -98,9 +124,10 @@ impl PrefixParselet for IdentParselet {
                 }),
                 token.span,
             )),
-            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
-                token.to_string(),
-            ))),
+            _ => Err(ParserErrorKind::UnexpectedToken {
+                token: token.to_string(),
+                span: token.span(),
+            }),
         }
     }
 }
@@ -302,10 +329,11 @@ pub struct Parser<'a> {
     prefix_parselets: HashMap<TokenType, Rc<dyn PrefixParselet>>,
     infix_parselets: HashMap<TokenType, Rc<dyn InfixParselet>>,
     program: Program,
+    parse_context: ParseContext,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(lexer: &'a mut Lexer<'a>) -> Parser<'a> {
+    pub fn new(lexer: &'a mut Lexer<'a>) -> ParserResult<Parser<'a>> {
         let mut parser = Parser {
             lexer,
             current_token: Token::new(TT::Eof),
@@ -313,10 +341,14 @@ impl<'a> Parser<'a> {
             prefix_parselets: HashMap::new(),
             infix_parselets: HashMap::new(),
             program: Program::new(),
+            parse_context: ParseContext {
+                msg: "".to_string(),
+                span: Span::new(0.into(), None),
+            },
         };
 
         // Prime the next_token
-        parser.consume().unwrap();
+        parser.consume()?;
 
         // Custom parselets
         register!(parser.prefix_parselets, TT::Integer, NumberParselet);
@@ -339,7 +371,7 @@ impl<'a> Parser<'a> {
         infix_left!(parser.infix_parselets, TT::Slash, Precedence::Product);
         infix_right!(parser.infix_parselets, TT::Caret, Precedence::Exponent);
 
-        parser
+        Ok(parser)
     }
 
     pub fn parse(&mut self) -> ParserResult<Program> {
@@ -578,6 +610,11 @@ impl<'a> Parser<'a> {
         let token = self.consume()?;
         let mut span = token.span();
 
+        self.parse_context = ParseContext {
+            msg: "if statement".to_string(),
+            span: Span::new(span.start(), None),
+        };
+
         let condition = self.parse_expression(Precedence::Lowest)?;
 
         let then_block = self.parse_block()?;
@@ -609,9 +646,9 @@ impl<'a> Parser<'a> {
         let prefix_parselet = self
             .prefix_parselets
             .get(&token.token_type)
-            .ok_or_else(|| {
-                ParserError::new(ParserErrorKind::UnexpectedToken(token.to_string()))
-                    .with_span(token.span.clone())
+            .ok_or_else(|| ParserErrorKind::UnexpectedToken {
+                token: token.to_string(),
+                span: token.span(),
             })?
             .clone();
 
@@ -623,9 +660,9 @@ impl<'a> Parser<'a> {
             let infix_parselet = self
                 .infix_parselets
                 .get(&token.token_type)
-                .ok_or_else(|| {
-                    ParserError::new(ParserErrorKind::UnexpectedToken(token.to_string()))
-                        .with_span(token.span.clone())
+                .ok_or_else(|| ParserErrorKind::UnexpectedToken {
+                    token: token.to_string(),
+                    span: token.span(),
                 })?
                 .clone();
 
@@ -668,11 +705,16 @@ impl<'a> Parser<'a> {
     /// Returns the consumed token if it was consumed, an error otherwise.
     fn consume_expected(&mut self, token_type: TokenType) -> ParserResult<Token> {
         if self.next_token.token_type != token_type {
-            return Err(ParserError::new(ParserErrorKind::ExpectedToken(
-                token_type,
-                self.next_token.to_string(),
-            ))
-            .with_span(self.next_token.span.clone()));
+            let context_msg = self.parse_context.msg.clone();
+            let context_span = Some(self.parse_context.span.clone().into());
+
+            return Err(ParserErrorKind::ExpectedToken {
+                expected: token_type,
+                found: self.next_token.to_string(),
+                span: self.next_token.span.clone().into(),
+                context_msg,
+                context_span,
+            });
         }
 
         self.consume()
@@ -685,11 +727,7 @@ impl<'a> Parser<'a> {
             .lexer
             .next()
             .unwrap_or_else(|| Ok(Token::new(TT::Eof).with_span(self.lexer.pos().into())))
-            .map_err(|lexer_error| {
-                let mut pe = ParserError::new(ParserErrorKind::LexerError(lexer_error.kind));
-                pe.span = lexer_error.span;
-                pe
-            })?;
+            .map_err(|e| ParserErrorKind::LexerError(e))?;
 
         Ok(self.current_token.clone())
     }
@@ -709,7 +747,7 @@ mod tests {
 
     fn parse_expr(s: &str) -> Vec<ExprNode> {
         let mut lexer = Lexer::new(s);
-        let mut parser = Parser::new(&mut lexer);
+        let mut parser = Parser::new(&mut lexer).unwrap();
         parser.parse_expression(Precedence::Lowest).unwrap();
 
         let mut nodes = Vec::new();

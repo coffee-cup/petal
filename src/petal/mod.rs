@@ -1,4 +1,5 @@
 // use crate::petal::analysis::Analysis;
+use miette::{Diagnostic, IntoDiagnostic};
 
 use self::{errors::CompilerError, lexer::Lexer};
 
@@ -25,16 +26,28 @@ impl Compiler {
         Self {}
     }
 
-    pub fn compile_file(&self, file: &str) -> CompilerResult<()> {
-        let file = std::fs::read_to_string(file).expect("Could not read file");
+    pub fn compile_file(&self, filename: &str) -> CompilerResult<()> {
+        let file = std::fs::read_to_string(filename).expect("Could not read file");
 
-        let mut lexer1 = Lexer::new(&file);
-        let tokens = lexer1.map(|t| t.unwrap()).collect::<Vec<_>>();
+        let f2 = file.clone();
+        let lexer1 = Lexer::new(&f2);
+        match lexer1.collect::<Result<Vec<_>, _>>() {
+            Ok(tokens) => {
+                println!("Tokens: {:#?}", tokens);
+            }
+            Err(e) => {
+                let report = miette::Report::from(e).with_source_code(f2);
+                println!("{:?}", report);
+            }
+        };
+
         // println!("Tokens: {:#?}", tokens);
 
         let mut lexer = Lexer::new(&file);
-        let mut parser = parser::Parser::new(&mut lexer);
-        let program = parser.parse().map_err(CompilerError::ParserError)?;
+        let mut parser =
+            parser::Parser::new(&mut lexer).map_err(|e| CompilerError::ParserError(e))?;
+
+        let program = parser.parse().map_err(|e| CompilerError::ParserError(e))?;
 
         // println!("{:#?}", program);
         println!("{:?}", program.ast.expressions);

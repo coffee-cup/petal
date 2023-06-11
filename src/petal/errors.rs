@@ -1,6 +1,9 @@
 use std::{cmp::min, io};
 
-use super::{parser::ParserError, source_info::Span, typechecker::TypecheckingError};
+use crate::petal::lexer::LexerErrorKind;
+
+use super::{parser::ParserErrorKind, source_info::Span, typechecker::TypecheckingError};
+use miette::Diagnostic;
 use thiserror::Error;
 
 use colored::Colorize;
@@ -18,14 +21,7 @@ pub struct CompilerCodeError {
     span: Span,
 }
 
-#[derive(Clone, Debug)]
-pub enum CompilerError2 {
-    Unknown,
-
-    CodeError(CompilerCodeError),
-}
-
-#[derive(Error, Debug)]
+#[derive(Diagnostic, Error, Debug)]
 pub enum CompilerError {
     #[error("Unknown compiler error")]
     Unknown,
@@ -33,8 +29,8 @@ pub enum CompilerError {
     #[error("File read error: {0}")]
     FileReadError(#[from] io::Error),
 
-    #[error("Parser error: {}", .0.kind)]
-    ParserError(ParserError),
+    #[error("Parser error")]
+    ParserError(ParserErrorKind),
 
     // #[error("Analysis error: {}", .0.kind)]
     // AnalysisError(AnalysisError),
@@ -45,25 +41,22 @@ pub enum CompilerError {
     WasmValidationError(String, String),
 }
 
-fn print_basic_error(error: &CompilerError) {
-    println!("{}", error.to_string().red());
-}
-
-pub fn print_compiler_code_error(source: &str, error: &CompilerCodeError) {}
-
-pub fn print_compiler_error(source: &str, error: &CompilerError) {
+pub fn print_compiler_error(source: &str, error: CompilerError) {
     use CompilerError::*;
 
-    let (msg, span) = match error {
-        ParserError(e) => (e.kind.to_string(), e.span.clone()),
-        // AnalysisError(e) => (e.kind.to_string(), e.span.clone()),
-        _ => {
-            print_basic_error(&error);
-            return;
-        }
-    };
+    println!("ERROR: {:?}", error);
 
-    print_basic_error(&error);
+    match error {
+        ParserError(ParserErrorKind::LexerError(e)) => {
+            let report = miette::Report::from(e).with_source_code(source.to_string());
+            println!("{:?}", report);
+        }
+        ParserError(e) => {
+            let report = miette::Report::from(e).with_source_code(source.to_string());
+            println!("{:?}", report);
+        }
+        _ => eprintln!("{}", error),
+    }
 
     // if let Some(span) = &span {
     //     let source_lines = source.lines();
