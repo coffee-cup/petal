@@ -1,0 +1,19 @@
+---
+source: src/petal/parser.rs
+expression: "parse_expr(\"1\")"
+---
+[
+    ExprNode {
+        expr: Integer(
+            1,
+        ),
+        span: Span(
+            Pos(
+                1,
+            ),
+            Pos(
+                1,
+            ),
+        ),
+    },
+]

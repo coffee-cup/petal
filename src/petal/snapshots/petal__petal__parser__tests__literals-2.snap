@@ -1,0 +1,19 @@
+---
+source: src/petal/parser.rs
+expression: "parse_expr(\"123.456\")"
+---
+[
+    ExprNode {
+        expr: Float(
+            123.456,
+        ),
+        span: Span(
+            Pos(
+                1,
+            ),
+            Pos(
+                7,
+            ),
+        ),
+    },
+]

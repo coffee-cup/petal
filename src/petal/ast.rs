@@ -2,7 +2,7 @@ use slotmap::{new_key_type, SecondaryMap, SlotMap};
 use std::ops::Deref;
 
 use super::{
-    positions::{HasSpan, Pos, Span},
+    source_info::{HasSpan, Pos, Span},
     token::Token,
 };
 

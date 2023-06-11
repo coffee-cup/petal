@@ -1,0 +1,74 @@
+---
+source: src/petal/lexer.rs
+expression: "lex(\"a boop hello world\".to_string())"
+---
+[
+    Token {
+        token_type: Identifier,
+        lexeme: "a",
+        literal: Some(
+            Identifier(
+                "a",
+            ),
+        ),
+        span: Span(
+            Pos(
+                1,
+            ),
+            Pos(
+                1,
+            ),
+        ),
+    },
+    Token {
+        token_type: Identifier,
+        lexeme: "boop",
+        literal: Some(
+            Identifier(
+                "boop",
+            ),
+        ),
+        span: Span(
+            Pos(
+                3,
+            ),
+            Pos(
+                6,
+            ),
+        ),
+    },
+    Token {
+        token_type: Identifier,
+        lexeme: "hello",
+        literal: Some(
+            Identifier(
+                "hello",
+            ),
+        ),
+        span: Span(
+            Pos(
+                8,
+            ),
+            Pos(
+                12,
+            ),
+        ),
+    },
+    Token {
+        token_type: Identifier,
+        lexeme: "world",
+        literal: Some(
+            Identifier(
+                "world",
+            ),
+        ),
+        span: Span(
+            Pos(
+                14,
+            ),
+            Pos(
+                18,
+            ),
+        ),
+    },
+]

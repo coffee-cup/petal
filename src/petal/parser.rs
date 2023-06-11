@@ -7,8 +7,8 @@ use super::{
         StructDecl, StructField, TypeAnnotation,
     },
     lexer::{Lexer, LexerErrorKind},
-    positions::{HasSpan, Pos, Span},
     precedence::Precedence,
+    source_info::{HasSpan, Pos, Span},
     token::{Literal, Token, TokenType},
 };
 

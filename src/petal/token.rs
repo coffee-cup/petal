@@ -1,6 +1,6 @@
 use core::fmt;
 
-use super::positions::{HasSpan, Pos, Span};
+use super::source_info::{HasSpan, Pos, Span};
 
 #[derive(Hash, Eq, PartialEq, Debug, Clone)]
 pub enum TokenType {
@@ -73,7 +73,7 @@ impl Token {
             token_type,
             lexeme: "".to_string(),
             literal: None,
-            span: Pos::new(0, 0).into(),
+            span: Pos::new(0).into(),
         }
     }
 

@@ -1,0 +1,23 @@
+---
+source: src/petal/lexer.rs
+expression: tokens
+---
+[
+    Token {
+        token_type: Comment,
+        lexeme: "# hello world",
+        literal: Some(
+            Comment(
+                "hello world",
+            ),
+        ),
+        span: Span(
+            Pos(
+                1,
+            ),
+            Pos(
+                14,
+            ),
+        ),
+    },
+]

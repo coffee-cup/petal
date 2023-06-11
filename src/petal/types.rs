@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use super::{
     ast::{FuncDecl, TypeAnnotation},
-    positions::Span,
+    source_info::Span,
 };
 
 pub type TyVar = String;

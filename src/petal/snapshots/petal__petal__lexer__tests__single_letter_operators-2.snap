@@ -1,0 +1,58 @@
+---
+source: src/petal/lexer.rs
+expression: "lex(\"   ()\\n(\\n    (\".to_string())"
+---
+[
+    Token {
+        token_type: LeftParen,
+        lexeme: "(",
+        literal: None,
+        span: Span(
+            Pos(
+                4,
+            ),
+            Pos(
+                4,
+            ),
+        ),
+    },
+    Token {
+        token_type: RightParen,
+        lexeme: ")",
+        literal: None,
+        span: Span(
+            Pos(
+                5,
+            ),
+            Pos(
+                5,
+            ),
+        ),
+    },
+    Token {
+        token_type: LeftParen,
+        lexeme: "(",
+        literal: None,
+        span: Span(
+            Pos(
+                7,
+            ),
+            Pos(
+                7,
+            ),
+        ),
+    },
+    Token {
+        token_type: LeftParen,
+        lexeme: "(",
+        literal: None,
+        span: Span(
+            Pos(
+                13,
+            ),
+            Pos(
+                13,
+            ),
+        ),
+    },
+]

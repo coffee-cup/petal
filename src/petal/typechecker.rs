@@ -8,7 +8,7 @@ use thiserror::Error;
 
 use super::{
     ast::{Expr, FuncDecl, Program, Stmt, TypeAnnotation},
-    positions::Span,
+    source_info::Span,
     types::*,
 };
 

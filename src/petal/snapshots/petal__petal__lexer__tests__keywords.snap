@@ -1,0 +1,71 @@
+---
+source: src/petal/lexer.rs
+expression: "lex(\"let if else false true\".to_string())"
+---
+[
+    Token {
+        token_type: Let,
+        lexeme: "let",
+        literal: None,
+        span: Span(
+            Pos(
+                1,
+            ),
+            Pos(
+                3,
+            ),
+        ),
+    },
+    Token {
+        token_type: If,
+        lexeme: "if",
+        literal: None,
+        span: Span(
+            Pos(
+                5,
+            ),
+            Pos(
+                6,
+            ),
+        ),
+    },
+    Token {
+        token_type: Else,
+        lexeme: "else",
+        literal: None,
+        span: Span(
+            Pos(
+                8,
+            ),
+            Pos(
+                11,
+            ),
+        ),
+    },
+    Token {
+        token_type: False,
+        lexeme: "false",
+        literal: None,
+        span: Span(
+            Pos(
+                13,
+            ),
+            Pos(
+                17,
+            ),
+        ),
+    },
+    Token {
+        token_type: True,
+        lexeme: "true",
+        literal: None,
+        span: Span(
+            Pos(
+                19,
+            ),
+            Pos(
+                22,
+            ),
+        ),
+    },
+]

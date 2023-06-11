@@ -1,0 +1,240 @@
+---
+source: src/petal/lexer.rs
+expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
+---
+[
+    Token {
+        token_type: LeftParen,
+        lexeme: "(",
+        literal: None,
+        span: Span(
+            Pos(
+                1,
+            ),
+            Pos(
+                1,
+            ),
+        ),
+    },
+    Token {
+        token_type: RightParen,
+        lexeme: ")",
+        literal: None,
+        span: Span(
+            Pos(
+                3,
+            ),
+            Pos(
+                3,
+            ),
+        ),
+    },
+    Token {
+        token_type: LeftBrace,
+        lexeme: "{",
+        literal: None,
+        span: Span(
+            Pos(
+                5,
+            ),
+            Pos(
+                5,
+            ),
+        ),
+    },
+    Token {
+        token_type: RightBrace,
+        lexeme: "}",
+        literal: None,
+        span: Span(
+            Pos(
+                7,
+            ),
+            Pos(
+                7,
+            ),
+        ),
+    },
+    Token {
+        token_type: Dot,
+        lexeme: ".",
+        literal: None,
+        span: Span(
+            Pos(
+                9,
+            ),
+            Pos(
+                9,
+            ),
+        ),
+    },
+    Token {
+        token_type: Comma,
+        lexeme: ",",
+        literal: None,
+        span: Span(
+            Pos(
+                11,
+            ),
+            Pos(
+                11,
+            ),
+        ),
+    },
+    Token {
+        token_type: QuestionMark,
+        lexeme: "?",
+        literal: None,
+        span: Span(
+            Pos(
+                13,
+            ),
+            Pos(
+                13,
+            ),
+        ),
+    },
+    Token {
+        token_type: Colon,
+        lexeme: ":",
+        literal: None,
+        span: Span(
+            Pos(
+                15,
+            ),
+            Pos(
+                15,
+            ),
+        ),
+    },
+    Token {
+        token_type: Caret,
+        lexeme: "^",
+        literal: None,
+        span: Span(
+            Pos(
+                17,
+            ),
+            Pos(
+                17,
+            ),
+        ),
+    },
+    Token {
+        token_type: Semicolon,
+        lexeme: ";",
+        literal: None,
+        span: Span(
+            Pos(
+                19,
+            ),
+            Pos(
+                19,
+            ),
+        ),
+    },
+    Token {
+        token_type: Plus,
+        lexeme: "+",
+        literal: None,
+        span: Span(
+            Pos(
+                21,
+            ),
+            Pos(
+                21,
+            ),
+        ),
+    },
+    Token {
+        token_type: Minus,
+        lexeme: "-",
+        literal: None,
+        span: Span(
+            Pos(
+                23,
+            ),
+            Pos(
+                23,
+            ),
+        ),
+    },
+    Token {
+        token_type: Star,
+        lexeme: "*",
+        literal: None,
+        span: Span(
+            Pos(
+                25,
+            ),
+            Pos(
+                25,
+            ),
+        ),
+    },
+    Token {
+        token_type: Slash,
+        lexeme: "/",
+        literal: None,
+        span: Span(
+            Pos(
+                27,
+            ),
+            Pos(
+                27,
+            ),
+        ),
+    },
+    Token {
+        token_type: Bang,
+        lexeme: "!",
+        literal: None,
+        span: Span(
+            Pos(
+                29,
+            ),
+            Pos(
+                29,
+            ),
+        ),
+    },
+    Token {
+        token_type: Equal,
+        lexeme: "=",
+        literal: None,
+        span: Span(
+            Pos(
+                31,
+            ),
+            Pos(
+                31,
+            ),
+        ),
+    },
+    Token {
+        token_type: Less,
+        lexeme: "<",
+        literal: None,
+        span: Span(
+            Pos(
+                33,
+            ),
+            Pos(
+                33,
+            ),
+        ),
+    },
+    Token {
+        token_type: Greater,
+        lexeme: ">",
+        literal: None,
+        span: Span(
+            Pos(
+                35,
+            ),
+            Pos(
+                35,
+            ),
+        ),
+    },
+]

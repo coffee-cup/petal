@@ -1,0 +1,19 @@
+---
+source: src/petal/parser.rs
+expression: "parse_expr(\"\\\"hello\\\"\")"
+---
+[
+    ExprNode {
+        expr: String(
+            "hello",
+        ),
+        span: Span(
+            Pos(
+                1,
+            ),
+            Pos(
+                7,
+            ),
+        ),
+    },
+]

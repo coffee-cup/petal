@@ -1,6 +1,6 @@
 use std::{cmp::min, io};
 
-use super::{parser::ParserError, positions::Span, typechecker::TypecheckingError};
+use super::{parser::ParserError, source_info::Span, typechecker::TypecheckingError};
 use thiserror::Error;
 
 use colored::Colorize;
@@ -63,35 +63,37 @@ pub fn print_compiler_error(source: &str, error: &CompilerError) {
         }
     };
 
-    if let Some(span) = &span {
-        let source_lines = source.lines();
-        let source_content = source_lines.collect::<Vec<_>>();
-        let line_idx = min(span.start.line, source_content.len() - 1);
-        let line = source_content[line_idx];
-        let line_number = format!("{} | ", span.start.line);
-        let line_number_len = line_number.len();
+    print_basic_error(&error);
 
-        let error_len = msg.len();
+    // if let Some(span) = &span {
+    //     let source_lines = source.lines();
+    //     let source_content = source_lines.collect::<Vec<_>>();
+    //     let line_idx = min(span.start.line, source_content.len() - 1);
+    //     let line = source_content[line_idx];
+    //     let line_number = format!("{} | ", span.start.line);
+    //     let line_number_len = line_number.len();
 
-        println!("\n{}{}", line_number.purple(), line);
-        println!(
-            "{}{}{}",
-            " ".repeat(line_number_len),
-            " ".repeat(span.start.col - 1),
-            "^".repeat(span.end.col + 1 - span.start.col).red()
-        );
+    //     let error_len = msg.len();
 
-        let error_msg_pos: i32 = std::cmp::max(
-            0,
-            (line_number_len as i32) + (span.start.col as i32) - ((error_len as i32) / 2),
-        );
-        println!(
-            "{} {}",
-            " ".repeat(error_msg_pos as usize),
-            msg.red().bold()
-        );
-    } else {
-        // No span information, just print the error
-        println!("{}", msg.to_string().red().bold());
-    }
+    //     println!("\n{}{}", line_number.purple(), line);
+    //     println!(
+    //         "{}{}{}",
+    //         " ".repeat(line_number_len),
+    //         " ".repeat(span.start.col - 1),
+    //         "^".repeat(span.end.col + 1 - span.start.col).red()
+    //     );
+
+    //     let error_msg_pos: i32 = std::cmp::max(
+    //         0,
+    //         (line_number_len as i32) + (span.start.col as i32) - ((error_len as i32) / 2),
+    //     );
+    //     println!(
+    //         "{} {}",
+    //         " ".repeat(error_msg_pos as usize),
+    //         msg.red().bold()
+    //     );
+    // } else {
+    //     // No span information, just print the error
+    //     println!("{}", msg.to_string().red().bold());
+    // }
 }
