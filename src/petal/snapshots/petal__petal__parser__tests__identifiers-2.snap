@@ -1,0 +1,29 @@
+---
+source: src/petal/parser.rs
+expression: "parse_expr(\"foo\")"
+---
+[
+    ExprNode {
+        expr: Ident(
+            Identifier {
+                name: "foo",
+                span: Span(
+                    Pos(
+                        1,
+                    ),
+                    Pos(
+                        3,
+                    ),
+                ),
+            },
+        ),
+        span: Span(
+            Pos(
+                1,
+            ),
+            Pos(
+                3,
+            ),
+        ),
+    },
+]

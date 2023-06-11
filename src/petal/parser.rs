@@ -727,18 +727,18 @@ mod tests {
         insta::assert_debug_snapshot!(parse_expr("\"hello\""));
     }
 
-    // #[test]
-    // fn test_identifiers() {
-    //     insta::assert_debug_snapshot!(parse_expr("a"));
-    //     insta::assert_debug_snapshot!(parse_expr("foo"));
-    // }
+    #[test]
+    fn test_identifiers() {
+        insta::assert_debug_snapshot!(parse_expr("a"));
+        insta::assert_debug_snapshot!(parse_expr("foo"));
+    }
 
-    // #[test]
-    // fn test_unary_prec() {
-    //     insta::assert_debug_snapshot!(parse_expr("-ab"));
-    //     insta::assert_debug_snapshot!(parse_expr("!foo"));
-    //     insta::assert_debug_snapshot!(parse_expr("!-a"));
-    // }
+    #[test]
+    fn test_unary_prec() {
+        insta::assert_debug_snapshot!(parse_expr("-ab"));
+        insta::assert_debug_snapshot!(parse_expr("!foo"));
+        insta::assert_debug_snapshot!(parse_expr("!-a"));
+    }
 
     // #[test]
     // fn test_binary_prec() {

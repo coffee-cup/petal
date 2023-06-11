@@ -1,0 +1,57 @@
+---
+source: src/petal/parser.rs
+expression: "parse_expr(\"-ab\")"
+---
+[
+    ExprNode {
+        expr: Ident(
+            Identifier {
+                name: "ab",
+                span: Span(
+                    Pos(
+                        2,
+                    ),
+                    Pos(
+                        3,
+                    ),
+                ),
+            },
+        ),
+        span: Span(
+            Pos(
+                2,
+            ),
+            Pos(
+                3,
+            ),
+        ),
+    },
+    ExprNode {
+        expr: PrefixOp {
+            op: Token {
+                token_type: Minus,
+                lexeme: "-",
+                literal: None,
+                span: Span(
+                    Pos(
+                        1,
+                    ),
+                    Pos(
+                        1,
+                    ),
+                ),
+            },
+            right: ExprId(
+                1v1,
+            ),
+        },
+        span: Span(
+            Pos(
+                2,
+            ),
+            Pos(
+                1,
+            ),
+        ),
+    },
+]
