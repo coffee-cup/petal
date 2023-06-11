@@ -44,16 +44,16 @@ pub enum CompilerError {
 pub fn print_compiler_error(source: &str, error: CompilerError) {
     use CompilerError::*;
 
-    println!("ERROR: {:?}", error);
+    println!("ERROR: {:?}\n\n", error);
 
     match error {
         ParserError(ParserErrorKind::LexerError(e)) => {
             let report = miette::Report::from(e).with_source_code(source.to_string());
-            println!("{:?}", report);
+            eprintln!("{:?}", report);
         }
         ParserError(e) => {
             let report = miette::Report::from(e).with_source_code(source.to_string());
-            println!("{:?}", report);
+            eprintln!("{:?}", report);
         }
         _ => eprintln!("{}", error),
     }

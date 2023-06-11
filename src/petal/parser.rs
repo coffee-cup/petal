@@ -15,12 +15,6 @@ use super::{
 
 type TT = TokenType;
 
-#[derive(Clone, Debug)]
-pub struct ParseContext {
-    pub msg: String,
-    pub span: Span,
-}
-
 #[derive(Diagnostic, Error, Clone, Debug)]
 pub enum ParserErrorKind {
     #[error("{0}")]
@@ -34,19 +28,22 @@ pub enum ParserErrorKind {
         span: Span,
     },
 
+    #[error("Expected {expected}, found the end of the file")]
+    UnexpectedEof {
+        expected: TokenType,
+
+        #[label = "We expected to find {expected}, but found the end of the file instead"]
+        span: Span,
+    },
+
     #[error("Expected {expected}, found {found}")]
     ExpectedToken {
         expected: TokenType,
 
         found: String,
 
-        context_msg: String,
-
-        #[label = "and expected to find {expected}, but found {found} instead"]
+        #[label = "We expected to find {expected}, but found {found} instead"]
         span: SourceSpan,
-
-        #[label("We were parsing {context_msg}")]
-        context_span: Option<SourceSpan>,
     },
 }
 
@@ -329,7 +326,6 @@ pub struct Parser<'a> {
     prefix_parselets: HashMap<TokenType, Rc<dyn PrefixParselet>>,
     infix_parselets: HashMap<TokenType, Rc<dyn InfixParselet>>,
     program: Program,
-    parse_context: Option<ParseContext>,
 }
 
 impl<'a> Parser<'a> {
@@ -341,7 +337,6 @@ impl<'a> Parser<'a> {
             prefix_parselets: HashMap::new(),
             infix_parselets: HashMap::new(),
             program: Program::new(),
-            parse_context: None,
         };
 
         // Prime the next_token
@@ -607,11 +602,6 @@ impl<'a> Parser<'a> {
         let token = self.consume()?;
         let mut span = token.span();
 
-        self.parse_context = Some(ParseContext {
-            msg: "if statement".to_string(),
-            span: Span::new(span.start(), None),
-        });
-
         let condition = self.parse_expression(Precedence::Lowest)?;
 
         let then_block = self.parse_block()?;
@@ -702,22 +692,17 @@ impl<'a> Parser<'a> {
     /// Returns the consumed token if it was consumed, an error otherwise.
     fn consume_expected(&mut self, token_type: TokenType) -> ParserResult<Token> {
         if self.next_token.token_type != token_type {
-            let context_msg = self
-                .parse_context
-                .clone()
-                .map(|ctx| ctx.msg.clone())
-                .unwrap_or_else(|| "".to_string());
-            let context_span = self
-                .parse_context
-                .clone()
-                .map(|ctx| ctx.span.clone().into());
+            if self.next_token.token_type == TT::Eof {
+                return Err(ParserErrorKind::UnexpectedEof {
+                    expected: token_type,
+                    span: self.next_token.span.clone().into(),
+                });
+            }
 
             return Err(ParserErrorKind::ExpectedToken {
                 expected: token_type,
                 found: self.next_token.to_string(),
                 span: self.next_token.span.clone().into(),
-                context_msg,
-                context_span,
             });
         }
 
@@ -730,7 +715,10 @@ impl<'a> Parser<'a> {
         self.next_token = self
             .lexer
             .next()
-            .unwrap_or_else(|| Ok(Token::new(TT::Eof).with_span(self.lexer.pos().into())))
+            .unwrap_or_else(|| {
+                let offset = self.lexer.pos().offset();
+                Ok(Token::new(TT::Eof).with_span(Span::new((offset - 1).into(), None)))
+            })
             .map_err(|e| ParserErrorKind::LexerError(e))?;
 
         Ok(self.current_token.clone())
