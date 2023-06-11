@@ -1,6 +1,6 @@
 use std::io;
 
-use super::{parser::ParserError, source_info::Span};
+use super::{analysis::AnalysisError, parser::ParserError, source_info::Span};
 use miette::Diagnostic;
 use thiserror::Error;
 
@@ -15,8 +15,9 @@ pub enum CompilerError {
     #[error("Parser error")]
     ParserError(ParserError),
 
-    // #[error("Analysis error: {}", .0.kind)]
-    // AnalysisError(AnalysisError),
+    #[error("Analysis error")]
+    AnalysisError(AnalysisError),
+
     #[error("Failed to generate WASM binary: {0}\n\nThe generated wat...\n{1}")]
     WasmGenerationError(String, String),
 
@@ -30,10 +31,17 @@ pub fn print_compiler_error(source: &str, error: CompilerError) {
             let report = miette::Report::from(e).with_source_code(source.to_string());
             eprintln!("\n{:?}", report);
         }
+
         CompilerError::ParserError(e) => {
             let report = miette::Report::from(e).with_source_code(source.to_string());
             eprintln!("\n{:?}", report);
         }
+
+        CompilerError::AnalysisError(e) => {
+            let report = miette::Report::from(e).with_source_code(source.to_string());
+            eprintln!("\n{:?}", report);
+        }
+
         _ => {
             let report = miette::Report::from(error).with_source_code(source.to_string());
             eprintln!("\n{:?}", report);

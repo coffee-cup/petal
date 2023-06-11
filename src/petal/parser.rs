@@ -99,6 +99,7 @@ impl PrefixParselet for IdentParselet {
                 Expr::Ident(Identifier {
                     name,
                     span: token.span.clone(),
+                    symbol_id: None,
                 }),
                 token.span,
             )),
@@ -487,7 +488,11 @@ impl<'a> Parser<'a> {
             _ => unreachable!(),
         };
 
-        Ok(Identifier { name, span })
+        Ok(Identifier {
+            name,
+            span,
+            symbol_id: None,
+        })
     }
 
     fn parse_function_arg(&mut self) -> ParserResult<FuncArg> {

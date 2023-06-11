@@ -1,8 +1,8 @@
 // use crate::petal::analysis::Analysis;
 
-use self::{errors::CompilerError, lexer::Lexer};
+use self::{analysis::AnalysisContext, errors::CompilerError, lexer::Lexer};
 
-// mod analysis;
+mod analysis;
 mod ast;
 // mod codegen;
 pub mod errors;
@@ -49,10 +49,10 @@ impl Compiler {
 
         // println!("{:#?}", program);
 
-        // let mut analysis = Analysis::new();
-        // analysis
-        //     .analysis_program(&program)
-        //     .map_err(CompilerError::AnalysisError)?;
+        let mut analysis = AnalysisContext::new();
+        analysis
+            .analysis_program(&program)
+            .map_err(CompilerError::AnalysisError)?;
 
         // let mut typechecker = Typechecker::new(&program);
         // typechecker.check().map_err(CompilerError::TypecheckError)?;

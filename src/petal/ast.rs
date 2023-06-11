@@ -58,6 +58,7 @@ impl Program {
 pub struct Identifier {
     pub name: String,
     pub span: Span,
+    pub symbol_id: Option<usize>,
 }
 
 #[derive(PartialEq, Clone, Debug)]
