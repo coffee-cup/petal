@@ -1,5 +1,5 @@
 use miette::{Diagnostic, SourceSpan};
-use std::{collections::HashMap, println, rc::Rc};
+use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
 
 use super::{
@@ -7,18 +7,18 @@ use super::{
         Block, Expr, ExprId, FuncArg, FuncDecl, Identifier, LetDecl, Program, Stmt, StmtId,
         StructDecl, StructField, TypeAnnotation,
     },
-    lexer::{Lexer, LexerErrorKind},
+    lexer::{Lexer, LexerError},
     precedence::Precedence,
-    source_info::{Pos, Span},
+    source_info::Span,
     token::{Literal, Token, TokenType},
 };
 
 type TT = TokenType;
 
 #[derive(Diagnostic, Error, Clone, Debug)]
-pub enum ParserErrorKind {
+pub enum ParserError {
     #[error("{0}")]
-    LexerError(#[from] LexerErrorKind),
+    LexerError(#[from] LexerError),
 
     #[error("Unexpected token")]
     UnexpectedToken {
@@ -47,26 +47,7 @@ pub enum ParserErrorKind {
     },
 }
 
-// #[derive(Debug, Clone)]
-// pub struct ParserError {
-//     pub span: Option<Span>,
-//     pub kind: ParserErrorKind,
-// }
-
-// impl ParserError {
-//     pub fn new(kind: ParserErrorKind) -> Self {
-//         ParserError { kind, span: None }
-//     }
-
-//     pub fn with_span(&self, span: Span) -> Self {
-//         ParserError {
-//             span: Some(span),
-//             ..self.clone()
-//         }
-//     }
-// }
-
-type ParserResult<T> = Result<T, ParserErrorKind>;
+type ParserResult<T> = Result<T, ParserError>;
 
 trait PrefixParselet {
     fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<ExprId>;
@@ -87,7 +68,7 @@ impl PrefixParselet for NumberParselet {
             Some(Literal::Float(value)) => Ok(parser
                 .program
                 .new_expression(Expr::Float(value), token.span)),
-            _ => Err(ParserErrorKind::UnexpectedToken {
+            _ => Err(ParserError::UnexpectedToken {
                 token: token.to_string(),
                 span: token.span(),
             }),
@@ -102,7 +83,7 @@ impl PrefixParselet for StringParselet {
             Some(Literal::String(value)) => Ok(parser
                 .program
                 .new_expression(Expr::String(value), token.span)),
-            _ => Err(ParserErrorKind::UnexpectedToken {
+            _ => Err(ParserError::UnexpectedToken {
                 token: token.to_string(),
                 span: token.span(),
             }),
@@ -121,7 +102,7 @@ impl PrefixParselet for IdentParselet {
                 }),
                 token.span,
             )),
-            _ => Err(ParserErrorKind::UnexpectedToken {
+            _ => Err(ParserError::UnexpectedToken {
                 token: token.to_string(),
                 span: token.span(),
             }),
@@ -425,7 +406,7 @@ impl<'a> Parser<'a> {
 
     fn parse_struct_field(&mut self) -> ParserResult<StructField> {
         let token = self.consume_expected(TT::Identifier)?;
-        let mut span = token.span().clone();
+        let mut span = token.span();
 
         let ident = self.parse_identifier()?;
         self.consume_expected(TT::Colon)?;
@@ -633,7 +614,7 @@ impl<'a> Parser<'a> {
         let prefix_parselet = self
             .prefix_parselets
             .get(&token.token_type)
-            .ok_or_else(|| ParserErrorKind::UnexpectedToken {
+            .ok_or_else(|| ParserError::UnexpectedToken {
                 token: token.to_string(),
                 span: token.span(),
             })?
@@ -647,7 +628,7 @@ impl<'a> Parser<'a> {
             let infix_parselet = self
                 .infix_parselets
                 .get(&token.token_type)
-                .ok_or_else(|| ParserErrorKind::UnexpectedToken {
+                .ok_or_else(|| ParserError::UnexpectedToken {
                     token: token.to_string(),
                     span: token.span(),
                 })?
@@ -693,13 +674,13 @@ impl<'a> Parser<'a> {
     fn consume_expected(&mut self, token_type: TokenType) -> ParserResult<Token> {
         if self.next_token.token_type != token_type {
             if self.next_token.token_type == TT::Eof {
-                return Err(ParserErrorKind::UnexpectedEof {
+                return Err(ParserError::UnexpectedEof {
                     expected: token_type,
-                    span: self.next_token.span.clone().into(),
+                    span: self.next_token.span.clone(),
                 });
             }
 
-            return Err(ParserErrorKind::ExpectedToken {
+            return Err(ParserError::ExpectedToken {
                 expected: token_type,
                 found: self.next_token.to_string(),
                 span: self.next_token.span.clone().into(),
@@ -719,7 +700,7 @@ impl<'a> Parser<'a> {
                 let offset = self.lexer.pos().offset();
                 Ok(Token::new(TT::Eof).with_span(Span::new((offset - 1).into(), None)))
             })
-            .map_err(|e| ParserErrorKind::LexerError(e))?;
+            .map_err(ParserError::LexerError)?;
 
         Ok(self.current_token.clone())
     }
@@ -730,12 +711,6 @@ mod tests {
     use crate::petal::ast::ExprNode;
 
     use super::*;
-
-    // fn parse_stmt(s: &str) -> Stmt {
-    //     let mut lexer = Lexer::new(s);
-    //     let mut parser = Parser::new(&mut lexer);
-    //     parser.parse_declaration().unwrap()
-    // }
 
     fn parse_expr(s: &str) -> Vec<ExprNode> {
         let mut lexer = Lexer::new(s);

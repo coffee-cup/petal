@@ -1,13 +1,11 @@
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap},
     fmt::Display,
-    unreachable,
 };
 
 use thiserror::Error;
 
 use super::{
-    ast::{Expr, FuncDecl, Program, Stmt, TypeAnnotation},
     source_info::Span,
     types::*,
 };
@@ -317,7 +315,7 @@ impl Typechecker {
                     println!("Substitution: {:?}", sub2);
                     sub = sub.combine(sub2);
                 }
-                Constraint::Oneof(lhs, tys) => todo!(),
+                Constraint::Oneof(_lhs, _tys) => todo!(),
             }
         }
 
@@ -343,7 +341,7 @@ impl Typechecker {
                 }
             }
             (Variable(v), ty) | (ty, Variable(v)) => {
-                if occurs_check(&ty, &Variable(v.clone())) {
+                if occurs_check(ty, &Variable(v.clone())) {
                     panic!("Infinite type");
                 } else {
                     let mut sub = Substitution::new();

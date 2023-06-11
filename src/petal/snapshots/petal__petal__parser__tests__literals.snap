@@ -7,13 +7,15 @@ expression: "parse_expr(\"1\")"
         expr: Integer(
             1,
         ),
-        span: Span(
-            Pos(
-                1,
+        span: Span {
+            start: Pos(
+                0,
             ),
-            Pos(
-                1,
+            end: Some(
+                Pos(
+                    0,
+                ),
             ),
-        ),
+        },
     },
 ]

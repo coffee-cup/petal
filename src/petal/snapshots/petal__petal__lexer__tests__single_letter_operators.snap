@@ -7,234 +7,270 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         token_type: LeftParen,
         lexeme: "(",
         literal: None,
-        span: Span(
-            Pos(
-                1,
+        span: Span {
+            start: Pos(
+                0,
             ),
-            Pos(
-                1,
+            end: Some(
+                Pos(
+                    0,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: RightParen,
         lexeme: ")",
         literal: None,
-        span: Span(
-            Pos(
-                3,
+        span: Span {
+            start: Pos(
+                2,
             ),
-            Pos(
-                3,
+            end: Some(
+                Pos(
+                    2,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: LeftBrace,
         lexeme: "{",
         literal: None,
-        span: Span(
-            Pos(
-                5,
+        span: Span {
+            start: Pos(
+                4,
             ),
-            Pos(
-                5,
+            end: Some(
+                Pos(
+                    4,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: RightBrace,
         lexeme: "}",
         literal: None,
-        span: Span(
-            Pos(
-                7,
+        span: Span {
+            start: Pos(
+                6,
             ),
-            Pos(
-                7,
+            end: Some(
+                Pos(
+                    6,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Dot,
         lexeme: ".",
         literal: None,
-        span: Span(
-            Pos(
-                9,
+        span: Span {
+            start: Pos(
+                8,
             ),
-            Pos(
-                9,
+            end: Some(
+                Pos(
+                    8,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Comma,
         lexeme: ",",
         literal: None,
-        span: Span(
-            Pos(
-                11,
+        span: Span {
+            start: Pos(
+                10,
             ),
-            Pos(
-                11,
+            end: Some(
+                Pos(
+                    10,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: QuestionMark,
         lexeme: "?",
         literal: None,
-        span: Span(
-            Pos(
-                13,
+        span: Span {
+            start: Pos(
+                12,
             ),
-            Pos(
-                13,
+            end: Some(
+                Pos(
+                    12,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Colon,
         lexeme: ":",
         literal: None,
-        span: Span(
-            Pos(
-                15,
+        span: Span {
+            start: Pos(
+                14,
             ),
-            Pos(
-                15,
+            end: Some(
+                Pos(
+                    14,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Caret,
         lexeme: "^",
         literal: None,
-        span: Span(
-            Pos(
-                17,
+        span: Span {
+            start: Pos(
+                16,
             ),
-            Pos(
-                17,
+            end: Some(
+                Pos(
+                    16,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Semicolon,
         lexeme: ";",
         literal: None,
-        span: Span(
-            Pos(
-                19,
+        span: Span {
+            start: Pos(
+                18,
             ),
-            Pos(
-                19,
+            end: Some(
+                Pos(
+                    18,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Plus,
         lexeme: "+",
         literal: None,
-        span: Span(
-            Pos(
-                21,
+        span: Span {
+            start: Pos(
+                20,
             ),
-            Pos(
-                21,
+            end: Some(
+                Pos(
+                    20,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Minus,
         lexeme: "-",
         literal: None,
-        span: Span(
-            Pos(
-                23,
+        span: Span {
+            start: Pos(
+                22,
             ),
-            Pos(
-                23,
+            end: Some(
+                Pos(
+                    22,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Star,
         lexeme: "*",
         literal: None,
-        span: Span(
-            Pos(
-                25,
+        span: Span {
+            start: Pos(
+                24,
             ),
-            Pos(
-                25,
+            end: Some(
+                Pos(
+                    24,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Slash,
         lexeme: "/",
         literal: None,
-        span: Span(
-            Pos(
-                27,
+        span: Span {
+            start: Pos(
+                26,
             ),
-            Pos(
-                27,
+            end: Some(
+                Pos(
+                    26,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Bang,
         lexeme: "!",
         literal: None,
-        span: Span(
-            Pos(
-                29,
+        span: Span {
+            start: Pos(
+                28,
             ),
-            Pos(
-                29,
+            end: Some(
+                Pos(
+                    28,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Equal,
         lexeme: "=",
         literal: None,
-        span: Span(
-            Pos(
-                31,
+        span: Span {
+            start: Pos(
+                30,
             ),
-            Pos(
-                31,
+            end: Some(
+                Pos(
+                    30,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Less,
         lexeme: "<",
         literal: None,
-        span: Span(
-            Pos(
-                33,
+        span: Span {
+            start: Pos(
+                32,
             ),
-            Pos(
-                33,
+            end: Some(
+                Pos(
+                    32,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: Greater,
         lexeme: ">",
         literal: None,
-        span: Span(
-            Pos(
-                35,
+        span: Span {
+            start: Pos(
+                34,
             ),
-            Pos(
-                35,
+            end: Some(
+                Pos(
+                    34,
+                ),
             ),
-        ),
+        },
     },
 ]

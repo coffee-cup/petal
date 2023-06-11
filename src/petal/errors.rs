@@ -1,12 +1,12 @@
-use std::{cmp::min, io};
+use std::{io};
 
-use crate::petal::lexer::LexerErrorKind;
 
-use super::{parser::ParserErrorKind, source_info::Span, typechecker::TypecheckingError};
+
+use super::{parser::ParserError, source_info::Span};
 use miette::Diagnostic;
 use thiserror::Error;
 
-use colored::Colorize;
+
 
 #[derive(Clone, Debug)]
 pub struct ErrorContext {
@@ -30,7 +30,7 @@ pub enum CompilerError {
     FileReadError(#[from] io::Error),
 
     #[error("Parser error")]
-    ParserError(ParserErrorKind),
+    ParserError(ParserError),
 
     // #[error("Analysis error: {}", .0.kind)]
     // AnalysisError(AnalysisError),
@@ -42,51 +42,17 @@ pub enum CompilerError {
 }
 
 pub fn print_compiler_error(source: &str, error: CompilerError) {
-    use CompilerError::*;
-
     println!("ERROR: {:?}\n\n", error);
 
     match error {
-        ParserError(ParserErrorKind::LexerError(e)) => {
+        CompilerError::ParserError(ParserError::LexerError(e)) => {
             let report = miette::Report::from(e).with_source_code(source.to_string());
             eprintln!("{:?}", report);
         }
-        ParserError(e) => {
+        CompilerError::ParserError(e) => {
             let report = miette::Report::from(e).with_source_code(source.to_string());
             eprintln!("{:?}", report);
         }
         _ => eprintln!("{}", error),
     }
-
-    // if let Some(span) = &span {
-    //     let source_lines = source.lines();
-    //     let source_content = source_lines.collect::<Vec<_>>();
-    //     let line_idx = min(span.start.line, source_content.len() - 1);
-    //     let line = source_content[line_idx];
-    //     let line_number = format!("{} | ", span.start.line);
-    //     let line_number_len = line_number.len();
-
-    //     let error_len = msg.len();
-
-    //     println!("\n{}{}", line_number.purple(), line);
-    //     println!(
-    //         "{}{}{}",
-    //         " ".repeat(line_number_len),
-    //         " ".repeat(span.start.col - 1),
-    //         "^".repeat(span.end.col + 1 - span.start.col).red()
-    //     );
-
-    //     let error_msg_pos: i32 = std::cmp::max(
-    //         0,
-    //         (line_number_len as i32) + (span.start.col as i32) - ((error_len as i32) / 2),
-    //     );
-    //     println!(
-    //         "{} {}",
-    //         " ".repeat(error_msg_pos as usize),
-    //         msg.red().bold()
-    //     );
-    // } else {
-    //     // No span information, just print the error
-    //     println!("{}", msg.to_string().red().bold());
-    // }
 }

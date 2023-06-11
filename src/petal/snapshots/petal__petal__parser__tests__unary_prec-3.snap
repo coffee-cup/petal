@@ -7,24 +7,28 @@ expression: "parse_expr(\"!-a\")"
         expr: Ident(
             Identifier {
                 name: "a",
-                span: Span(
-                    Pos(
-                        3,
+                span: Span {
+                    start: Pos(
+                        2,
                     ),
-                    Pos(
-                        3,
+                    end: Some(
+                        Pos(
+                            2,
+                        ),
                     ),
-                ),
+                },
             },
         ),
-        span: Span(
-            Pos(
-                3,
+        span: Span {
+            start: Pos(
+                2,
             ),
-            Pos(
-                3,
+            end: Some(
+                Pos(
+                    2,
+                ),
             ),
-        ),
+        },
     },
     ExprNode {
         expr: PrefixOp {
@@ -32,27 +36,31 @@ expression: "parse_expr(\"!-a\")"
                 token_type: Minus,
                 lexeme: "-",
                 literal: None,
-                span: Span(
-                    Pos(
-                        2,
+                span: Span {
+                    start: Pos(
+                        1,
                     ),
-                    Pos(
-                        2,
+                    end: Some(
+                        Pos(
+                            1,
+                        ),
                     ),
-                ),
+                },
             },
             right: ExprId(
                 1v1,
             ),
         },
-        span: Span(
-            Pos(
-                3,
-            ),
-            Pos(
+        span: Span {
+            start: Pos(
                 2,
             ),
-        ),
+            end: Some(
+                Pos(
+                    1,
+                ),
+            ),
+        },
     },
     ExprNode {
         expr: PrefixOp {
@@ -60,26 +68,30 @@ expression: "parse_expr(\"!-a\")"
                 token_type: Bang,
                 lexeme: "!",
                 literal: None,
-                span: Span(
-                    Pos(
-                        1,
+                span: Span {
+                    start: Pos(
+                        0,
                     ),
-                    Pos(
-                        1,
+                    end: Some(
+                        Pos(
+                            0,
+                        ),
                     ),
-                ),
+                },
             },
             right: ExprId(
                 2v1,
             ),
         },
-        span: Span(
-            Pos(
-                3,
+        span: Span {
+            start: Pos(
+                2,
             ),
-            Pos(
-                1,
+            end: Some(
+                Pos(
+                    0,
+                ),
             ),
-        ),
+        },
     },
 ]

@@ -7,52 +7,60 @@ expression: "lex(\"   ()\\n(\\n    (\".to_string())"
         token_type: LeftParen,
         lexeme: "(",
         literal: None,
-        span: Span(
-            Pos(
-                4,
+        span: Span {
+            start: Pos(
+                3,
             ),
-            Pos(
-                4,
+            end: Some(
+                Pos(
+                    3,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: RightParen,
         lexeme: ")",
         literal: None,
-        span: Span(
-            Pos(
-                5,
+        span: Span {
+            start: Pos(
+                4,
             ),
-            Pos(
-                5,
+            end: Some(
+                Pos(
+                    4,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: LeftParen,
         lexeme: "(",
         literal: None,
-        span: Span(
-            Pos(
-                7,
+        span: Span {
+            start: Pos(
+                6,
             ),
-            Pos(
-                7,
+            end: Some(
+                Pos(
+                    6,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: LeftParen,
         lexeme: "(",
         literal: None,
-        span: Span(
-            Pos(
-                13,
+        span: Span {
+            start: Pos(
+                12,
             ),
-            Pos(
-                13,
+            end: Some(
+                Pos(
+                    12,
+                ),
             ),
-        ),
+        },
     },
 ]

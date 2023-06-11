@@ -11,13 +11,15 @@ expression: tokens
                 "hello world",
             ),
         ),
-        span: Span(
-            Pos(
-                1,
+        span: Span {
+            start: Pos(
+                0,
             ),
-            Pos(
-                14,
+            end: Some(
+                Pos(
+                    13,
+                ),
             ),
-        ),
+        },
     },
 ]

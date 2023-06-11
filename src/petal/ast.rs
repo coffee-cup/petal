@@ -1,8 +1,8 @@
-use slotmap::{new_key_type, SecondaryMap, SlotMap};
-use std::ops::Deref;
+use slotmap::{new_key_type, SlotMap};
+
 
 use super::{
-    source_info::{Pos, Span},
+    source_info::{Span},
     token::Token,
 };
 

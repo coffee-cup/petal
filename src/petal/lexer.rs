@@ -14,14 +14,12 @@ pub struct Lexer<'a> {
     chars: Chars<'a>,
     current: Option<char>,
 
-    // line: usize,
-    // col: usize,
     offset: usize,
     current_lexeme: String,
 }
 
 #[derive(Diagnostic, Error, Clone, Debug)]
-pub enum LexerErrorKind {
+pub enum LexerError {
     #[error("Unexpected character")]
     #[diagnostic()]
     UnexpectedChar {
@@ -48,26 +46,7 @@ pub enum LexerErrorKind {
     },
 }
 
-// #[derive(Debug, Clone)]
-// pub struct LexerError {
-//     pub span: Option<Span>,
-//     pub kind: LexerErrorKind,
-// }
-
-// impl LexerError {
-//     pub fn new(kind: LexerErrorKind) -> Self {
-//         LexerError { span: None, kind }
-//     }
-
-//     pub fn with_span(&self, span: Span) -> Self {
-//         LexerError {
-//             span: Some(span),
-//             ..self.clone()
-//         }
-//     }
-// }
-
-type LexerResult<T> = Result<T, LexerErrorKind>;
+type LexerResult<T> = Result<T, LexerError>;
 
 lazy_static! {
     static ref KEYWORDS: HashMap<&'static str, TokenType> = {
@@ -90,12 +69,13 @@ impl<'a> Lexer<'a> {
             chars: source.chars(),
             current: None,
             current_lexeme: "".to_string(),
-            // line: 0,
-            // col: 0,
             offset: 0,
         };
 
         lexer.advance();
+
+        // The first call to advance() will load the first character into current as well as increase the offset
+        // However, we want to the first character to be at offset 0, so we reset the offset to 0
         lexer.offset = 0;
 
         lexer
@@ -137,7 +117,7 @@ impl<'a> Lexer<'a> {
                 Some('"') => break,
                 Some(c) => s.push(c),
                 _ => {
-                    return Err(LexerErrorKind::UnterminatedString {
+                    return Err(LexerError::UnterminatedString {
                         span: start_pos.into(),
                     })
                 }
@@ -155,11 +135,11 @@ impl<'a> Lexer<'a> {
         let start_pos = (self.offset).into();
 
         loop {
-            match self.peek() {
+            match self.current {
                 Some(c) if c.is_ascii_digit() => number.push(c),
                 Some('.') => {
                     if seen_dot {
-                        return Err(LexerErrorKind::InvalidNumber {
+                        return Err(LexerError::InvalidNumber {
                             span: Span::new(start_pos, Some((self.offset + 1).into())),
                             help: Some("A number cannot have more than one decimal point".into()),
                         });
@@ -181,7 +161,7 @@ impl<'a> Lexer<'a> {
         if seen_dot {
             let value = number
                 .parse::<f64>()
-                .map_err(|_e| LexerErrorKind::InvalidNumber {
+                .map_err(|_e| LexerError::InvalidNumber {
                     span: Pos::new(self.offset).into(),
                     help: None,
                 })?;
@@ -190,7 +170,7 @@ impl<'a> Lexer<'a> {
         } else {
             let value = number
                 .parse::<i64>()
-                .map_err(|_e| LexerErrorKind::InvalidNumber {
+                .map_err(|_e| LexerError::InvalidNumber {
                     span: Pos::new(self.offset).into(),
                     help: None,
                 })?;
@@ -237,13 +217,6 @@ impl<'a> Lexer<'a> {
     }
 
     fn advance(&mut self) {
-        // if self.current == Some('\n') {
-        //     self.line += 1;
-        //     self.col = 1;
-        // } else {
-        //     self.col += 1;
-        // }
-
         self.offset += 1;
         self.current = self.chars.next();
 
@@ -254,7 +227,7 @@ impl<'a> Lexer<'a> {
 }
 
 impl<'a> Iterator for Lexer<'a> {
-    type Item = Result<Token, LexerErrorKind>;
+    type Item = Result<Token, LexerError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.skip_whitespace();
@@ -265,8 +238,6 @@ impl<'a> Iterator for Lexer<'a> {
         }
 
         let start_offset = self.offset;
-        // let start_line = self.line;
-        // let start_col = self.col;
 
         let token = match self.current {
             Some('(') => Token::new(TT::LeftParen),
@@ -306,7 +277,7 @@ impl<'a> Iterator for Lexer<'a> {
             Some(c) if c.is_alphabetic() => self.identifier_or_reserved(),
 
             Some(_) => {
-                return Some(Err(LexerErrorKind::UnexpectedChar {
+                return Some(Err(LexerError::UnexpectedChar {
                     c: self.current.unwrap(),
                     span: Pos::new(self.offset).into(),
                 }))

@@ -1,4 +1,4 @@
-use miette::{SourceOffset, SourceSpan};
+use miette::{SourceSpan};
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub struct Pos(usize);
@@ -15,7 +15,7 @@ impl Pos {
     }
 
     pub fn offset(&self) -> usize {
-        self.0.clone()
+        self.0
     }
 }
 

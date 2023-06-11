@@ -7,13 +7,15 @@ expression: "parse_expr(\"\\\"hello\\\"\")"
         expr: String(
             "hello",
         ),
-        span: Span(
-            Pos(
-                1,
+        span: Span {
+            start: Pos(
+                0,
             ),
-            Pos(
-                7,
+            end: Some(
+                Pos(
+                    6,
+                ),
             ),
-        ),
+        },
     },
 ]

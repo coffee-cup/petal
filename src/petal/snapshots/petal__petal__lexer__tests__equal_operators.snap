@@ -7,52 +7,60 @@ expression: "lex(\"== != <= >=\".to_string())"
         token_type: EqualEqual,
         lexeme: "==",
         literal: None,
-        span: Span(
-            Pos(
-                1,
+        span: Span {
+            start: Pos(
+                0,
             ),
-            Pos(
-                2,
+            end: Some(
+                Pos(
+                    1,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: BangEqual,
         lexeme: "!=",
         literal: None,
-        span: Span(
-            Pos(
-                4,
+        span: Span {
+            start: Pos(
+                3,
             ),
-            Pos(
-                5,
+            end: Some(
+                Pos(
+                    4,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: LessEqual,
         lexeme: "<=",
         literal: None,
-        span: Span(
-            Pos(
-                7,
+        span: Span {
+            start: Pos(
+                6,
             ),
-            Pos(
-                8,
+            end: Some(
+                Pos(
+                    7,
+                ),
             ),
-        ),
+        },
     },
     Token {
         token_type: GreaterEqual,
         lexeme: ">=",
         literal: None,
-        span: Span(
-            Pos(
-                10,
+        span: Span {
+            start: Pos(
+                9,
             ),
-            Pos(
-                11,
+            end: Some(
+                Pos(
+                    10,
+                ),
             ),
-        ),
+        },
     },
 ]

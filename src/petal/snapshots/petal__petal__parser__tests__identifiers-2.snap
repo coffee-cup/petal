@@ -7,23 +7,27 @@ expression: "parse_expr(\"foo\")"
         expr: Ident(
             Identifier {
                 name: "foo",
-                span: Span(
-                    Pos(
-                        1,
+                span: Span {
+                    start: Pos(
+                        0,
                     ),
-                    Pos(
-                        3,
+                    end: Some(
+                        Pos(
+                            2,
+                        ),
                     ),
-                ),
+                },
             },
         ),
-        span: Span(
-            Pos(
-                1,
+        span: Span {
+            start: Pos(
+                0,
             ),
-            Pos(
-                3,
+            end: Some(
+                Pos(
+                    2,
+                ),
             ),
-        ),
+        },
     },
 ]

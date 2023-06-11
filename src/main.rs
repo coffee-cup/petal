@@ -1,7 +1,7 @@
-use std::io::Write;
+
 
 use clap::{Parser, Subcommand};
-use petal::{errors::CompilerError, Compiler};
+use petal::{Compiler};
 
 #[macro_use]
 extern crate lazy_static;
@@ -39,7 +39,7 @@ fn main() {
     let args = Cli::parse();
 
     match args.command {
-        Commands::Build { file, wat, output } => {
+        Commands::Build { file, wat: _, output } => {
             let compiler = Compiler::new();
 
             match compiler.compile_file(&file) {
@@ -49,15 +49,15 @@ fn main() {
 
                     petal::errors::print_compiler_error(&file, e);
                 }
-                Ok(wasm) => {
+                Ok(_wasm) => {
                     // if wat {
                     //     println!("{}", wasm.print_wat())
                     // }
 
                     // Ensure that the output directory exists
-                    std::fs::create_dir_all(&output).expect("Unable to create output directory");
+                    std::fs::create_dir_all(output).expect("Unable to create output directory");
 
-                    let file_name = file.clone().replace("petal", "wasm");
+                    let _file_name = file.clone().replace("petal", "wasm");
 
                     // Save the WASM binary to the output directory
                     // let mut file = std::fs::File::create(format!("{}/{}", output, file_name))

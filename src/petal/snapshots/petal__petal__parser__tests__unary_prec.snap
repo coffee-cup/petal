@@ -7,24 +7,28 @@ expression: "parse_expr(\"-ab\")"
         expr: Ident(
             Identifier {
                 name: "ab",
-                span: Span(
-                    Pos(
-                        2,
+                span: Span {
+                    start: Pos(
+                        1,
                     ),
-                    Pos(
-                        3,
+                    end: Some(
+                        Pos(
+                            2,
+                        ),
                     ),
-                ),
+                },
             },
         ),
-        span: Span(
-            Pos(
-                2,
+        span: Span {
+            start: Pos(
+                1,
             ),
-            Pos(
-                3,
+            end: Some(
+                Pos(
+                    2,
+                ),
             ),
-        ),
+        },
     },
     ExprNode {
         expr: PrefixOp {
@@ -32,26 +36,30 @@ expression: "parse_expr(\"-ab\")"
                 token_type: Minus,
                 lexeme: "-",
                 literal: None,
-                span: Span(
-                    Pos(
-                        1,
+                span: Span {
+                    start: Pos(
+                        0,
                     ),
-                    Pos(
-                        1,
+                    end: Some(
+                        Pos(
+                            0,
+                        ),
                     ),
-                ),
+                },
             },
             right: ExprId(
                 1v1,
             ),
         },
-        span: Span(
-            Pos(
-                2,
-            ),
-            Pos(
+        span: Span {
+            start: Pos(
                 1,
             ),
-        ),
+            end: Some(
+                Pos(
+                    0,
+                ),
+            ),
+        },
     },
 ]

@@ -1,5 +1,4 @@
 // use crate::petal::analysis::Analysis;
-use miette::{Diagnostic, IntoDiagnostic};
 
 use self::{errors::CompilerError, lexer::Lexer};
 
@@ -44,13 +43,12 @@ impl Compiler {
         // println!("Tokens: {:#?}", tokens);
 
         let mut lexer = Lexer::new(&file);
-        let mut parser =
-            parser::Parser::new(&mut lexer).map_err(|e| CompilerError::ParserError(e))?;
+        let mut parser = parser::Parser::new(&mut lexer).map_err(CompilerError::ParserError)?;
 
-        let program = parser.parse().map_err(|e| CompilerError::ParserError(e))?;
+        let program = parser.parse().map_err(CompilerError::ParserError)?;
 
         // println!("{:#?}", program);
-        println!("{:?}", program.ast.expressions);
+        println!("{:#?}", program.ast.expressions);
 
         // let mut analysis = Analysis::new();
         // analysis

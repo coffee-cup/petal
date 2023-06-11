@@ -7,13 +7,15 @@ expression: "parse_expr(\"123.456\")"
         expr: Float(
             123.456,
         ),
-        span: Span(
-            Pos(
-                1,
+        span: Span {
+            start: Pos(
+                0,
             ),
-            Pos(
-                7,
+            end: Some(
+                Pos(
+                    6,
+                ),
             ),
-        ),
+        },
     },
 ]

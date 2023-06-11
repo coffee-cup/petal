@@ -1,9 +1,6 @@
 use std::fmt::Display;
 
-use super::{
-    ast::{FuncDecl, TypeAnnotation},
-    source_info::Span,
-};
+
 
 pub type TyVar = String;
 
