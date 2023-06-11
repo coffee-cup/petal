@@ -329,7 +329,7 @@ pub struct Parser<'a> {
     prefix_parselets: HashMap<TokenType, Rc<dyn PrefixParselet>>,
     infix_parselets: HashMap<TokenType, Rc<dyn InfixParselet>>,
     program: Program,
-    parse_context: ParseContext,
+    parse_context: Option<ParseContext>,
 }
 
 impl<'a> Parser<'a> {
@@ -341,10 +341,7 @@ impl<'a> Parser<'a> {
             prefix_parselets: HashMap::new(),
             infix_parselets: HashMap::new(),
             program: Program::new(),
-            parse_context: ParseContext {
-                msg: "".to_string(),
-                span: Span::new(0.into(), None),
-            },
+            parse_context: None,
         };
 
         // Prime the next_token
@@ -610,10 +607,10 @@ impl<'a> Parser<'a> {
         let token = self.consume()?;
         let mut span = token.span();
 
-        self.parse_context = ParseContext {
+        self.parse_context = Some(ParseContext {
             msg: "if statement".to_string(),
             span: Span::new(span.start(), None),
-        };
+        });
 
         let condition = self.parse_expression(Precedence::Lowest)?;
 
@@ -705,8 +702,15 @@ impl<'a> Parser<'a> {
     /// Returns the consumed token if it was consumed, an error otherwise.
     fn consume_expected(&mut self, token_type: TokenType) -> ParserResult<Token> {
         if self.next_token.token_type != token_type {
-            let context_msg = self.parse_context.msg.clone();
-            let context_span = Some(self.parse_context.span.clone().into());
+            let context_msg = self
+                .parse_context
+                .clone()
+                .map(|ctx| ctx.msg.clone())
+                .unwrap_or_else(|| "".to_string());
+            let context_span = self
+                .parse_context
+                .clone()
+                .map(|ctx| ctx.span.clone().into());
 
             return Err(ParserErrorKind::ExpectedToken {
                 expected: token_type,
