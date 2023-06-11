@@ -1,10 +1,6 @@
 use slotmap::{new_key_type, SlotMap};
 
-
-use super::{
-    source_info::{Span},
-    token::Token,
-};
+use super::{source_info::Span, token::Token};
 
 new_key_type! {pub struct ExprId;}
 pub type ExpressionPool = SlotMap<ExprId, ExprNode>;
@@ -48,7 +44,6 @@ impl Program {
     }
 
     pub fn new_statement(&mut self, stmt: Stmt, span: Span) -> StmtId {
-        println!("New statement: {:?}", stmt);
         self.ast.statements.insert(StmtNode { stmt, span })
     }
 

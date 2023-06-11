@@ -1,25 +1,8 @@
-use std::{io};
-
-
+use std::io;
 
 use super::{parser::ParserError, source_info::Span};
 use miette::Diagnostic;
 use thiserror::Error;
-
-
-
-#[derive(Clone, Debug)]
-pub struct ErrorContext {
-    msg: String,
-    span: Span,
-}
-
-#[derive(Clone, Debug)]
-pub struct CompilerCodeError {
-    context: Vec<ErrorContext>,
-    error_msg: String,
-    span: Span,
-}
 
 #[derive(Diagnostic, Error, Debug)]
 pub enum CompilerError {
@@ -42,17 +25,18 @@ pub enum CompilerError {
 }
 
 pub fn print_compiler_error(source: &str, error: CompilerError) {
-    println!("ERROR: {:?}\n\n", error);
-
     match error {
         CompilerError::ParserError(ParserError::LexerError(e)) => {
             let report = miette::Report::from(e).with_source_code(source.to_string());
-            eprintln!("{:?}", report);
+            eprintln!("\n{:?}", report);
         }
         CompilerError::ParserError(e) => {
             let report = miette::Report::from(e).with_source_code(source.to_string());
-            eprintln!("{:?}", report);
+            eprintln!("\n{:?}", report);
         }
-        _ => eprintln!("{}", error),
+        _ => {
+            let report = miette::Report::from(error).with_source_code(source.to_string());
+            eprintln!("\n{:?}", report);
+        }
     }
 }

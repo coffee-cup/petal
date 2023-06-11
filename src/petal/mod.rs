@@ -28,17 +28,17 @@ impl Compiler {
     pub fn compile_file(&self, filename: &str) -> CompilerResult<()> {
         let file = std::fs::read_to_string(filename).expect("Could not read file");
 
-        let f2 = file.clone();
-        let lexer1 = Lexer::new(&f2);
-        match lexer1.collect::<Result<Vec<_>, _>>() {
-            Ok(tokens) => {
-                println!("Tokens: {:#?}", tokens);
-            }
-            Err(e) => {
-                let report = miette::Report::from(e).with_source_code(f2);
-                println!("{:?}", report);
-            }
-        };
+        // let f2 = file.clone();
+        // let lexer1 = Lexer::new(&f2);
+        // match lexer1.collect::<Result<Vec<_>, _>>() {
+        //     Ok(tokens) => {
+        //         println!("Tokens: {:#?}", tokens);
+        //     }
+        //     Err(e) => {
+        //         let report = miette::Report::from(e).with_source_code(f2);
+        //         println!("{:?}", report);
+        //     }
+        // };
 
         // println!("Tokens: {:#?}", tokens);
 
@@ -48,7 +48,6 @@ impl Compiler {
         let program = parser.parse().map_err(CompilerError::ParserError)?;
 
         // println!("{:#?}", program);
-        println!("{:#?}", program.ast.expressions);
 
         // let mut analysis = Analysis::new();
         // analysis

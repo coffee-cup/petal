@@ -1,0 +1,121 @@
+---
+source: src/petal/parser.rs
+expression: "parse_expr(\"1 * 2 + 3\")"
+---
+[
+    ExprNode {
+        expr: Integer(
+            1,
+        ),
+        span: Span {
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    0,
+                ),
+            ),
+        },
+    },
+    ExprNode {
+        expr: Integer(
+            2,
+        ),
+        span: Span {
+            start: Pos(
+                4,
+            ),
+            end: Some(
+                Pos(
+                    4,
+                ),
+            ),
+        },
+    },
+    ExprNode {
+        expr: BinaryOp {
+            op: Token {
+                token_type: Star,
+                lexeme: "*",
+                literal: None,
+                span: Span {
+                    start: Pos(
+                        2,
+                    ),
+                    end: Some(
+                        Pos(
+                            2,
+                        ),
+                    ),
+                },
+            },
+            left: ExprId(
+                1v1,
+            ),
+            right: ExprId(
+                2v1,
+            ),
+        },
+        span: Span {
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    4,
+                ),
+            ),
+        },
+    },
+    ExprNode {
+        expr: Integer(
+            3,
+        ),
+        span: Span {
+            start: Pos(
+                8,
+            ),
+            end: Some(
+                Pos(
+                    8,
+                ),
+            ),
+        },
+    },
+    ExprNode {
+        expr: BinaryOp {
+            op: Token {
+                token_type: Plus,
+                lexeme: "+",
+                literal: None,
+                span: Span {
+                    start: Pos(
+                        6,
+                    ),
+                    end: Some(
+                        Pos(
+                            6,
+                        ),
+                    ),
+                },
+            },
+            left: ExprId(
+                3v1,
+            ),
+            right: ExprId(
+                4v1,
+            ),
+        },
+        span: Span {
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    8,
+                ),
+            ),
+        },
+    },
+]

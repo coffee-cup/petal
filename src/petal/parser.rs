@@ -745,13 +745,13 @@ mod tests {
         insta::assert_debug_snapshot!(parse_expr("!-a"));
     }
 
-    // #[test]
-    // fn test_binary_prec() {
-    //     insta::assert_debug_snapshot!(parse_expr("1 + 2 + 3"));
-    //     insta::assert_debug_snapshot!(parse_expr("1 + 2 * 3"));
-    //     insta::assert_debug_snapshot!(parse_expr("1 * 2 + 3"));
-    //     insta::assert_debug_snapshot!(parse_expr("1 ^ 2"));
-    // }
+    #[test]
+    fn test_binary_prec() {
+        insta::assert_debug_snapshot!(parse_expr("1 + 2 + 3"));
+        insta::assert_debug_snapshot!(parse_expr("1 + 2 * 3"));
+        insta::assert_debug_snapshot!(parse_expr("1 * 2 + 3"));
+        insta::assert_debug_snapshot!(parse_expr("1 ^ 2"));
+    }
 
     // #[test]
     // fn test_unary_binary_prec() {
