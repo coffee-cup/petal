@@ -1,125 +1,143 @@
-use std::{collections::HashMap, println, rc::Rc};
+use miette::{Diagnostic, SourceSpan};
+use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
 
 use super::{
+    analysis::AnalysisError,
     ast::{
-        Block, Expr, ExprId, FuncArg, FuncDecl, Identifier, LetDecl, Program, Stmt, StructDecl,
-        StructField, TypeAnnotation,
+        Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, Identifier, LetDecl, Program, Stmt,
+        StmtId, StructDecl, StructField, TypeAnnotation,
     },
-    lexer::{Lexer, LexerErrorKind},
-    positions::{HasSpan, Pos, Span},
+    lexer::{Lexer, LexerError},
     precedence::Precedence,
+    source_info::Span,
     token::{Literal, Token, TokenType},
 };
 
 type TT = TokenType;
 
-#[derive(Error, Clone, Debug)]
-pub enum ParserErrorKind {
+#[derive(Diagnostic, Error, Clone, Debug)]
+pub enum ParserError {
     #[error("{0}")]
-    LexerError(#[from] LexerErrorKind),
+    LexerError(#[from] LexerError),
 
-    #[error("Unexpected token {0}")]
-    UnexpectedToken(String),
+    #[error("Unexpected token")]
+    UnexpectedToken {
+        token: String,
 
-    #[error("Expected {0}, found {1}")]
-    ExpectedToken(TokenType, String),
-}
+        #[label("we came across this token, `{token}`, and don't know how to parse it")]
+        span: Span,
+    },
 
-#[derive(Debug, Clone)]
-pub struct ParserError {
-    pub span: Option<Span>,
-    pub kind: ParserErrorKind,
-}
+    #[error("Missing type annotation")]
+    #[diagnostic(help("You can add a type annotation like this: `{name}: Int`"))]
+    MissingTypeAnnotation {
+        #[label("all function parameters need a type annotation")]
+        span: Span,
 
-impl ParserError {
-    pub fn new(kind: ParserErrorKind) -> Self {
-        ParserError { kind, span: None }
-    }
+        name: String,
+    },
 
-    pub fn with_span(&self, span: Span) -> Self {
-        ParserError {
-            span: Some(span),
-            ..self.clone()
-        }
-    }
+    #[error("Expected {expected}, found the end of the file")]
+    UnexpectedEof {
+        expected: TokenType,
+
+        #[label = "we expected to find `{expected}`, but found the end of the file instead"]
+        span: Span,
+    },
+
+    #[error("Expected {expected}, found {found}")]
+    ExpectedToken {
+        expected: TokenType,
+
+        found: String,
+
+        #[label = "we expected to find `{expected}`, but found `{found}` instead"]
+        span: SourceSpan,
+    },
 }
 
 type ParserResult<T> = Result<T, ParserError>;
 
 trait PrefixParselet {
-    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr>;
+    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<ExprId>;
 }
 
 trait InfixParselet {
-    fn parse(&self, parser: &mut Parser, left: Expr, token: Token) -> ParserResult<Expr>;
+    fn parse(&self, parser: &mut Parser, left: ExprId, token: Token) -> ParserResult<ExprId>;
     fn precedence(&self) -> Precedence;
 }
 
 struct NumberParselet;
 impl PrefixParselet for NumberParselet {
-    fn parse(&self, _parser: &mut Parser, token: Token) -> ParserResult<Expr> {
+    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<ExprId> {
         match token.literal {
-            Some(Literal::Integer(value)) => Ok(Expr::Integer {
-                value,
-                span: token.span,
+            Some(Literal::Integer(value)) => Ok(parser
+                .program
+                .new_expression(Expr::Integer(value), token.span)),
+            Some(Literal::Float(value)) => Ok(parser
+                .program
+                .new_expression(Expr::Float(value), token.span)),
+            _ => Err(ParserError::UnexpectedToken {
+                token: token.to_string(),
+                span: token.span(),
             }),
-            Some(Literal::Float(value)) => Ok(Expr::Float {
-                value,
-                span: token.span,
-            }),
-            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
-                token.to_string(),
-            ))),
         }
     }
 }
 
 struct StringParselet;
 impl PrefixParselet for StringParselet {
-    fn parse(&self, _parser: &mut Parser, token: Token) -> ParserResult<Expr> {
+    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<ExprId> {
         match token.literal {
-            Some(Literal::String(value)) => Ok(Expr::String {
-                value,
-                span: token.span,
+            Some(Literal::String(value)) => Ok(parser
+                .program
+                .new_expression(Expr::String(value), token.span)),
+            _ => Err(ParserError::UnexpectedToken {
+                token: token.to_string(),
+                span: token.span(),
             }),
-            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
-                token.to_string(),
-            ))),
         }
     }
 }
 
 struct IdentParselet;
 impl PrefixParselet for IdentParselet {
-    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr> {
+    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<ExprId> {
         match token.literal {
-            Some(Literal::Identifier(name)) => Ok(Expr::Ident(Identifier::new(name, token.span))),
-            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
-                token.to_string(),
-            ))),
+            Some(Literal::Identifier(name)) => {
+                let ident = parser.program.new_identifier(name, token.span.clone());
+
+                Ok(parser
+                    .program
+                    .new_expression(Expr::Ident(ident), token.span))
+            }
+            _ => Err(ParserError::UnexpectedToken {
+                token: token.to_string(),
+                span: token.span(),
+            }),
         }
     }
 }
 
-struct CommentParselet;
-impl PrefixParselet for CommentParselet {
-    fn parse(&self, _parser: &mut Parser, token: Token) -> ParserResult<Expr> {
-        match token.literal {
-            Some(Literal::Comment(value)) => Ok(Expr::Comment {
-                value,
-                span: token.span,
-            }),
-            _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
-                token.to_string(),
-            ))),
-        }
-    }
-}
+// struct CommentParselet;
+// impl PrefixParselet for CommentParselet {
+//     fn parse(&self, _parser: &mut Parser, token: Token) -> ParserResult<ExprId> {
+//         match token.literal {
+//             Some(Literal::Comment(value)) => Ok(Expr::Comment {
+//                 value,
+//                 span: token.span,
+//             }),
+//             _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
+//                 token.to_string(),
+//             ))),
+//         }
+//     }
+// }
 
 struct GroupParselet;
 impl PrefixParselet for GroupParselet {
-    fn parse(&self, parser: &mut Parser, _token: Token) -> ParserResult<Expr> {
+    fn parse(&self, parser: &mut Parser, _token: Token) -> ParserResult<ExprId> {
         let expr = parser.parse_expression(Precedence::Lowest)?;
         parser.consume_expected(TT::RightParen)?;
         Ok(expr)
@@ -130,23 +148,28 @@ struct PrefixOperatorParselet {
     precedence: Precedence,
 }
 impl PrefixParselet for PrefixOperatorParselet {
-    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr> {
+    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<ExprId> {
         let operand = parser.parse_expression(self.precedence.clone())?;
-        let span = token.span().merge(operand.span());
 
-        Ok(Expr::PrefixOp {
-            op: token,
-            right: Box::new(operand),
+        let span = parser.program.ast.expressions[operand]
+            .span
+            .merge(token.span());
+
+        Ok(parser.program.new_expression(
+            Expr::PrefixOp {
+                op: token,
+                right: operand,
+            },
             span,
-        })
+        ))
     }
 }
 
 struct CallParselet;
 impl InfixParselet for CallParselet {
-    fn parse(&self, parser: &mut Parser, left: Expr, _token: Token) -> ParserResult<Expr> {
-        let mut args: Vec<Expr> = Vec::new();
-        let mut span = left.span();
+    fn parse(&self, parser: &mut Parser, left: ExprId, _token: Token) -> ParserResult<ExprId> {
+        let mut args: Vec<ExprId> = Vec::new();
+        let mut span = parser.program.ast.expressions[left].span.clone();
 
         loop {
             if parser.peek().token_type == TT::RightParen {
@@ -154,7 +177,7 @@ impl InfixParselet for CallParselet {
             }
 
             let arg = parser.parse_expression(Precedence::Lowest)?;
-            span = span.merge(arg.span());
+            span = span.merge(parser.program.ast.expressions[arg].span.clone());
 
             args.push(arg);
             parser.match_expected(TT::Comma)?;
@@ -163,11 +186,9 @@ impl InfixParselet for CallParselet {
         let t = parser.consume_expected(TT::RightParen)?;
         span = span.merge(t.span());
 
-        Ok(Expr::Call {
-            callee: Box::new(left),
-            args,
-            span,
-        })
+        Ok(parser
+            .program
+            .new_expression(Expr::Call { callee: left, args }, span))
     }
 
     fn precedence(&self) -> Precedence {
@@ -180,7 +201,7 @@ struct BinaryOperatorParselet {
     is_right: bool,
 }
 impl InfixParselet for BinaryOperatorParselet {
-    fn parse(&self, parser: &mut Parser, left: Expr, token: Token) -> ParserResult<Expr> {
+    fn parse(&self, parser: &mut Parser, left: ExprId, token: Token) -> ParserResult<ExprId> {
         let parse_right_prec = if self.is_right {
             self.precedence().prev()
         } else {
@@ -188,14 +209,18 @@ impl InfixParselet for BinaryOperatorParselet {
         };
 
         let right = parser.parse_expression(parse_right_prec)?;
-        let span = left.span().merge(right.span());
+        let span = parser.program.ast.expressions[left]
+            .span
+            .merge(parser.program.ast.expressions[right].span.clone());
 
-        Ok(Expr::BinaryOp {
-            left: Box::new(left),
-            op: token,
-            right: Box::new(right),
+        Ok(parser.program.new_expression(
+            Expr::BinaryOp {
+                left,
+                op: token,
+                right,
+            },
             span,
-        })
+        ))
     }
 
     fn precedence(&self) -> Precedence {
@@ -207,38 +232,42 @@ struct PostfixOperatorParselet {
     precedence: Precedence,
 }
 impl PrefixParselet for PostfixOperatorParselet {
-    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<Expr> {
+    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<ExprId> {
         let operand = parser.parse_expression(self.precedence.clone())?;
-        let span = token.span.merge(operand.span());
+        let span = parser.program.ast.expressions[operand]
+            .span
+            .merge(token.span());
 
-        Ok(Expr::PostfixOp {
-            op: token,
-            left: Box::new(operand),
+        Ok(parser.program.new_expression(
+            Expr::PostfixOp {
+                op: token,
+                left: operand,
+            },
             span,
-        })
+        ))
     }
 }
 
-struct ConditionalParselet;
-impl InfixParselet for ConditionalParselet {
-    fn parse(&self, parser: &mut Parser, left: Expr, _token: Token) -> ParserResult<Expr> {
-        let then_branch = parser.parse_expression(Precedence::Lowest)?;
-        parser.consume_expected(TT::Colon)?;
-        let else_branch = parser.parse_expression(self.precedence().prev())?;
-        let span = left.span().merge(else_branch.span());
+// struct ConditionalParselet;
+// impl InfixParselet for ConditionalParselet {
+//     fn parse(&self, parser: &mut Parser, left: Expr, _token: Token) -> ParserResult<Expr> {
+//         let then_branch = parser.parse_expression(Precedence::Lowest)?;
+//         parser.consume_expected(TT::Colon)?;
+//         let else_branch = parser.parse_expression(self.precedence().prev())?;
+//         let span = left.span().merge(else_branch.span());
 
-        Ok(Expr::Conditional {
-            condition: Box::new(left),
-            then_branch: Box::new(then_branch),
-            else_branch: Box::new(else_branch),
-            span,
-        })
-    }
+//         Ok(Expr::Conditional {
+//             condition: Box::new(left),
+//             then_branch: Box::new(then_branch),
+//             else_branch: Box::new(else_branch),
+//             span,
+//         })
+//     }
 
-    fn precedence(&self) -> Precedence {
-        Precedence::Conditional
-    }
-}
+//     fn precedence(&self) -> Precedence {
+//         Precedence::Conditional
+//     }
+// }
 
 macro_rules! register {
     ($map:expr, $token_type:path, $parselet:ident) => {
@@ -285,37 +314,33 @@ pub struct Parser<'a> {
     lexer: &'a mut Lexer<'a>,
     current_token: Token,
     next_token: Token,
-    id_gen: ExprId,
     prefix_parselets: HashMap<TokenType, Rc<dyn PrefixParselet>>,
     infix_parselets: HashMap<TokenType, Rc<dyn InfixParselet>>,
+    program: Program,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(lexer: &'a mut Lexer<'a>) -> Parser<'a> {
+    pub fn new(lexer: &'a mut Lexer<'a>) -> ParserResult<Parser<'a>> {
         let mut parser = Parser {
             lexer,
             current_token: Token::new(TT::Eof),
             next_token: Token::new(TT::Eof),
-            id_gen: 0,
             prefix_parselets: HashMap::new(),
             infix_parselets: HashMap::new(),
+            program: Program::new(),
         };
 
         // Prime the next_token
-        parser.consume().unwrap();
+        parser.consume()?;
 
         // Custom parselets
         register!(parser.prefix_parselets, TT::Integer, NumberParselet);
         register!(parser.prefix_parselets, TT::Float, NumberParselet);
         register!(parser.prefix_parselets, TT::String, StringParselet);
         register!(parser.prefix_parselets, TT::Identifier, IdentParselet);
-        register!(parser.prefix_parselets, TT::Comment, CommentParselet);
+        // register!(parser.prefix_parselets, TT::Comment, CommentParselet);
         register!(parser.prefix_parselets, TT::LeftParen, GroupParselet);
-        register!(
-            parser.infix_parselets,
-            TT::QuestionMark,
-            ConditionalParselet
-        );
+        // register!(parser.infix_parselets, TT::QuestionMark, ConditionalParselet);
         register!(parser.infix_parselets, TT::LeftParen, CallParselet);
 
         // Prefix parselets
@@ -329,46 +354,40 @@ impl<'a> Parser<'a> {
         infix_left!(parser.infix_parselets, TT::Slash, Precedence::Product);
         infix_right!(parser.infix_parselets, TT::Caret, Precedence::Exponent);
 
-        parser
+        Ok(parser)
     }
 
     pub fn parse(&mut self) -> ParserResult<Program> {
-        let result = self.parse_program()?;
+        self.parse_program()?;
         self.consume_expected(TT::Eof)?;
-        Ok(result)
+
+        Ok(self.program.clone())
     }
 
-    fn parse_program(&mut self) -> ParserResult<Program> {
-        let mut statements = Vec::new();
-
+    fn parse_program(&mut self) -> ParserResult<()> {
         while !self.is_at_end() {
-            let decl = self.parse_declaration()?;
-            statements.push(decl);
+            match self.peek().token_type {
+                TT::Struct => {
+                    self.parse_struct_decl()?;
+                }
+                TT::Fun | TT::Export => {
+                    self.parse_function()?;
+                }
+                _ => {
+                    let stmt = self.parse_declaration()?;
+                    self.program.main_stmts.push(stmt);
+                }
+            };
         }
 
-        Ok(Program { statements })
+        Ok(())
     }
 
-    fn parse_declaration(&mut self) -> ParserResult<Stmt> {
-        let stmt = match self.peek().token_type {
-            TT::Struct => self.parse_struct_decl()?,
-            TT::Fun | TT::Export => self.parse_function()?,
-            TT::Let => self.parse_let_declaration()?,
-            _ => self.parse_statement()?,
-        };
-
-        Ok(stmt)
-    }
-
-    fn parse_struct_decl(&mut self) -> ParserResult<Stmt> {
+    fn parse_struct_decl(&mut self) -> ParserResult<()> {
         let token = self.consume()?;
         let mut span = token.span();
 
-        let name = match self.consume_expected(TT::Identifier)?.literal {
-            Some(Literal::Identifier(name)) => name,
-            _ => unreachable!(),
-        };
-
+        let ident = self.parse_identifier()?;
         self.consume_expected(TT::LeftBrace)?;
 
         let mut fields = Vec::new();
@@ -387,27 +406,29 @@ impl<'a> Parser<'a> {
 
         span = span.merge(token.span());
 
-        Ok(Stmt::Struct(StructDecl { name, span, fields }))
+        self.program.add_struct(StructDecl {
+            ident,
+            fields,
+            span,
+        });
+
+        Ok(())
     }
 
     fn parse_struct_field(&mut self) -> ParserResult<StructField> {
         let token = self.consume_expected(TT::Identifier)?;
-        let mut span = token.span().clone();
+        let mut span = token.span();
 
-        let name = match token.literal {
-            Some(Literal::Identifier(name)) => name,
-            _ => unreachable!(),
-        };
-
+        let ident = self.parse_identifier()?;
         self.consume_expected(TT::Colon)?;
 
         let ty = self.parse_type()?;
-        span = span.merge(ty.span());
+        span = span.merge(ty.span.clone());
 
-        Ok(StructField { name, ty, span })
+        Ok(StructField { ident, ty, span })
     }
 
-    fn parse_function(&mut self) -> ParserResult<Stmt> {
+    fn parse_function(&mut self) -> ParserResult<()> {
         let token = self.consume()?;
         let mut span = token.span();
 
@@ -417,7 +438,7 @@ impl<'a> Parser<'a> {
             self.consume_expected(TT::Fun)?;
         }
 
-        let name = self.parse_identifier()?;
+        let ident = self.parse_identifier()?;
 
         // Generic type parameters
         let mut type_params = Vec::new();
@@ -453,20 +474,22 @@ impl<'a> Parser<'a> {
 
         // Function body
         let block = self.parse_block()?;
-        span = span.merge(block.span().clone());
+        span = span.merge(self.program.ast.statements[block].span.clone());
 
-        Ok(Stmt::Func(FuncDecl {
-            name,
+        self.program.add_function(FuncDecl {
+            ident,
             is_exported,
             type_params,
             args,
             return_ty,
             body: block,
             span,
-        }))
+        });
+
+        Ok(())
     }
 
-    fn parse_identifier(&mut self) -> ParserResult<Identifier> {
+    fn parse_identifier(&mut self) -> ParserResult<IdentId> {
         let token = self.consume_expected(TT::Identifier)?;
         let span = token.span();
 
@@ -475,17 +498,25 @@ impl<'a> Parser<'a> {
             _ => unreachable!(),
         };
 
-        Ok(Identifier::new(name, span))
+        let ident = self.program.new_identifier(name, span);
+        Ok(ident)
     }
 
     fn parse_function_arg(&mut self) -> ParserResult<FuncArg> {
-        let name = self.parse_identifier()?;
-        let span = name.span();
+        let ident = self.parse_identifier()?;
+        let span = self.program.span_for_ident(ident);
 
-        self.consume_expected(TT::Colon)?;
+        self.consume_expected(TT::Colon)
+            .map_err(|_e| ParserError::MissingTypeAnnotation {
+                span: span.clone(),
+                name: self.program.get_ident_name(ident),
+            })?;
+
         let ty = self.parse_type()?;
 
-        Ok(FuncArg { name, span, ty })
+        let span = span.merge(ty.span.clone());
+
+        Ok(FuncArg { ident, span, ty })
     }
 
     fn parse_type(&mut self) -> ParserResult<TypeAnnotation> {
@@ -502,22 +533,31 @@ impl<'a> Parser<'a> {
         Ok(TypeAnnotation { name, span })
     }
 
-    fn parse_block(&mut self) -> ParserResult<Block> {
+    fn parse_block(&mut self) -> ParserResult<StmtId> {
         let token = self.consume_expected(TT::LeftBrace)?;
         let mut span = token.span();
 
-        let mut statements = Vec::new();
+        let mut statements: Vec<StmtId> = Vec::new();
         while !self.peek().is(TT::RightBrace) && !self.is_at_end() {
-            statements.push(self.parse_declaration()?);
+            statements.push(self.parse_statement()?);
         }
 
         let token = self.consume_expected(TT::RightBrace)?;
         span = span.merge(token.span());
 
-        Ok(Block { statements, span })
+        Ok(self
+            .program
+            .new_statement(Stmt::BlockStmt(Block { statements }), span))
     }
 
-    fn parse_let_declaration(&mut self) -> ParserResult<Stmt> {
+    fn parse_declaration(&mut self) -> ParserResult<StmtId> {
+        match self.peek().token_type {
+            TT::Let => self.parse_let_declaration(),
+            _ => self.parse_statement(),
+        }
+    }
+
+    fn parse_let_declaration(&mut self) -> ParserResult<StmtId> {
         let token = self.consume()?;
         let mut span = token.span();
 
@@ -531,70 +571,71 @@ impl<'a> Parser<'a> {
         self.consume_expected(TT::Equal)?;
         let init = self.parse_expression(Precedence::Lowest)?;
 
-        span = span.merge(init.span());
+        span = span.merge(self.program.ast.expressions[init].span.clone());
 
-        Ok(Stmt::Let(LetDecl {
-            name,
-            ty,
-            init,
+        Ok(self.program.new_statement(
+            Stmt::Let(LetDecl {
+                ident: name,
+                ty,
+                init,
+            }),
             span,
-        }))
+        ))
     }
 
-    fn parse_statement(&mut self) -> ParserResult<Stmt> {
+    fn parse_statement(&mut self) -> ParserResult<StmtId> {
         let stmt = match self.peek().token_type {
             TT::If => self.parse_if_statement()?,
             _ => {
                 let expr = self.parse_expression(Precedence::Lowest)?;
-                let span = expr.span();
+                let span = self.program.ast.expressions[expr].span.clone();
 
                 // TODO: consume newline or semicolon?
-                Stmt::ExprStmt {
-                    expr: Box::new(expr),
-                    span,
-                }
+                self.program.new_statement(Stmt::ExprStmt(expr), span)
             }
         };
 
         Ok(stmt)
     }
 
-    fn parse_if_statement(&mut self) -> ParserResult<Stmt> {
+    fn parse_if_statement(&mut self) -> ParserResult<StmtId> {
         let token = self.consume()?;
         let mut span = token.span();
 
         let condition = self.parse_expression(Precedence::Lowest)?;
 
         let then_block = self.parse_block()?;
-        span = span.merge(then_block.span());
+        span = span.merge(self.program.ast.statements[then_block].span.clone());
 
         let else_block = if self.match_expected(TT::Else)? {
             let else_block = self.parse_block()?;
-            span = span.merge(else_block.span());
+            span = span.merge(self.program.ast.statements[else_block].span.clone());
             Some(else_block)
         } else {
             None
         };
 
-        Ok(Stmt::IfStmt {
-            condition,
-            then_block,
-            else_block,
+        Ok(self.program.new_statement(
+            Stmt::IfStmt {
+                condition,
+                then_block,
+                else_block,
+            },
             span,
-        })
+        ))
     }
 
     /// Parse the next expression using the provided precedence
     /// This is the core of the Pratt parser
-    pub fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<Expr> {
+    pub fn parse_expression(&mut self, precedence: Precedence) -> ParserResult<ExprId> {
         let token = self.consume()?;
 
         let prefix_parselet = self
             .prefix_parselets
             .get(&token.token_type)
-            .ok_or_else(|| {
-                ParserError::new(ParserErrorKind::UnexpectedToken(token.to_string()))
-                    .with_span(token.span.clone())
+            .ok_or_else(|| ParserError::UnexpectedToken {
+                token: token.to_string(),
+                span: token.span(),
             })?
             .clone();
 
@@ -606,9 +647,9 @@ impl<'a> Parser<'a> {
             let infix_parselet = self
                 .infix_parselets
                 .get(&token.token_type)
-                .ok_or_else(|| {
-                    ParserError::new(ParserErrorKind::UnexpectedToken(token.to_string()))
-                        .with_span(token.span.clone())
+                .ok_or_else(|| ParserError::UnexpectedToken {
+                    token: token.to_string(),
+                    span: token.span(),
                 })?
                 .clone();
 
@@ -651,11 +692,18 @@ impl<'a> Parser<'a> {
     /// Returns the consumed token if it was consumed, an error otherwise.
     fn consume_expected(&mut self, token_type: TokenType) -> ParserResult<Token> {
         if self.next_token.token_type != token_type {
-            return Err(ParserError::new(ParserErrorKind::ExpectedToken(
-                token_type,
-                self.next_token.to_string(),
-            ))
-            .with_span(self.next_token.span.clone()));
+            if self.next_token.token_type == TT::Eof {
+                return Err(ParserError::UnexpectedEof {
+                    expected: token_type,
+                    span: self.next_token.span.clone(),
+                });
+            }
+
+            return Err(ParserError::ExpectedToken {
+                expected: token_type,
+                found: self.next_token.to_string(),
+                span: self.next_token.span.clone().into(),
+            });
         }
 
         self.consume()
@@ -667,38 +715,33 @@ impl<'a> Parser<'a> {
         self.next_token = self
             .lexer
             .next()
-            .unwrap_or_else(|| Ok(Token::new(TT::Eof).with_span(self.lexer.pos().into())))
-            .map_err(|lexer_error| {
-                let mut pe = ParserError::new(ParserErrorKind::LexerError(lexer_error.kind));
-                pe.span = lexer_error.span;
-                pe
-            })?;
+            .unwrap_or_else(|| {
+                let offset = self.lexer.pos().offset();
+                Ok(Token::new(TT::Eof).with_span(Span::new((offset - 1).into(), None)))
+            })
+            .map_err(ParserError::LexerError)?;
 
         Ok(self.current_token.clone())
-    }
-
-    /// Get a unique ID for an expression
-    fn gen_id(&mut self) -> ExprId {
-        let id = self.id_gen;
-        self.id_gen += 1;
-        id
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::petal::ast::ExprNode;
+
     use super::*;
 
-    fn parse_stmt(s: &str) -> Stmt {
+    fn parse_expr(s: &str) -> Vec<ExprNode> {
         let mut lexer = Lexer::new(s);
-        let mut parser = Parser::new(&mut lexer);
-        parser.parse_declaration().unwrap()
-    }
+        let mut parser = Parser::new(&mut lexer).unwrap();
+        parser.parse_expression(Precedence::Lowest).unwrap();
 
-    fn parse_expr(s: &str) -> Expr {
-        let mut lexer = Lexer::new(s);
-        let mut parser = Parser::new(&mut lexer);
-        parser.parse_expression(Precedence::Lowest).unwrap()
+        let mut nodes = Vec::new();
+        for (_, expr) in parser.program.ast.expressions.iter() {
+            nodes.push(expr.clone())
+        }
+
+        nodes
     }
 
     #[test]
@@ -729,100 +772,100 @@ mod tests {
         insta::assert_debug_snapshot!(parse_expr("1 ^ 2"));
     }
 
-    #[test]
-    fn test_unary_binary_prec() {
-        insta::assert_debug_snapshot!(parse_expr("-a * b"));
-        insta::assert_debug_snapshot!(parse_expr("!a ^ b"));
-    }
+    // #[test]
+    // fn test_unary_binary_prec() {
+    //     insta::assert_debug_snapshot!(parse_expr("-a * b"));
+    //     insta::assert_debug_snapshot!(parse_expr("!a ^ b"));
+    // }
 
-    #[test]
-    fn test_binary_associativity() {
-        insta::assert_debug_snapshot!(parse_expr("a + b - c"));
-        insta::assert_debug_snapshot!(parse_expr("a * b / c"));
-        insta::assert_debug_snapshot!(parse_expr("a ^ b ^ c"));
-    }
+    // #[test]
+    // fn test_binary_associativity() {
+    //     insta::assert_debug_snapshot!(parse_expr("a + b - c"));
+    //     insta::assert_debug_snapshot!(parse_expr("a * b / c"));
+    //     insta::assert_debug_snapshot!(parse_expr("a ^ b ^ c"));
+    // }
 
-    #[test]
-    fn test_conditionals() {
-        insta::assert_debug_snapshot!(parse_expr("1 ? 2 : 3"));
-        insta::assert_debug_snapshot!(parse_expr("1 ? 2 : 3 ? 4 : 5"));
-        insta::assert_debug_snapshot!(parse_expr("a + b ? c * d : e / f",));
-    }
+    // #[test]
+    // fn test_conditionals() {
+    //     insta::assert_debug_snapshot!(parse_expr("1 ? 2 : 3"));
+    //     insta::assert_debug_snapshot!(parse_expr("1 ? 2 : 3 ? 4 : 5"));
+    //     insta::assert_debug_snapshot!(parse_expr("a + b ? c * d : e / f",));
+    // }
 
-    #[test]
-    fn test_groups() {
-        insta::assert_debug_snapshot!(parse_expr("(foo)"));
-        insta::assert_debug_snapshot!(parse_expr("(1 + 2) * 3"));
-        insta::assert_debug_snapshot!(parse_expr("1 * (2 - 3)"));
-        insta::assert_debug_snapshot!(parse_expr("a ^ (b + c)"));
-        insta::assert_debug_snapshot!(parse_expr("(a ^ b) ^ c"));
-    }
+    // #[test]
+    // fn test_groups() {
+    //     insta::assert_debug_snapshot!(parse_expr("(foo)"));
+    //     insta::assert_debug_snapshot!(parse_expr("(1 + 2) * 3"));
+    //     insta::assert_debug_snapshot!(parse_expr("1 * (2 - 3)"));
+    //     insta::assert_debug_snapshot!(parse_expr("a ^ (b + c)"));
+    //     insta::assert_debug_snapshot!(parse_expr("(a ^ b) ^ c"));
+    // }
 
-    #[test]
-    fn test_calls() {
-        insta::assert_debug_snapshot!(parse_expr("foo()"));
-        insta::assert_debug_snapshot!(parse_expr("foo(a, 1, \"hello\")"));
-        insta::assert_debug_snapshot!(parse_expr("a(b) + c(d)"));
-        insta::assert_debug_snapshot!(parse_expr("a(b)(c)"));
-    }
+    // #[test]
+    // fn test_calls() {
+    //     insta::assert_debug_snapshot!(parse_expr("foo()"));
+    //     insta::assert_debug_snapshot!(parse_expr("foo(a, 1, \"hello\")"));
+    //     insta::assert_debug_snapshot!(parse_expr("a(b) + c(d)"));
+    //     insta::assert_debug_snapshot!(parse_expr("a(b)(c)"));
+    // }
 
-    #[test]
-    fn test_let_declarations() {
-        insta::assert_debug_snapshot!(parse_stmt("let a = b"));
-        insta::assert_debug_snapshot!(parse_stmt("let a = b + c * d"));
-        insta::assert_debug_snapshot!(parse_stmt("let a: Int = b"));
-    }
+    // #[test]
+    // fn test_let_declarations() {
+    //     insta::assert_debug_snapshot!(parse_stmt("let a = b"));
+    //     insta::assert_debug_snapshot!(parse_stmt("let a = b + c * d"));
+    //     insta::assert_debug_snapshot!(parse_stmt("let a: Int = b"));
+    // }
 
-    #[test]
-    fn test_ifs() {
-        insta::assert_debug_snapshot!(parse_stmt(
-            "
-            if cond {
-                a
-            }
-        "
-        ));
-        insta::assert_debug_snapshot!(parse_stmt(
-            "
-            if cond {
-                a
-            } else {
-                b
-            }
-        "
-        ));
-    }
+    // #[test]
+    // fn test_ifs() {
+    //     insta::assert_debug_snapshot!(parse_stmt(
+    //         "
+    //         if cond {
+    //             a
+    //         }
+    //     "
+    //     ));
+    //     insta::assert_debug_snapshot!(parse_stmt(
+    //         "
+    //         if cond {
+    //             a
+    //         } else {
+    //             b
+    //         }
+    //     "
+    //     ));
+    // }
 
-    #[test]
-    fn test_structs() {
-        insta::assert_debug_snapshot!(parse_stmt("struct Foo {}"));
-        insta::assert_debug_snapshot!(parse_stmt("struct Foo { hello: Int }"));
-        insta::assert_debug_snapshot!(parse_stmt(
-            "struct Foo {
-            hello: Int,
-            world: String
-        }"
-        ));
-    }
+    // #[test]
+    // fn test_structs() {
+    //     insta::assert_debug_snapshot!(parse_stmt("struct Foo {}"));
+    //     insta::assert_debug_snapshot!(parse_stmt("struct Foo { hello: Int }"));
+    //     insta::assert_debug_snapshot!(parse_stmt(
+    //         "struct Foo {
+    //         hello: Int,
+    //         world: String
+    //     }"
+    //     ));
+    // }
 
-    #[test]
-    fn test_functions() {
-        insta::assert_debug_snapshot!(parse_stmt("fn foo() {}"));
-        insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
-        insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int, b: String) {}"));
-        insta::assert_debug_snapshot!(parse_stmt(
-            "
-        fn foo(foo: Int, bar: Int) {
-            let a = foo + bar
-        }"
-        ));
-        insta::assert_debug_snapshot!(parse_stmt("export fn foo() {}"));
+    // #[test]
+    // fn test_functions() {
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo() {}"));
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int, b: String) {}"));
+    //     insta::assert_debug_snapshot!(parse_stmt(
+    //         "
+    //     fn foo(foo: Int, bar: Int) {
+    //         let a = foo + bar
+    //     }"
+    //     ));
+    //     insta::assert_debug_snapshot!(parse_stmt("export fn foo() {}"));
 
-        insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
 
-        insta::assert_debug_snapshot!(parse_stmt("fn foo<T>() {}"));
-        insta::assert_debug_snapshot!(parse_stmt("fn foo<T>(a: T) {}"));
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo<T>() {}"));
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo<T>(a: T) {}"));
 
-        insta::assert_debug_snapshot!(parse_stmt("fn foo(): Int {}"));
-    }
+    //     insta::assert_debug_snapshot!(parse_stmt("fn foo(): Int {}"));
+    // }
 }

@@ -8,14 +8,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: "(",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 1,
-            },
-            end: Pos {
-                line: 0,
-                col: 1,
-            },
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    0,
+                ),
+            ),
         },
     },
     Token {
@@ -23,14 +23,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: ")",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 3,
-            },
-            end: Pos {
-                line: 0,
-                col: 3,
-            },
+            start: Pos(
+                2,
+            ),
+            end: Some(
+                Pos(
+                    2,
+                ),
+            ),
         },
     },
     Token {
@@ -38,14 +38,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: "{",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 5,
-            },
-            end: Pos {
-                line: 0,
-                col: 5,
-            },
+            start: Pos(
+                4,
+            ),
+            end: Some(
+                Pos(
+                    4,
+                ),
+            ),
         },
     },
     Token {
@@ -53,14 +53,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: "}",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 7,
-            },
-            end: Pos {
-                line: 0,
-                col: 7,
-            },
+            start: Pos(
+                6,
+            ),
+            end: Some(
+                Pos(
+                    6,
+                ),
+            ),
         },
     },
     Token {
@@ -68,14 +68,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: ".",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 9,
-            },
-            end: Pos {
-                line: 0,
-                col: 9,
-            },
+            start: Pos(
+                8,
+            ),
+            end: Some(
+                Pos(
+                    8,
+                ),
+            ),
         },
     },
     Token {
@@ -83,14 +83,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: ",",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 11,
-            },
-            end: Pos {
-                line: 0,
-                col: 11,
-            },
+            start: Pos(
+                10,
+            ),
+            end: Some(
+                Pos(
+                    10,
+                ),
+            ),
         },
     },
     Token {
@@ -98,14 +98,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: "?",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 13,
-            },
-            end: Pos {
-                line: 0,
-                col: 13,
-            },
+            start: Pos(
+                12,
+            ),
+            end: Some(
+                Pos(
+                    12,
+                ),
+            ),
         },
     },
     Token {
@@ -113,14 +113,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: ":",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 15,
-            },
-            end: Pos {
-                line: 0,
-                col: 15,
-            },
+            start: Pos(
+                14,
+            ),
+            end: Some(
+                Pos(
+                    14,
+                ),
+            ),
         },
     },
     Token {
@@ -128,14 +128,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: "^",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 17,
-            },
-            end: Pos {
-                line: 0,
-                col: 17,
-            },
+            start: Pos(
+                16,
+            ),
+            end: Some(
+                Pos(
+                    16,
+                ),
+            ),
         },
     },
     Token {
@@ -143,14 +143,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: ";",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 19,
-            },
-            end: Pos {
-                line: 0,
-                col: 19,
-            },
+            start: Pos(
+                18,
+            ),
+            end: Some(
+                Pos(
+                    18,
+                ),
+            ),
         },
     },
     Token {
@@ -158,14 +158,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: "+",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 21,
-            },
-            end: Pos {
-                line: 0,
-                col: 21,
-            },
+            start: Pos(
+                20,
+            ),
+            end: Some(
+                Pos(
+                    20,
+                ),
+            ),
         },
     },
     Token {
@@ -173,14 +173,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: "-",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 23,
-            },
-            end: Pos {
-                line: 0,
-                col: 23,
-            },
+            start: Pos(
+                22,
+            ),
+            end: Some(
+                Pos(
+                    22,
+                ),
+            ),
         },
     },
     Token {
@@ -188,14 +188,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: "*",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 25,
-            },
-            end: Pos {
-                line: 0,
-                col: 25,
-            },
+            start: Pos(
+                24,
+            ),
+            end: Some(
+                Pos(
+                    24,
+                ),
+            ),
         },
     },
     Token {
@@ -203,14 +203,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: "/",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 27,
-            },
-            end: Pos {
-                line: 0,
-                col: 27,
-            },
+            start: Pos(
+                26,
+            ),
+            end: Some(
+                Pos(
+                    26,
+                ),
+            ),
         },
     },
     Token {
@@ -218,14 +218,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: "!",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 29,
-            },
-            end: Pos {
-                line: 0,
-                col: 29,
-            },
+            start: Pos(
+                28,
+            ),
+            end: Some(
+                Pos(
+                    28,
+                ),
+            ),
         },
     },
     Token {
@@ -233,14 +233,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: "=",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 31,
-            },
-            end: Pos {
-                line: 0,
-                col: 31,
-            },
+            start: Pos(
+                30,
+            ),
+            end: Some(
+                Pos(
+                    30,
+                ),
+            ),
         },
     },
     Token {
@@ -248,14 +248,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: "<",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 33,
-            },
-            end: Pos {
-                line: 0,
-                col: 33,
-            },
+            start: Pos(
+                32,
+            ),
+            end: Some(
+                Pos(
+                    32,
+                ),
+            ),
         },
     },
     Token {
@@ -263,14 +263,14 @@ expression: "lex(\"( ) { } . , ? : ^ ; + - * / ! = < >\".to_string())"
         lexeme: ">",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 35,
-            },
-            end: Pos {
-                line: 0,
-                col: 35,
-            },
+            start: Pos(
+                34,
+            ),
+            end: Some(
+                Pos(
+                    34,
+                ),
+            ),
         },
     },
 ]

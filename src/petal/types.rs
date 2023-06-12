@@ -1,10 +1,5 @@
 use std::fmt::Display;
 
-use super::{
-    ast::{FuncDecl, TypeAnnotation},
-    positions::Span,
-};
-
 pub type TyVar = String;
 
 /// Monomorphic type
@@ -15,17 +10,6 @@ pub enum MonoType {
 
     Struct(StructType),
 
-    // /// Integer (`1`, `2`, `3`, ...)
-    // Int,
-
-    // /// Float (`1.0`, `2.1`, `3.14`, ...)
-    // Float,
-
-    // /// Boolean (`true`, `false`)
-    // Bool,
-
-    // /// String (`"hello"`, `"world"`, ...)
-    // String,
     /// Function type (`(Int, String) -> Bool`)
     FunApp(FunctionAppType),
 }
@@ -112,10 +96,7 @@ impl Display for MonoType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             MonoType::Variable(name) => write!(f, "{}", name),
-            // MonoType::Int => write!(f, "Int"),
-            // MonoType::Float => write!(f, "Float"),
-            // MonoType::Bool => write!(f, "Bool"),
-            // MonoType::String => write!(f, "String"),
+
             MonoType::Struct(struct_ty) => {
                 write!(
                     f,
@@ -136,6 +117,7 @@ impl Display for MonoType {
                     }
                 )
             }
+
             MonoType::FunApp(function_app) => {
                 write!(
                     f,
@@ -172,22 +154,4 @@ impl Display for PolyType {
             }
         }
     }
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub enum Type {
-    Void,
-
-    TyVar(usize),
-
-    // Basic type
-    // Int
-    Simple(String),
-
-    // Function type
-    // A -> B
-    Function {
-        params: Vec<Type>,
-        return_ty: Box<Type>,
-    },
 }

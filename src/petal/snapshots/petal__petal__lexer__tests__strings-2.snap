@@ -12,14 +12,14 @@ expression: "lex(\"\\\"multi\\nline\\nstring\\\"\".to_string())"
             ),
         ),
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 1,
-            },
-            end: Pos {
-                line: 2,
-                col: 7,
-            },
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    18,
+                ),
+            ),
         },
     },
 ]

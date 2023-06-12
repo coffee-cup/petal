@@ -1,17 +1,33 @@
 ---
 source: src/petal/parser.rs
-expression: "parse(\"a\")"
+expression: "parse_expr(\"a\")"
 ---
-Ident {
-    name: "a",
-    span: Span {
-        start: Pos {
-            line: 0,
-            col: 1,
-        },
-        end: Pos {
-            line: 0,
-            col: 1,
+[
+    ExprNode {
+        expr: Ident(
+            Identifier {
+                name: "a",
+                span: Span {
+                    start: Pos(
+                        0,
+                    ),
+                    end: Some(
+                        Pos(
+                            0,
+                        ),
+                    ),
+                },
+            },
+        ),
+        span: Span {
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    0,
+                ),
+            ),
         },
     },
-}
+]

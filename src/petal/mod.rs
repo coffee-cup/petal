@@ -1,20 +1,20 @@
-use crate::petal::{analysis::Analysis, wat::IRGenerator};
+// use crate::petal::analysis::Analysis;
 
-use self::{errors::CompilerError, lexer::Lexer, wasm::Wasm};
+use self::{analysis::AnalysisContext, errors::CompilerError, lexer::Lexer};
 
 mod analysis;
 mod ast;
-mod codegen;
+// mod codegen;
 pub mod errors;
 mod lexer;
 mod parser;
-mod positions;
 mod precedence;
+mod source_info;
 mod token;
 mod typechecker;
 mod types;
-mod wasm;
-mod wat;
+// mod wasm;
+// mod wat;
 
 type CompilerResult<T> = Result<T, CompilerError>;
 
@@ -25,22 +25,33 @@ impl Compiler {
         Self {}
     }
 
-    pub fn compile_file(&self, file: &str) -> CompilerResult<Wasm> {
-        let file = std::fs::read_to_string(file).expect("Could not read file");
+    pub fn compile_file(&self, filename: &str) -> CompilerResult<()> {
+        let file = std::fs::read_to_string(filename).expect("Could not read file");
 
-        let mut lexer1 = Lexer::new(&file);
-        let tokens = lexer1.map(|t| t.unwrap()).collect::<Vec<_>>();
+        // let f2 = file.clone();
+        // let lexer1 = Lexer::new(&f2);
+        // match lexer1.collect::<Result<Vec<_>, _>>() {
+        //     Ok(tokens) => {
+        //         println!("Tokens: {:#?}", tokens);
+        //     }
+        //     Err(e) => {
+        //         let report = miette::Report::from(e).with_source_code(f2);
+        //         println!("{:?}", report);
+        //     }
+        // };
+
         // println!("Tokens: {:#?}", tokens);
 
         let mut lexer = Lexer::new(&file);
-        let mut parser = parser::Parser::new(&mut lexer);
-        let program = parser.parse().map_err(CompilerError::ParserError)?;
+        let mut parser = parser::Parser::new(&mut lexer).map_err(CompilerError::ParserError)?;
 
-        println!("{:#?}", program);
+        let mut program = parser.parse().map_err(CompilerError::ParserError)?;
 
-        let mut analysis = Analysis::new();
+        // println!("{:#?}", program);
+
+        let mut analysis = AnalysisContext::new(&mut program);
         analysis
-            .analysis_program(&program)
+            .analysis_program()
             .map_err(CompilerError::AnalysisError)?;
 
         // let mut typechecker = Typechecker::new(&program);

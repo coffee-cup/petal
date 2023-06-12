@@ -12,9 +12,11 @@ clap = { version = "4.2.4", features = ["derive"] }
 colored = "2.0.0"
 insta = { version = "1.29.0", features = ["json"] }
 lazy_static = "1.4.0"
+miette = { version = "5.9.0", features = ["fancy"] }
 num = "0.4.0"
 num-derive = "0.3.3"
 num-traits = "0.2.15"
+slotmap = "1.0.6"
 thiserror = "1.0.40"
 wasm-encoder = "0.26.0"
 wasmer = "3.3.0"

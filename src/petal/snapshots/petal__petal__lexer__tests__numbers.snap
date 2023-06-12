@@ -12,14 +12,14 @@ expression: "lex(\"1 123 123.456\".to_string())"
             ),
         ),
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 1,
-            },
-            end: Pos {
-                line: 0,
-                col: 1,
-            },
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    0,
+                ),
+            ),
         },
     },
     Token {
@@ -31,14 +31,14 @@ expression: "lex(\"1 123 123.456\".to_string())"
             ),
         ),
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 3,
-            },
-            end: Pos {
-                line: 0,
-                col: 5,
-            },
+            start: Pos(
+                2,
+            ),
+            end: Some(
+                Pos(
+                    4,
+                ),
+            ),
         },
     },
     Token {
@@ -50,14 +50,14 @@ expression: "lex(\"1 123 123.456\".to_string())"
             ),
         ),
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 7,
-            },
-            end: Pos {
-                line: 0,
-                col: 13,
-            },
+            start: Pos(
+                6,
+            ),
+            end: Some(
+                Pos(
+                    12,
+                ),
+            ),
         },
     },
 ]

@@ -1,8 +1,10 @@
+use colored::Colorize;
+use miette::Diagnostic;
 use std::{collections::HashMap, str::Chars};
 use thiserror::Error;
 
 use super::{
-    positions::{Pos, Span},
+    source_info::{Pos, Span},
     token::{Literal, Token, TokenType},
 };
 
@@ -12,40 +14,36 @@ pub struct Lexer<'a> {
     chars: Chars<'a>,
     current: Option<char>,
 
-    line: usize,
-    col: usize,
+    offset: usize,
     current_lexeme: String,
 }
 
-#[derive(Error, Clone, Debug)]
-pub enum LexerErrorKind {
-    #[error("Unexpected character {0}")]
-    UnexpectedChar(char),
+#[derive(Diagnostic, Error, Clone, Debug)]
+pub enum LexerError {
+    #[error("Unexpected character")]
+    #[diagnostic()]
+    UnexpectedChar {
+        c: char,
+
+        #[label("The character `{c}` was found but not expected here")]
+        span: Span,
+    },
 
     #[error("Unterminated string")]
-    UnterminatedString,
+    #[diagnostic(help("Strings must be closed with a double quote `{}`", "\"".bold()))]
+    UnterminatedString {
+        #[label("This string is unterminated")]
+        span: Span,
+    },
 
     #[error("Invalid number")]
-    InvalidNumber,
-}
+    InvalidNumber {
+        #[label("This number is invalid")]
+        span: Span,
 
-#[derive(Debug, Clone)]
-pub struct LexerError {
-    pub span: Option<Span>,
-    pub kind: LexerErrorKind,
-}
-
-impl LexerError {
-    pub fn new(kind: LexerErrorKind) -> Self {
-        LexerError { span: None, kind }
-    }
-
-    pub fn with_span(&self, span: Span) -> Self {
-        LexerError {
-            span: Some(span),
-            ..self.clone()
-        }
-    }
+        #[help("{0}")]
+        help: Option<String>,
+    },
 }
 
 type LexerResult<T> = Result<T, LexerError>;
@@ -71,16 +69,20 @@ impl<'a> Lexer<'a> {
             chars: source.chars(),
             current: None,
             current_lexeme: "".to_string(),
-            line: 0,
-            col: 0,
+            offset: 0,
         };
 
         lexer.advance();
+
+        // The first call to advance() will load the first character into current as well as increase the offset
+        // However, we want to the first character to be at offset 0, so we reset the offset to 0
+        lexer.offset = 0;
+
         lexer
     }
 
     pub fn pos(&self) -> Pos {
-        Pos::new(self.line, self.col)
+        Pos::new(self.offset)
     }
 
     fn identifier_or_reserved(&mut self) -> Token {
@@ -106,7 +108,7 @@ impl<'a> Lexer<'a> {
 
     fn string(&mut self) -> LexerResult<Token> {
         let mut s = String::new();
-        let start_pos = Pos::new(self.line, self.col);
+        let start_pos = Pos::new(self.offset);
 
         self.advance();
 
@@ -115,8 +117,9 @@ impl<'a> Lexer<'a> {
                 Some('"') => break,
                 Some(c) => s.push(c),
                 _ => {
-                    return Err(LexerError::new(LexerErrorKind::UnterminatedString)
-                        .with_span(start_pos.into()))
+                    return Err(LexerError::UnterminatedString {
+                        span: start_pos.into(),
+                    })
                 }
             }
 
@@ -129,14 +132,17 @@ impl<'a> Lexer<'a> {
     fn number(&mut self) -> LexerResult<Token> {
         let mut number = String::new();
         let mut seen_dot = false;
+        let start_pos = (self.offset).into();
 
         loop {
             match self.current {
                 Some(c) if c.is_ascii_digit() => number.push(c),
                 Some('.') => {
                     if seen_dot {
-                        return Err(LexerError::new(LexerErrorKind::InvalidNumber)
-                            .with_span(Pos::new(self.line, self.col).into()));
+                        return Err(LexerError::InvalidNumber {
+                            span: Span::new(start_pos, Some((self.offset + 1).into())),
+                            help: Some("A number cannot have more than one decimal point".into()),
+                        });
                     }
 
                     seen_dot = true;
@@ -153,17 +159,21 @@ impl<'a> Lexer<'a> {
         }
 
         if seen_dot {
-            let value = number.parse::<f64>().map_err(|_e| {
-                LexerError::new(LexerErrorKind::InvalidNumber)
-                    .with_span(Pos::new(self.line, self.col).into())
-            })?;
+            let value = number
+                .parse::<f64>()
+                .map_err(|_e| LexerError::InvalidNumber {
+                    span: Pos::new(self.offset).into(),
+                    help: None,
+                })?;
 
             Ok(Token::new(TT::Float).with_literal(Literal::Float(value)))
         } else {
-            let value = number.parse::<i64>().map_err(|_e| {
-                LexerError::new(LexerErrorKind::InvalidNumber)
-                    .with_span(Pos::new(self.line, self.col).into())
-            })?;
+            let value = number
+                .parse::<i64>()
+                .map_err(|_e| LexerError::InvalidNumber {
+                    span: Pos::new(self.offset).into(),
+                    help: None,
+                })?;
 
             Ok(Token::new(TT::Integer).with_literal(Literal::Integer(value)))
         }
@@ -207,13 +217,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn advance(&mut self) {
-        if self.current == Some('\n') {
-            self.line += 1;
-            self.col = 1;
-        } else {
-            self.col += 1;
-        }
-
+        self.offset += 1;
         self.current = self.chars.next();
 
         if let Some(c) = self.current {
@@ -233,8 +237,7 @@ impl<'a> Iterator for Lexer<'a> {
             self.current_lexeme.push(c);
         }
 
-        let start_line = self.line;
-        let start_col = self.col;
+        let start_offset = self.offset;
 
         let token = match self.current {
             Some('(') => Token::new(TT::LeftParen),
@@ -274,10 +277,10 @@ impl<'a> Iterator for Lexer<'a> {
             Some(c) if c.is_alphabetic() => self.identifier_or_reserved(),
 
             Some(_) => {
-                return Some(Err(LexerError::new(LexerErrorKind::UnexpectedChar(
-                    self.current.unwrap(),
-                ))
-                .with_span(Pos::new(self.line, self.col).into())))
+                return Some(Err(LexerError::UnexpectedChar {
+                    c: self.current.unwrap(),
+                    span: Pos::new(self.offset).into(),
+                }))
             }
 
             None => return None,
@@ -285,10 +288,7 @@ impl<'a> Iterator for Lexer<'a> {
 
         let token = token
             .with_lexeme(self.current_lexeme.clone())
-            .with_span(Span::new(
-                Pos::new(start_line, start_col),
-                Pos::new(self.line, self.col),
-            ));
+            .with_span(Span::new(start_offset.into(), Some(self.offset.into())));
 
         self.advance();
 

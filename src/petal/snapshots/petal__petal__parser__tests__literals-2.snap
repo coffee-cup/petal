@@ -2,16 +2,20 @@
 source: src/petal/parser.rs
 expression: "parse_expr(\"123.456\")"
 ---
-Float {
-    value: 123.456,
-    span: Span {
-        start: Pos {
-            line: 0,
-            col: 1,
-        },
-        end: Pos {
-            line: 0,
-            col: 7,
+[
+    ExprNode {
+        expr: Float(
+            123.456,
+        ),
+        span: Span {
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    6,
+                ),
+            ),
         },
     },
-}
+]

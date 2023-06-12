@@ -8,14 +8,14 @@ expression: "lex(\"let if else false true\".to_string())"
         lexeme: "let",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 1,
-            },
-            end: Pos {
-                line: 0,
-                col: 3,
-            },
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    2,
+                ),
+            ),
         },
     },
     Token {
@@ -23,14 +23,14 @@ expression: "lex(\"let if else false true\".to_string())"
         lexeme: "if",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 5,
-            },
-            end: Pos {
-                line: 0,
-                col: 6,
-            },
+            start: Pos(
+                4,
+            ),
+            end: Some(
+                Pos(
+                    5,
+                ),
+            ),
         },
     },
     Token {
@@ -38,14 +38,14 @@ expression: "lex(\"let if else false true\".to_string())"
         lexeme: "else",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 8,
-            },
-            end: Pos {
-                line: 0,
-                col: 11,
-            },
+            start: Pos(
+                7,
+            ),
+            end: Some(
+                Pos(
+                    10,
+                ),
+            ),
         },
     },
     Token {
@@ -53,14 +53,14 @@ expression: "lex(\"let if else false true\".to_string())"
         lexeme: "false",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 13,
-            },
-            end: Pos {
-                line: 0,
-                col: 17,
-            },
+            start: Pos(
+                12,
+            ),
+            end: Some(
+                Pos(
+                    16,
+                ),
+            ),
         },
     },
     Token {
@@ -68,14 +68,14 @@ expression: "lex(\"let if else false true\".to_string())"
         lexeme: "true",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 19,
-            },
-            end: Pos {
-                line: 0,
-                col: 22,
-            },
+            start: Pos(
+                18,
+            ),
+            end: Some(
+                Pos(
+                    21,
+                ),
+            ),
         },
     },
 ]

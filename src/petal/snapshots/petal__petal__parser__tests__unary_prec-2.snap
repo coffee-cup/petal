@@ -1,44 +1,65 @@
 ---
 source: src/petal/parser.rs
-expression: "parse(\"!foo\")"
+expression: "parse_expr(\"!foo\")"
 ---
-PrefixOp {
-    op: Token {
-        token_type: Bang,
-        lexeme: "!",
-        literal: None,
+[
+    ExprNode {
+        expr: Ident(
+            Identifier {
+                name: "foo",
+                span: Span {
+                    start: Pos(
+                        1,
+                    ),
+                    end: Some(
+                        Pos(
+                            3,
+                        ),
+                    ),
+                },
+            },
+        ),
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 1,
-            },
-            end: Pos {
-                line: 0,
-                col: 1,
-            },
+            start: Pos(
+                1,
+            ),
+            end: Some(
+                Pos(
+                    3,
+                ),
+            ),
         },
     },
-    right: Ident {
-        name: "foo",
+    ExprNode {
+        expr: PrefixOp {
+            op: Token {
+                token_type: Bang,
+                lexeme: "!",
+                literal: None,
+                span: Span {
+                    start: Pos(
+                        0,
+                    ),
+                    end: Some(
+                        Pos(
+                            0,
+                        ),
+                    ),
+                },
+            },
+            right: ExprId(
+                1v1,
+            ),
+        },
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 2,
-            },
-            end: Pos {
-                line: 0,
-                col: 4,
-            },
+            start: Pos(
+                1,
+            ),
+            end: Some(
+                Pos(
+                    0,
+                ),
+            ),
         },
     },
-    span: Span {
-        start: Pos {
-            line: 0,
-            col: 1,
-        },
-        end: Pos {
-            line: 0,
-            col: 4,
-        },
-    },
-}
+]

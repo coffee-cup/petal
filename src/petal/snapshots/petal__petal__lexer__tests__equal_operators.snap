@@ -8,14 +8,14 @@ expression: "lex(\"== != <= >=\".to_string())"
         lexeme: "==",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 1,
-            },
-            end: Pos {
-                line: 0,
-                col: 2,
-            },
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    1,
+                ),
+            ),
         },
     },
     Token {
@@ -23,14 +23,14 @@ expression: "lex(\"== != <= >=\".to_string())"
         lexeme: "!=",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 4,
-            },
-            end: Pos {
-                line: 0,
-                col: 5,
-            },
+            start: Pos(
+                3,
+            ),
+            end: Some(
+                Pos(
+                    4,
+                ),
+            ),
         },
     },
     Token {
@@ -38,14 +38,14 @@ expression: "lex(\"== != <= >=\".to_string())"
         lexeme: "<=",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 7,
-            },
-            end: Pos {
-                line: 0,
-                col: 8,
-            },
+            start: Pos(
+                6,
+            ),
+            end: Some(
+                Pos(
+                    7,
+                ),
+            ),
         },
     },
     Token {
@@ -53,14 +53,14 @@ expression: "lex(\"== != <= >=\".to_string())"
         lexeme: ">=",
         literal: None,
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 10,
-            },
-            end: Pos {
-                line: 0,
-                col: 11,
-            },
+            start: Pos(
+                9,
+            ),
+            end: Some(
+                Pos(
+                    10,
+                ),
+            ),
         },
     },
 ]

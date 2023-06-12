@@ -1,6 +1,6 @@
 use core::fmt;
 
-use super::positions::{HasSpan, Pos, Span};
+use super::source_info::{Pos, Span};
 
 #[derive(Hash, Eq, PartialEq, Debug, Clone)]
 pub enum TokenType {
@@ -73,7 +73,7 @@ impl Token {
             token_type,
             lexeme: "".to_string(),
             literal: None,
-            span: Pos::new(0, 0).into(),
+            span: Pos::new(0).into(),
         }
     }
 
@@ -98,10 +98,8 @@ impl Token {
     pub fn is(&self, token_type: TokenType) -> bool {
         self.token_type == token_type
     }
-}
 
-impl HasSpan for Token {
-    fn span(&self) -> Span {
+    pub fn span(&self) -> Span {
         self.span.clone()
     }
 }

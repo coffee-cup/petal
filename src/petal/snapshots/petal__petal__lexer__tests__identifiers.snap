@@ -12,14 +12,14 @@ expression: "lex(\"a boop hello world\".to_string())"
             ),
         ),
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 1,
-            },
-            end: Pos {
-                line: 0,
-                col: 1,
-            },
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    0,
+                ),
+            ),
         },
     },
     Token {
@@ -31,14 +31,14 @@ expression: "lex(\"a boop hello world\".to_string())"
             ),
         ),
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 3,
-            },
-            end: Pos {
-                line: 0,
-                col: 6,
-            },
+            start: Pos(
+                2,
+            ),
+            end: Some(
+                Pos(
+                    5,
+                ),
+            ),
         },
     },
     Token {
@@ -50,14 +50,14 @@ expression: "lex(\"a boop hello world\".to_string())"
             ),
         ),
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 8,
-            },
-            end: Pos {
-                line: 0,
-                col: 12,
-            },
+            start: Pos(
+                7,
+            ),
+            end: Some(
+                Pos(
+                    11,
+                ),
+            ),
         },
     },
     Token {
@@ -69,14 +69,14 @@ expression: "lex(\"a boop hello world\".to_string())"
             ),
         ),
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 14,
-            },
-            end: Pos {
-                line: 0,
-                col: 18,
-            },
+            start: Pos(
+                13,
+            ),
+            end: Some(
+                Pos(
+                    17,
+                ),
+            ),
         },
     },
 ]

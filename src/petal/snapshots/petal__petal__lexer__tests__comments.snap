@@ -12,14 +12,14 @@ expression: tokens
             ),
         ),
         span: Span {
-            start: Pos {
-                line: 0,
-                col: 1,
-            },
-            end: Pos {
-                line: 0,
-                col: 14,
-            },
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    13,
+                ),
+            ),
         },
     },
 ]

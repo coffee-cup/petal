@@ -1,7 +1,7 @@
-use std::io::Write;
+
 
 use clap::{Parser, Subcommand};
-use petal::{errors::CompilerError, Compiler};
+use petal::{Compiler};
 
 #[macro_use]
 extern crate lazy_static;
@@ -39,7 +39,7 @@ fn main() {
     let args = Cli::parse();
 
     match args.command {
-        Commands::Build { file, wat, output } => {
+        Commands::Build { file, wat: _, output } => {
             let compiler = Compiler::new();
 
             match compiler.compile_file(&file) {
@@ -47,24 +47,24 @@ fn main() {
                     // We should not need to re-read the file here
                     let file = std::fs::read_to_string(file).expect("Could not read file");
 
-                    petal::errors::print_compiler_error(&file, &e);
+                    petal::errors::print_compiler_error(&file, e);
                 }
-                Ok(wasm) => {
-                    if wat {
-                        println!("{}", wasm.print_wat())
-                    }
+                Ok(_wasm) => {
+                    // if wat {
+                    //     println!("{}", wasm.print_wat())
+                    // }
 
                     // Ensure that the output directory exists
-                    std::fs::create_dir_all(&output).expect("Unable to create output directory");
+                    std::fs::create_dir_all(output).expect("Unable to create output directory");
 
-                    let file_name = file.clone().replace("petal", "wasm");
+                    let _file_name = file.clone().replace("petal", "wasm");
 
                     // Save the WASM binary to the output directory
-                    let mut file = std::fs::File::create(format!("{}/{}", output, file_name))
-                        .expect("Unable to create output file");
+                    // let mut file = std::fs::File::create(format!("{}/{}", output, file_name))
+                    //     .expect("Unable to create output file");
 
-                    file.write_all(wasm.bytes())
-                        .expect("Unable to write the .wasm binary");
+                    // file.write_all(wasm.bytes())
+                    //     .expect("Unable to write the .wasm binary");
                 }
             }
         }
