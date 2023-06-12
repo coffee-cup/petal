@@ -1,4 +1,4 @@
-use miette::{SourceSpan};
+use miette::SourceSpan;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub struct Pos(usize);
@@ -16,6 +16,12 @@ impl Pos {
 
     pub fn offset(&self) -> usize {
         self.0
+    }
+}
+
+impl Default for Pos {
+    fn default() -> Self {
+        Pos(0)
     }
 }
 
@@ -47,6 +53,15 @@ impl Span {
         };
 
         Self { start, end }
+    }
+}
+
+impl Default for Span {
+    fn default() -> Self {
+        Span {
+            start: Pos::default(),
+            end: None,
+        }
     }
 }
 

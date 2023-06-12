@@ -45,13 +45,13 @@ impl Compiler {
         let mut lexer = Lexer::new(&file);
         let mut parser = parser::Parser::new(&mut lexer).map_err(CompilerError::ParserError)?;
 
-        let program = parser.parse().map_err(CompilerError::ParserError)?;
+        let mut program = parser.parse().map_err(CompilerError::ParserError)?;
 
         // println!("{:#?}", program);
 
-        let mut analysis = AnalysisContext::new();
+        let mut analysis = AnalysisContext::new(&mut program);
         analysis
-            .analysis_program(&program)
+            .analysis_program()
             .map_err(CompilerError::AnalysisError)?;
 
         // let mut typechecker = Typechecker::new(&program);

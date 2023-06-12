@@ -8,10 +8,14 @@ pub type ExpressionPool = SlotMap<ExprId, ExprNode>;
 new_key_type! {pub struct StmtId;}
 pub type StatementPool = SlotMap<StmtId, StmtNode>;
 
+new_key_type! {pub struct IdentId;}
+pub type IdentifierPool = SlotMap<IdentId, Identifier>;
+
 #[derive(Clone, Debug)]
 pub struct AstPool {
     pub statements: StatementPool,
     pub expressions: ExpressionPool,
+    pub identifiers: IdentifierPool,
 }
 
 #[derive(Clone, Debug)]
@@ -19,6 +23,7 @@ pub struct Program {
     pub ast: AstPool,
     pub functions: Vec<FuncDecl>,
     pub structs: Vec<StructDecl>,
+    pub main_stmts: Vec<StmtId>,
 }
 
 impl Program {
@@ -26,13 +31,23 @@ impl Program {
         let ast = AstPool {
             statements: StatementPool::with_key(),
             expressions: ExpressionPool::with_key(),
+            identifiers: IdentifierPool::with_key(),
         };
 
         Self {
             ast,
             functions: Vec::new(),
             structs: Vec::new(),
+            main_stmts: Vec::new(),
         }
+    }
+
+    pub fn get_ident_name(&self, ident: IdentId) -> String {
+        self.ast.identifiers[ident].name.clone()
+    }
+
+    pub fn span_for_ident(&self, ident: IdentId) -> Span {
+        self.ast.identifiers[ident].span.clone()
     }
 
     pub fn add_function(&mut self, func: FuncDecl) {
@@ -50,10 +65,16 @@ impl Program {
     pub fn new_expression(&mut self, expr: Expr, span: Span) -> ExprId {
         self.ast.expressions.insert(ExprNode { expr, span })
     }
+
+    pub fn new_identifier(&mut self, name: String, span: Span) -> IdentId {
+        self.ast.identifiers.insert(Identifier {
+            name,
+            span,
+            symbol_id: None,
+        })
+    }
 }
 
-// TODO: If we use a separate identifier pool, we can keep track of all uses of a single type of variable
-// This will be useful for lsp features like "find all references" or "rename"
 #[derive(PartialEq, Clone, Debug)]
 pub struct Identifier {
     pub name: String,
@@ -69,7 +90,7 @@ pub struct TypeAnnotation {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct StructDecl {
-    pub ident: Identifier,
+    pub ident: IdentId,
     pub fields: Vec<StructField>,
     pub span: Span,
 }
@@ -77,22 +98,22 @@ pub struct StructDecl {
 /// struct Foo { ... }
 #[derive(PartialEq, Clone, Debug)]
 pub struct StructField {
-    pub ident: Identifier,
+    pub ident: IdentId,
     pub ty: TypeAnnotation,
     pub span: Span,
 }
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct FuncArg {
-    pub ident: Identifier,
-    pub span: Span,
+    pub ident: IdentId,
     pub ty: TypeAnnotation,
+    pub span: Span,
 }
 
 /// fn foo(a, b) { ... }
 #[derive(PartialEq, Clone, Debug)]
 pub struct FuncDecl {
-    pub ident: Identifier,
+    pub ident: IdentId,
     pub is_exported: bool,
     pub type_params: Vec<TypeAnnotation>,
     pub args: Vec<FuncArg>,
@@ -103,7 +124,7 @@ pub struct FuncDecl {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct LetDecl {
-    pub ident: Identifier,
+    pub ident: IdentId,
     pub ty: Option<TypeAnnotation>,
     pub init: ExprId,
 }
@@ -157,7 +178,7 @@ pub enum Expr {
     String(String),
 
     // foo
-    Ident(Identifier),
+    Ident(IdentId),
 
     // -1
     PrefixOp {

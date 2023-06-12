@@ -6,13 +6,16 @@ use std::{
 
 use thiserror::Error;
 
-use crate::petal::ast::Stmt;
+use crate::petal::{ast::Stmt, typechecker::occurs_check};
 
 use super::{
-    ast::{Block, Expr, FuncArg, FuncDecl, Identifier, LetDecl, Program, TypeAnnotation},
+    ast::{
+        Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, Identifier, LetDecl, Program, StmtId,
+        StmtNode, TypeAnnotation,
+    },
     source_info::Span,
     typechecker::{
-        Constraint, Substitution, TypeContext, Typechecker, TypecheckingErrorKind, Types,
+        Constraint, MonoTypeData, Substitution, TypeContext, TypeVarGen, Typechecker, Types,
     },
     types::{FunctionAppType, MonoType, PolyType, StructType},
 };
@@ -22,7 +25,7 @@ pub enum AnalysisError {
     #[error("Unknown analysis error")]
     UnknownError,
 
-    #[error("Undeclared variable {name}")]
+    #[error("Undeclared variable")]
     UndeclaredVariable {
         name: String,
 
@@ -30,33 +33,56 @@ pub enum AnalysisError {
         span: Span,
     },
 
-    #[error("Undefined type {name}")]
+    #[error("Unknown type `{name}`")]
     UndefinedType {
         name: String,
 
-        #[label = "Undefined type {name}"]
+        #[label = "the type `{name}` is nowhere to be found"]
         span: Span,
     },
 
     #[error("Function {name} already exists")]
+    #[diagnostic(help("All functions names must be unique across the program"))]
     FunctionAlreadyDeclared {
         name: String,
 
-        #[label("The function {name} was first declared here")]
+        #[label("the function {name} was first declared here")]
         first_declaration: Span,
 
-        #[label = "And then declared again here"]
+        #[label = "and then declared again here"]
         span: Span,
-
-        #[help]
-        help: Option<String>,
     },
-    // #[error("Invalid type annotation {0}")]
-    // InvalidTypeAnnotation(String),
 
-    // #[error("Variable {0} already defined")]
-    // VariableAlreadyDeclared(String),
+    #[error("Invalid type annotation {name}")]
+    InvalidTypeAnnotation {
+        name: String,
 
+        #[label = "invalid type annotation {name}"]
+        span: Span,
+    },
+
+    #[error("Variable {name} already defined")]
+    VariableAlreadyDeclared {
+        name: String,
+
+        #[label("the variable {name} was first declared here")]
+        first_declaration: Span,
+
+        #[label = "and then declared again here"]
+        span: Span,
+    },
+
+    #[error("Mismatched types")]
+    MismatchedTypes {
+        lhs: MonoType,
+        rhs: MonoType,
+
+        #[label("the type `{lhs}`")]
+        lhs_span: Span,
+
+        #[label("cannot be equated with type `{rhs}`")]
+        rhs_span: Span,
+    },
     // #[error("Variable {0} does not have an symbol associated with it")]
     // IdentifierDoesNotHaveSymbol(String),
 
@@ -69,15 +95,6 @@ pub enum AnalysisError {
 
 type AnalysisResult<T> = Result<T, AnalysisError>;
 
-macro_rules! err {
-    ($kind:expr) => {
-        Err(AnalysisError::new($kind))
-    };
-    ($kind:expr, $span:expr) => {
-        Err(AnalysisError::new($kind).with_span($span))
-    };
-}
-
 type SymbolId = usize;
 
 #[derive(PartialEq, Clone, Debug)]
@@ -85,7 +102,7 @@ struct Symbol {
     id: SymbolId,
     name: String,
     ty: Option<PolyType>,
-    decl_source: Option<Span>,
+    decl_source: Span,
 }
 
 impl Symbol {
@@ -94,7 +111,7 @@ impl Symbol {
             id,
             name,
             ty: None,
-            decl_source: None,
+            decl_source: Span::new(0.into(), None),
         }
     }
 
@@ -107,7 +124,7 @@ impl Symbol {
 
     pub fn with_source(&self, span: Span) -> Self {
         Self {
-            decl_source: Some(span),
+            decl_source: span,
             ..self.clone()
         }
     }
@@ -121,6 +138,8 @@ struct SymbolTable {
     /// Maps variables names in a scope to their symbol IDs
     scopes: HashMap<(usize, String), SymbolId>,
 
+    ident_lookup: HashMap<IdentId, SymbolId>,
+
     current_depth: usize,
 
     counter: usize,
@@ -131,67 +150,40 @@ impl SymbolTable {
         Self {
             symbols: HashMap::new(),
             scopes: HashMap::new(),
+            ident_lookup: HashMap::new(),
             current_depth: 0,
             counter: 0,
         }
     }
 
-    // pub fn insert_none(&mut self, name: String) -> Symbol {
-    //     let id = self.gen_id();
-    //     let sym = Symbol::new(id, name.clone());
-    //     self.symbols.insert(id, sym.clone());
-    //     self.scopes.last_mut().unwrap().insert(name, id);
-
-    //     sym
-    // }
-
-    // pub fn insert_mono(&mut self, name: String, ty: MonoType) -> Symbol {
-    //     self.insert(name, PolyType::Mono(ty))
-    // }
-
-    // pub fn insert(&mut self, name: String, ty: PolyType) -> Symbol {
-    //     let id = self.gen_id();
-    //     let sym = Symbol::new(id, name.clone()).with_type(ty);
-    //     self.symbols.insert(id, sym.clone());
-    //     self.scopes.last_mut().unwrap().insert(name, id);
-
-    //     sym
-    // }
-
-    // pub fn get(&mut self, name: &String) -> Option<Symbol> {
-    //     for scope in self.scopes.iter().rev() {
-    //         if let Some(id) = scope.get(name) {
-    //             let sym = self
-    //                 .symbols
-    //                 .get(id)
-    //                 .expect(format!("Symbol ID {} not found in table", id).as_str());
-
-    //             return Some(sym.clone());
-    //         }
-    //     }
-
-    //     None
-    // }
-
-    pub fn insert_mono(&mut self, name: String, ty: MonoType) -> Symbol {
-        self.insert(name, PolyType::Mono(ty))
+    pub fn symbol_for_ident(&self, ident: &IdentId) -> Option<Symbol> {
+        self.ident_lookup
+            .get(ident)
+            .and_then(|id| self.symbols.get(id).cloned())
     }
 
-    pub fn insert(&mut self, name: String, ty: PolyType) -> Symbol {
+    pub fn associate_ident(&mut self, ident: IdentId, symbol: SymbolId) {
+        self.ident_lookup.insert(ident, symbol);
+    }
+
+    pub fn insert_mono(&mut self, name: String, ty: MonoType, source: Option<Span>) -> Symbol {
+        self.insert(name, PolyType::Mono(ty), source)
+    }
+
+    pub fn insert(&mut self, name: String, ty: PolyType, source: Option<Span>) -> Symbol {
         let id = self.gen_id();
-        let sym = Symbol::new(id, name.clone()).with_type(ty);
+        let mut sym = Symbol::new(id, name.clone()).with_type(ty);
+        if let Some(source) = source {
+            sym = sym.with_source(source);
+        }
+
         self.symbols.insert(id, sym.clone());
         self.scopes.insert(self.key(&name), id);
 
         sym
     }
 
-    pub fn set_symbol_source(&mut self, symbol_id: SymbolId, source: Span) {
-        let sym = self.symbols.get_mut(&symbol_id).unwrap();
-        sym.decl_source = Some(source);
-    }
-
-    pub fn get(&mut self, name: &String) -> Option<Symbol> {
+    pub fn get(&self, name: &String) -> Option<Symbol> {
         self.scopes
             .get(&(self.current_depth, name.clone()))
             .and_then(|id| self.symbols.get(id).cloned())
@@ -222,63 +214,464 @@ impl SymbolTable {
 
 pub struct TypeTable(HashMap<String, MonoType>);
 
-pub struct AnalysisContext {
+pub struct AnalysisContext<'a> {
+    program: &'a mut Program,
     symbol_table: SymbolTable,
     type_symbols: SymbolTable,
 
-    typechecker: Typechecker,
+    type_ctx: TypeContext,
+    ty_gen: TypeVarGen,
+    type_constraints: Vec<Constraint>,
 }
 
-impl AnalysisContext {
-    pub fn new() -> Self {
+impl<'a> AnalysisContext<'a> {
+    pub fn new(program: &'a mut Program) -> Self {
         let symbol_table = SymbolTable::new();
 
         let mut type_symbols = SymbolTable::new();
-        type_symbols.insert_mono("Int".into(), MonoType::int());
-        type_symbols.insert_mono("Float".into(), MonoType::float());
-        type_symbols.insert_mono("Bool".into(), MonoType::bool());
-        type_symbols.insert_mono("String".into(), MonoType::string());
+
+        let mut type_ctx = TypeContext::new();
+        type_symbols.insert_mono("Int".into(), MonoType::int(), None);
+        type_symbols.insert_mono("Float".into(), MonoType::float(), None);
+        type_symbols.insert_mono("Bool".into(), MonoType::bool(), None);
+        type_symbols.insert_mono("String".into(), MonoType::string(), None);
 
         let typechecker = Typechecker::new();
 
         Self {
             symbol_table,
             type_symbols,
-            typechecker,
+            type_ctx,
+            ty_gen: TypeVarGen::new(),
+            type_constraints: Vec::new(),
+            program,
         }
     }
 
-    pub fn analysis_program(&mut self, program: &Program) -> AnalysisResult<()> {
+    pub fn analysis_program(&mut self) -> AnalysisResult<()> {
         println!("Analyzing program!");
 
-        self.generate_symbols_for_program(program)?;
+        self.generate_symbols_for_program()?;
+        self.check_program()?;
 
         println!("Symbol table:\n{}", self.symbol_table);
 
         Ok(())
     }
 
-    pub fn generate_symbols_for_program(&mut self, program: &Program) -> AnalysisResult<()> {
-        for func in &program.functions {
-            if let Some(sym) = self.symbol_table.get(&func.ident.name) {
+    pub fn check_program(&mut self) -> AnalysisResult<()> {
+        for stmt in self.program.main_stmts.clone().iter() {
+            self.stmt_constraints(*stmt)?;
+        }
+
+        // TODO: Generate constraints for literally all the functions
+
+        println!("\n--- Constraints:");
+        for constraint in self.type_constraints.clone() {
+            println!("{}", constraint);
+        }
+        println!("---\n");
+
+        self.solve_constraints()?;
+
+        Ok(())
+    }
+
+    pub fn generate_symbols_for_program(&mut self) -> AnalysisResult<()> {
+        // Add all functions to symbol table
+        for func in self.program.functions.iter() {
+            let fun_name = self.program.get_ident_name(func.ident);
+
+            if let Some(sym) = self.symbol_table.get(&fun_name) {
                 return Err(AnalysisError::FunctionAlreadyDeclared {
                     name: sym.name,
-                    first_declaration: sym.decl_source.unwrap(),
-                    span: func.ident.span.clone(),
-                    help: Some("Functions can only be declared once".into()),
+                    first_declaration: sym.decl_source,
+                    span: self.program.span_for_ident(func.ident),
                 });
             }
 
-            // TODO: Generic functions are not monotypes
-            let sym = self
-                .symbol_table
-                .insert_mono(func.ident.name.clone(), MonoType::unit());
-            self.symbol_table
-                .set_symbol_source(sym.id, func.ident.span.clone());
+            let func_ty = self.get_type_of_function_decl(func)?;
+
+            let sym = self.symbol_table.insert(
+                fun_name,
+                func_ty,
+                Some(self.program.span_for_ident(func.ident)),
+            );
+            self.symbol_table.associate_ident(func.ident, sym.id);
+        }
+
+        // Analysis the top-level statements
+        for stmt in self.program.main_stmts.clone().iter() {
+            self.generate_symbols_for_statement(*stmt)?;
+        }
+
+        // TODO: Generate symbols for literally every function
+
+        Ok(())
+    }
+
+    fn solve_constraints(&mut self) -> AnalysisResult<()> {
+        let mut sub = Substitution::new();
+
+        for constraint in self.type_constraints.clone() {
+            match constraint {
+                Constraint::Equal { lhs, rhs } => {
+                    let sub2 = self.unify_constraint(lhs.apply(&sub), rhs.apply(&sub))?;
+                    sub = sub.combine(sub2);
+                }
+            }
+        }
+
+        self.apply_substition_to_symbol_table(&sub);
+
+        Ok(())
+    }
+
+    fn apply_substition_to_symbol_table(&mut self, sub: &Substitution) {
+        for (_, sym) in self.symbol_table.symbols.iter_mut() {
+            if let Some(ty) = &mut sym.ty {
+                *ty = ty.apply(sub);
+            }
+        }
+    }
+
+    fn unify_constraint(
+        &mut self,
+        lhs_data: MonoTypeData,
+        rhs_data: MonoTypeData,
+    ) -> AnalysisResult<Substitution> {
+        use MonoType::*;
+
+        let sub = match (&lhs_data.ty, &rhs_data.ty) {
+            (Variable(v1), Variable(v2)) => {
+                if v1 == v2 {
+                    Substitution::new()
+                } else {
+                    let mut sub = Substitution::new();
+                    sub.insert(v1.clone(), Variable(v2.clone()));
+                    sub
+                }
+            }
+            (Variable(v), ty) | (ty, Variable(v)) => {
+                if occurs_check(ty, &Variable(v.clone())) {
+                    panic!("Infinite type")
+                } else {
+                    let mut sub = Substitution::new();
+                    sub.insert(v.clone(), ty.clone());
+                    sub
+                }
+            }
+            (FunApp(f1), FunApp(f2)) => todo!(),
+
+            (t1 @ Struct(s1), t2 @ Struct(s2)) => {
+                if s1.name != s2.name {
+                    println!("s1 = {}, s2 = {}", s1.name, s2.name);
+
+                    return Err(AnalysisError::MismatchedTypes {
+                        lhs: t1.clone(),
+                        rhs: t2.clone(),
+                        lhs_span: self.span_for_monotype_data(&lhs_data).unwrap_or_default(),
+                        rhs_span: self.span_for_monotype_data(&rhs_data).unwrap_or_default(),
+                    });
+                }
+
+                let mut sub = Substitution::new();
+                for (a, b) in s1.params.iter().zip(s2.params.iter()) {
+                    // TODO: Create a MonoTypeData for each param
+                    // For this, I need to associate the param with an identifier node
+
+                    sub = sub.combine(self.unify_constraint(
+                        MonoTypeData::new(a.apply(&sub)),
+                        MonoTypeData::new(b.apply(&sub)),
+                    )?);
+                }
+
+                sub
+            }
+
+            (v1, v2) => {
+                if v1 != v2 {
+                    return Err(AnalysisError::MismatchedTypes {
+                        lhs: v1.clone(),
+                        rhs: v2.clone(),
+                        lhs_span: self.span_for_monotype_data(&lhs_data).unwrap_or_default(),
+                        rhs_span: self.span_for_monotype_data(&rhs_data).unwrap_or_default(),
+                    });
+                }
+
+                Substitution::new()
+            }
+        };
+
+        Ok(sub)
+    }
+
+    fn span_for_monotype_data(&self, ty_data: &MonoTypeData) -> Option<Span> {
+        if let Some(expr_id) = ty_data.expr_id {
+            return Some(self.program.ast.expressions[expr_id].span.clone());
+        } else if let Some(ident_id) = ty_data.ident_id {
+            return Some(self.program.ast.identifiers[ident_id].span.clone());
+        }
+
+        None
+    }
+
+    fn associate_types(&mut self, lhs: MonoTypeData, rhs: MonoTypeData) {
+        self.type_constraints.push(Constraint::Equal { lhs, rhs });
+    }
+
+    fn stmt_constraints(&mut self, stmt_id: StmtId) -> AnalysisResult<()> {
+        let stmt_node = &self.program.ast.statements[stmt_id];
+
+        match stmt_node.stmt.clone() {
+            Stmt::Let(let_decl) => {
+                let sym = self.symbol_table.symbol_for_ident(&let_decl.ident).unwrap();
+                let var_ty = sym.ty.unwrap().instantiate(&mut self.ty_gen);
+
+                let expr_ty = self.expr_constraints(let_decl.init)?;
+
+                self.associate_types(
+                    MonoTypeData::new(var_ty).with_ident(let_decl.ident),
+                    MonoTypeData::new(expr_ty).with_expr(let_decl.init),
+                );
+
+                // let sym = self.symbol_for_ident(&let_decl.ident)?;
+                // let var_ty = match &sym.ty {
+                //     Some(PolyType::Mono(ty @ MonoType::Variable(_))) => ty.clone(),
+                //     _ => return err!(AnalysisErrorKind::UnknownError),
+                // };
+
+                // let expr_ty = self.expr_constraints(&let_decl.init)?;
+                // self.typechecker
+                //     .associate_types(var_ty, expr_ty, let_decl.span.clone());
+            }
+            // Stmt::IfStmt {
+            //     condition,
+            //     then_block,
+            //     else_block,
+            //     ..
+            // } => {
+            //     let condition_ty = self.expr_constraints(condition)?;
+            //     self.typechecker
+            //         .associate_types(condition_ty, MonoType::bool(), condition.span());
+            //     self.block_constraints(then_block)?;
+
+            //     if let Some(else_block) = else_block {
+            //         self.block_constraints(else_block)?;
+            //     }
+            // }
+            // Stmt::ExprStmt { expr, .. } => {
+            //     let _ty = self.expr_constraints(expr)?;
+            // }
+            _ => todo!(),
+        };
+
+        Ok(())
+    }
+
+    fn block_constraints(&mut self, block: &Block) -> AnalysisResult<()> {
+        for stmt in &block.statements {
+            self.stmt_constraints(*stmt)?;
         }
 
         Ok(())
     }
+
+    fn expr_constraints(&mut self, expr_id: ExprId) -> AnalysisResult<MonoType> {
+        let expr_node = &self.program.ast.expressions[expr_id];
+
+        match &expr_node.expr {
+            Expr::Integer { .. } => Ok(MonoType::int()),
+            Expr::Float { .. } => Ok(MonoType::float()),
+            Expr::String { .. } => Ok(MonoType::string()),
+            Expr::Ident(ident) => {
+                let i = &self.program.ast.identifiers[*ident];
+                println!("Generating constraints for ident: {:?}", i);
+                let sym = self.symbol_table.symbol_for_ident(ident).unwrap();
+                let ty = sym.ty.unwrap();
+
+                let instantiated = ty.instantiate(&mut self.ty_gen);
+
+                Ok(instantiated)
+
+                // let sym = self.symbol_for_ident(ident)?;
+                // let ty = match &sym.ty {
+                //     Some(ty) => ty.clone(),
+                //     None => return err!(AnalysisErrorKind::UnknownError, ident.span()),
+                // };
+
+                // let instantiated = self.typechecker.instantiate(ty);
+
+                // Ok(instantiated)
+            }
+            // Expr::PrefixOp { op, right, span } => todo!(),
+            // Expr::BinaryOp {
+            //     left,
+            //     op,
+            //     right,
+            //     span,
+            // } => todo!(),
+            // Expr::PostfixOp { op, left, span } => todo!(),
+            // Expr::Conditional {
+            //     condition,
+            //     then_branch,
+            //     else_branch,
+            //     span,
+            // } => todo!(),
+            // Expr::Call { callee, args, span } => {
+            //     let callee_ty = self.expr_constraints(callee)?;
+
+            //     let arg_tys = args
+            //         .iter()
+            //         .map(|arg| self.expr_constraints(arg))
+            //         .collect::<AnalysisResult<Vec<_>>>()?;
+
+            //     let return_ty = self.typechecker.gen_type_var(expr.span());
+
+            //     // Based on the argument types and return type, this is what the callee type should be
+            //     let expected_left_ty = MonoType::FunApp(FunctionAppType {
+            //         params: arg_tys.clone(),
+            //         return_ty: Box::new(return_ty.clone()),
+            //     });
+
+            //     println!("callee_ty: {}", callee_ty);
+            //     println!("expected_left_ty: {}", expected_left_ty);
+
+            //     self.typechecker
+            //         .associate_types(callee_ty, expected_left_ty, expr.span());
+
+            //     Ok(return_ty)
+            // }
+            _ => todo!(),
+        }
+    }
+
+    fn generate_symbols_for_statement(&mut self, stmt_id: StmtId) -> AnalysisResult<()> {
+        let stmt_node = &self.program.ast.statements[stmt_id];
+
+        match &stmt_node.stmt {
+            Stmt::Let(let_decl) => {
+                let ident = &self.program.ast.identifiers[let_decl.ident];
+
+                if let Some(sym) = self.symbol_table.get(&ident.name) {
+                    return Err(AnalysisError::VariableAlreadyDeclared {
+                        name: sym.name.clone(),
+                        first_declaration: sym.decl_source,
+                        span: ident.span.clone(),
+                    });
+                }
+
+                let ty = if let Some(ty) = let_decl.ty.clone() {
+                    self.type_for_annotation(&ty)?
+                } else {
+                    self.ty_gen.gen_var()
+                };
+
+                let sym =
+                    self.symbol_table
+                        .insert_mono(ident.name.clone(), ty, Some(ident.span.clone()));
+                self.symbol_table.associate_ident(let_decl.ident, sym.id);
+
+                let init_expr = let_decl.init;
+                self.generate_symbols_for_expression(init_expr)?;
+            }
+
+            Stmt::ExprStmt(expr) => {
+                self.generate_symbols_for_expression(*expr)?;
+            }
+
+            _ => todo!(),
+        };
+
+        Ok(())
+    }
+
+    fn generate_symbols_for_expression(&mut self, expr_id: ExprId) -> AnalysisResult<()> {
+        let expr_node = &self.program.ast.expressions[expr_id];
+
+        match &expr_node.expr {
+            Expr::Integer(_) => {}
+            Expr::Float(_) => {}
+            Expr::String(_) => {}
+
+            Expr::Ident(ident_id) => {
+                let ident = &self.program.ast.identifiers[*ident_id];
+
+                if let Some(sym) = self.symbol_table.get(&ident.name) {
+                    self.symbol_table.associate_ident(*ident_id, sym.id);
+                } else {
+                    return Err(AnalysisError::UndeclaredVariable {
+                        name: ident.name.clone(),
+                        span: ident.span.clone(),
+                    });
+                }
+            }
+
+            _ => todo!(),
+        }
+
+        Ok(())
+    }
+
+    /// Get the polytype of a function declaration based on its signature
+    fn get_type_of_function_decl(&self, func: &FuncDecl) -> AnalysisResult<PolyType> {
+        // Get the type of the arguments
+        let mut param_tys = Vec::new();
+        for param in &func.args {
+            let ty = self.type_for_annotation(&param.ty)?;
+            param_tys.push(ty);
+        }
+
+        // Get the return type
+        let return_ty = match &func.return_ty {
+            Some(annotation) => {
+                let ty = self.type_for_annotation(annotation)?;
+                ty
+            }
+            None => MonoType::unit(),
+        };
+
+        let func_ty = FunctionAppType {
+            params: param_tys,
+            return_ty: Box::new(return_ty),
+        };
+
+        Ok(PolyType::Mono(MonoType::FunApp(func_ty)))
+    }
+
+    /// Get the type of a type annotation by looking up the identifier in the type_symbols table
+    fn type_for_annotation(&self, annotation: &TypeAnnotation) -> AnalysisResult<MonoType> {
+        self.type_symbols
+            .get(&annotation.name)
+            .and_then(|sym| sym.ty)
+            .map_or_else(
+                || {
+                    Err(AnalysisError::UndefinedType {
+                        name: annotation.name.clone(),
+                        span: annotation.span.clone(),
+                    })
+                },
+                |ty| match ty {
+                    PolyType::Mono(ty) => Ok(ty.clone()),
+                    PolyType::Quantifier(_) => Err(AnalysisError::InvalidTypeAnnotation {
+                        name: annotation.name.clone(),
+                        span: annotation.span.clone(),
+                    }),
+                },
+            )
+    }
+
+    // fn symbol_for_ident(&mut self, name: &Identifier) -> AnalysisResult<Symbol> {
+    // if let Some(sym_id) = name.symbol_id {
+    //     self.symbol_table.get_by_id(sym_id).ok_or_else(|| {
+    //         AnalysisError::new(AnalysisErrorKind::SymbolNotFound(name.name.clone()))
+    //     })
+    // } else {
+    //     err!(AnalysisErrorKind::IdentifierDoesNotHaveSymbol(
+    //         name.name.clone()
+    //     ))
+    // }
+    // }
 
     // fn typecheck_program(&mut self, program: &Program) -> AnalysisResult<()> {
     //     for stmt in &program.statements {

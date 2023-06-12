@@ -3,9 +3,10 @@ use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
 
 use super::{
+    analysis::AnalysisError,
     ast::{
-        Block, Expr, ExprId, FuncArg, FuncDecl, Identifier, LetDecl, Program, Stmt, StmtId,
-        StructDecl, StructField, TypeAnnotation,
+        Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, Identifier, LetDecl, Program, Stmt,
+        StmtId, StructDecl, StructField, TypeAnnotation,
     },
     lexer::{Lexer, LexerError},
     precedence::Precedence,
@@ -24,15 +25,24 @@ pub enum ParserError {
     UnexpectedToken {
         token: String,
 
-        #[label("We came across this token, {token}, and don't know how to parse it")]
+        #[label("we came across this token, `{token}`, and don't know how to parse it")]
         span: Span,
+    },
+
+    #[error("Missing type annotation")]
+    #[diagnostic(help("You can add a type annotation like this: `{name}: Int`"))]
+    MissingTypeAnnotation {
+        #[label("all function parameters need a type annotation")]
+        span: Span,
+
+        name: String,
     },
 
     #[error("Expected {expected}, found the end of the file")]
     UnexpectedEof {
         expected: TokenType,
 
-        #[label = "We expected to find {expected}, but found the end of the file instead"]
+        #[label = "we expected to find `{expected}`, but found the end of the file instead"]
         span: Span,
     },
 
@@ -42,7 +52,7 @@ pub enum ParserError {
 
         found: String,
 
-        #[label = "We expected to find {expected}, but found {found} instead"]
+        #[label = "we expected to find `{expected}`, but found `{found}` instead"]
         span: SourceSpan,
     },
 }
@@ -95,14 +105,13 @@ struct IdentParselet;
 impl PrefixParselet for IdentParselet {
     fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<ExprId> {
         match token.literal {
-            Some(Literal::Identifier(name)) => Ok(parser.program.new_expression(
-                Expr::Ident(Identifier {
-                    name,
-                    span: token.span.clone(),
-                    symbol_id: None,
-                }),
-                token.span,
-            )),
+            Some(Literal::Identifier(name)) => {
+                let ident = parser.program.new_identifier(name, token.span.clone());
+
+                Ok(parser
+                    .program
+                    .new_expression(Expr::Ident(ident), token.span))
+            }
             _ => Err(ParserError::UnexpectedToken {
                 token: token.to_string(),
                 span: token.span(),
@@ -365,7 +374,8 @@ impl<'a> Parser<'a> {
                     self.parse_function()?;
                 }
                 _ => {
-                    self.parse_declaration()?;
+                    let stmt = self.parse_declaration()?;
+                    self.program.main_stmts.push(stmt);
                 }
             };
         }
@@ -479,7 +489,7 @@ impl<'a> Parser<'a> {
         Ok(())
     }
 
-    fn parse_identifier(&mut self) -> ParserResult<Identifier> {
+    fn parse_identifier(&mut self) -> ParserResult<IdentId> {
         let token = self.consume_expected(TT::Identifier)?;
         let span = token.span();
 
@@ -488,19 +498,23 @@ impl<'a> Parser<'a> {
             _ => unreachable!(),
         };
 
-        Ok(Identifier {
-            name,
-            span,
-            symbol_id: None,
-        })
+        let ident = self.program.new_identifier(name, span);
+        Ok(ident)
     }
 
     fn parse_function_arg(&mut self) -> ParserResult<FuncArg> {
         let ident = self.parse_identifier()?;
-        let span = ident.span.clone();
+        let span = self.program.span_for_ident(ident);
 
-        self.consume_expected(TT::Colon)?;
+        self.consume_expected(TT::Colon)
+            .map_err(|_e| ParserError::MissingTypeAnnotation {
+                span: span.clone(),
+                name: self.program.get_ident_name(ident),
+            })?;
+
         let ty = self.parse_type()?;
+
+        let span = span.merge(ty.span.clone());
 
         Ok(FuncArg { ident, span, ty })
     }
