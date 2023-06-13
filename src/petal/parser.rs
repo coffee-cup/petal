@@ -539,7 +539,7 @@ impl<'a> Parser<'a> {
 
         let mut statements: Vec<StmtId> = Vec::new();
         while !self.peek().is(TT::RightBrace) && !self.is_at_end() {
-            statements.push(self.parse_statement()?);
+            statements.push(self.parse_declaration()?);
         }
 
         let token = self.consume_expected(TT::RightBrace)?;
