@@ -26,10 +26,11 @@ pub enum AnalysisError {
     UnknownError,
 
     #[error("Undeclared variable")]
+    #[diagnostic(help("Declare a variable before using it (e.g. `let {name} = 1`)"))]
     UndeclaredVariable {
         name: String,
 
-        #[label = "Undeclared variable {name}"]
+        #[label = "Undeclared variable `{name}`"]
         span: Span,
     },
 
@@ -196,6 +197,16 @@ impl SymbolTable {
     }
 
     pub fn get(&self, name: &String) -> Option<Symbol> {
+        for depth in (0..=self.current_depth).rev() {
+            if let Some(id) = self.scopes.get(&(depth, name.clone())) {
+                return self.symbols.get(id).cloned();
+            }
+        }
+
+        None
+    }
+
+    pub fn get_in_current_scope(&self, name: &String) -> Option<Symbol> {
         self.scopes
             .get(&(self.current_depth, name.clone()))
             .and_then(|id| self.symbols.get(id).cloned())
@@ -327,7 +338,7 @@ impl<'a> AnalysisContext<'a> {
             for arg in func.args.iter() {
                 let ident = &self.program.ast.identifiers[arg.ident];
 
-                if let Some(sym) = self.symbol_table.get(&ident.name) {
+                if let Some(sym) = self.symbol_table.get_in_current_scope(&ident.name) {
                     return Err(AnalysisError::ArgumentAlreadyDefined {
                         name: sym.name.clone(),
                         first_declaration: sym.decl_source,
@@ -591,7 +602,7 @@ impl<'a> AnalysisContext<'a> {
             Stmt::Let(let_decl) => {
                 let ident = &self.program.ast.identifiers[let_decl.ident];
 
-                if let Some(sym) = self.symbol_table.get(&ident.name) {
+                if let Some(sym) = self.symbol_table.get_in_current_scope(&ident.name) {
                     return Err(AnalysisError::VariableAlreadyDeclared {
                         name: sym.name.clone(),
                         first_declaration: sym.decl_source,
@@ -640,6 +651,9 @@ impl<'a> AnalysisContext<'a> {
 
             Expr::Ident(ident_id) => {
                 let ident = &self.program.ast.identifiers[*ident_id];
+
+                println!("Generating symbol for ident: {:?}", ident);
+                println!("{:#?}", self.symbol_table);
 
                 if let Some(sym) = self.symbol_table.get(&ident.name) {
                     self.symbol_table.associate_ident(*ident_id, sym.id);
