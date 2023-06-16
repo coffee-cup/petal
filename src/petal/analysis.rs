@@ -41,31 +41,43 @@ pub enum AnalysisError {
         span: Span,
     },
 
-    #[error("Function {name} already exists")]
+    #[error("Function `{name}` already exists")]
     #[diagnostic(help("All functions names must be unique across the program"))]
     FunctionAlreadyDeclared {
         name: String,
 
-        #[label("the function {name} was first declared here")]
+        #[label("the function `{name}` was first declared here")]
         first_declaration: Span,
 
         #[label = "and then declared again here"]
         span: Span,
     },
 
-    #[error("Invalid type annotation {name}")]
+    #[error("Invalid type annotation `{name}`")]
     InvalidTypeAnnotation {
         name: String,
 
-        #[label = "invalid type annotation {name}"]
+        #[label = "invalid type annotation `{name}`"]
         span: Span,
     },
 
-    #[error("Variable {name} already defined")]
+    #[error("Variable `{name}` already defined")]
     VariableAlreadyDeclared {
         name: String,
 
-        #[label("the variable {name} was first declared here")]
+        #[label("the variable `{name}` was first declared here")]
+        first_declaration: Span,
+
+        #[label = "and then declared again here"]
+        span: Span,
+    },
+
+    #[error("Argument `{name}` already declared")]
+    #[diagnostic(help("Function arguments must have unique names"))]
+    ArgumentAlreadyDefined {
+        name: String,
+
+        #[label("the argument `{name}` was first declared here")]
         first_declaration: Span,
 
         #[label = "and then declared again here"]
@@ -265,6 +277,9 @@ impl<'a> AnalysisContext<'a> {
         }
 
         // TODO: Generate constraints for literally all the functions
+        for func in self.program.functions.clone().iter() {
+            self.stmt_constraints(func.body)?;
+        }
 
         println!("\n--- Constraints:");
         for constraint in self.type_constraints.clone() {
@@ -305,7 +320,33 @@ impl<'a> AnalysisContext<'a> {
             self.generate_symbols_for_statement(*stmt)?;
         }
 
-        // TODO: Generate symbols for literally every function
+        for func in self.program.functions.clone().iter() {
+            self.symbol_table.enter_scope();
+
+            // Add function arguments to symbol table
+            for arg in func.args.iter() {
+                let ident = &self.program.ast.identifiers[arg.ident];
+
+                if let Some(sym) = self.symbol_table.get(&ident.name) {
+                    return Err(AnalysisError::ArgumentAlreadyDefined {
+                        name: sym.name.clone(),
+                        first_declaration: sym.decl_source,
+                        span: ident.span.clone(),
+                    });
+                }
+
+                let ty = self.type_for_annotation(&arg.ty)?;
+
+                let sym =
+                    self.symbol_table
+                        .insert_mono(ident.name.clone(), ty, Some(ident.span.clone()));
+                self.symbol_table.associate_ident(arg.ident, sym.id);
+            }
+
+            self.generate_symbols_for_statement(func.body)?;
+
+            self.symbol_table.leave_scope();
+        }
 
         Ok(())
     }
@@ -434,17 +475,14 @@ impl<'a> AnalysisContext<'a> {
                     MonoTypeData::new(var_ty).with_ident(let_decl.ident),
                     MonoTypeData::new(expr_ty).with_expr(let_decl.init),
                 );
-
-                // let sym = self.symbol_for_ident(&let_decl.ident)?;
-                // let var_ty = match &sym.ty {
-                //     Some(PolyType::Mono(ty @ MonoType::Variable(_))) => ty.clone(),
-                //     _ => return err!(AnalysisErrorKind::UnknownError),
-                // };
-
-                // let expr_ty = self.expr_constraints(&let_decl.init)?;
-                // self.typechecker
-                //     .associate_types(var_ty, expr_ty, let_decl.span.clone());
             }
+
+            Stmt::BlockStmt(block) => {
+                for stmt in block.statements.iter() {
+                    self.stmt_constraints(*stmt)?;
+                }
+            }
+
             // Stmt::IfStmt {
             //     condition,
             //     then_block,
@@ -463,7 +501,7 @@ impl<'a> AnalysisContext<'a> {
             // Stmt::ExprStmt { expr, .. } => {
             //     let _ty = self.expr_constraints(expr)?;
             // }
-            _ => todo!(),
+            _ => todo!("stmt_constraints for {:?}", stmt_node.stmt),
         };
 
         Ok(())
@@ -580,7 +618,13 @@ impl<'a> AnalysisContext<'a> {
                 self.generate_symbols_for_expression(*expr)?;
             }
 
-            _ => todo!(),
+            Stmt::BlockStmt(block) => {
+                for stmt in block.statements.clone() {
+                    self.generate_symbols_for_statement(stmt)?;
+                }
+            }
+
+            _ => todo!("generate_symbols_for_statement: {:?}", stmt_node.stmt),
         };
 
         Ok(())
