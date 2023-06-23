@@ -5,19 +5,9 @@ expression: "parse_expr(\"!foo\")"
 [
     ExprNode {
         expr: Ident(
-            Identifier {
-                name: "foo",
-                span: Span {
-                    start: Pos(
-                        1,
-                    ),
-                    end: Some(
-                        Pos(
-                            3,
-                        ),
-                    ),
-                },
-            },
+            IdentId(
+                1v1,
+            ),
         ),
         span: Span {
             start: Pos(
