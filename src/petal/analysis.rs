@@ -427,28 +427,7 @@ impl<'a> AnalysisContext<'a> {
                 if s1.name != s2.name {
                     println!("s1 = {}, s2 = {}", s1.name, s2.name);
 
-                    if let Some(
-                        n @ StmtNode {
-                            stmt: Stmt::IfStmt { .. },
-                            ..
-                        },
-                    ) = lhs_data
-                        .parent_stmt_id
-                        .map(|stmt_id| &self.program.ast.statements[stmt_id])
-                    {
-                        return Err(AnalysisError::IfConditionTypeMismatch {
-                            ty: t1.clone(),
-                            span: self.span_for_monotype_data(&lhs_data).unwrap_or_default(),
-                            if_span: n.span.start().span_from_length(1),
-                        });
-                    }
-
-                    return Err(AnalysisError::MismatchedTypes {
-                        lhs: t1.clone(),
-                        rhs: t2.clone(),
-                        lhs_span: self.span_for_monotype_data(&lhs_data).unwrap_or_default(),
-                        rhs_span: self.span_for_monotype_data(&rhs_data).unwrap_or_default(),
-                    });
+                    return Err(self.mismatch_type_error(t1, t2, &lhs_data, &rhs_data));
                 }
 
                 let mut sub = Substitution::new();
@@ -465,14 +444,9 @@ impl<'a> AnalysisContext<'a> {
                 sub
             }
 
-            (v1, v2) => {
-                if v1 != v2 {
-                    return Err(AnalysisError::MismatchedTypes {
-                        lhs: v1.clone(),
-                        rhs: v2.clone(),
-                        lhs_span: self.span_for_monotype_data(&lhs_data).unwrap_or_default(),
-                        rhs_span: self.span_for_monotype_data(&rhs_data).unwrap_or_default(),
-                    });
+            (t1, t2) => {
+                if t1 != t2 {
+                    return Err(self.mismatch_type_error(t1, t2, &lhs_data, &rhs_data));
                 }
 
                 Substitution::new()
@@ -480,6 +454,39 @@ impl<'a> AnalysisContext<'a> {
         };
 
         Ok(sub)
+    }
+
+    // Return an error for mismatched types
+    // This will use the most specific error possible for the given lhs and rhs types
+    fn mismatch_type_error(
+        &self,
+        t1: &MonoType,
+        t2: &MonoType,
+        lhs_data: &MonoTypeData,
+        rhs_data: &MonoTypeData,
+    ) -> AnalysisError {
+        if let Some(
+            n @ StmtNode {
+                stmt: Stmt::IfStmt { .. },
+                ..
+            },
+        ) = lhs_data
+            .parent_stmt_id
+            .map(|stmt_id| &self.program.ast.statements[stmt_id])
+        {
+            return AnalysisError::IfConditionTypeMismatch {
+                ty: t1.clone(),
+                span: self.span_for_monotype_data(&lhs_data).unwrap_or_default(),
+                if_span: n.span.start().span_from_length(1),
+            };
+        }
+
+        return AnalysisError::MismatchedTypes {
+            lhs: t1.clone(),
+            rhs: t2.clone(),
+            lhs_span: self.span_for_monotype_data(&lhs_data).unwrap_or_default(),
+            rhs_span: self.span_for_monotype_data(&rhs_data).unwrap_or_default(),
+        };
     }
 
     fn span_for_monotype_data(&self, ty_data: &MonoTypeData) -> Option<Span> {
