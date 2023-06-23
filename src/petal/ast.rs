@@ -110,7 +110,7 @@ pub struct FuncArg {
     pub span: Span,
 }
 
-/// fn foo(a, b) { ... }
+// fn foo(a, b) { ... }
 #[derive(PartialEq, Clone, Debug)]
 pub struct FuncDecl {
     pub ident: IdentId,

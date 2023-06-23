@@ -96,6 +96,18 @@ pub enum AnalysisError {
         #[label("cannot be equated with type `{rhs}`")]
         rhs_span: Span,
     },
+
+    #[error("If condition invalid type")]
+    #[diagnostic(help("The condition of an `if` statement must be a `Bool`"))]
+    IfConditionTypeMismatch {
+        ty: MonoType,
+
+        #[label("in this `if` statement")]
+        if_span: Span,
+
+        #[label("the condition must be a `Bool`. Found `{ty}`")]
+        span: Span,
+    },
     // #[error("Variable {0} does not have an symbol associated with it")]
     // IdentifierDoesNotHaveSymbol(String),
 
@@ -419,6 +431,22 @@ impl<'a> AnalysisContext<'a> {
                 if s1.name != s2.name {
                     println!("s1 = {}, s2 = {}", s1.name, s2.name);
 
+                    if let Some(
+                        n @ StmtNode {
+                            stmt: Stmt::IfStmt { .. },
+                            ..
+                        },
+                    ) = lhs_data
+                        .parent_stmt_id
+                        .map(|stmt_id| &self.program.ast.statements[stmt_id])
+                    {
+                        return Err(AnalysisError::IfConditionTypeMismatch {
+                            ty: t1.clone(),
+                            span: self.span_for_monotype_data(&lhs_data).unwrap_or_default(),
+                            if_span: n.span.start().span_from_length(1),
+                        });
+                    }
+
                     return Err(AnalysisError::MismatchedTypes {
                         lhs: t1.clone(),
                         rhs: t2.clone(),
@@ -491,6 +519,25 @@ impl<'a> AnalysisContext<'a> {
             Stmt::BlockStmt(block) => {
                 for stmt in block.statements.iter() {
                     self.stmt_constraints(*stmt)?;
+                }
+            }
+
+            Stmt::IfStmt {
+                condition,
+                then_block,
+                else_block,
+            } => {
+                let condition_ty = self.expr_constraints(condition)?;
+                self.associate_types(
+                    MonoTypeData::new(condition_ty)
+                        .with_expr(condition)
+                        .with_parent_stmt(stmt_id),
+                    MonoType::bool().into(),
+                );
+
+                self.stmt_constraints(then_block)?;
+                if let Some(else_block) = else_block {
+                    self.stmt_constraints(else_block)?;
                 }
             }
 
@@ -598,7 +645,7 @@ impl<'a> AnalysisContext<'a> {
     fn generate_symbols_for_statement(&mut self, stmt_id: StmtId) -> AnalysisResult<()> {
         let stmt_node = &self.program.ast.statements[stmt_id];
 
-        match &stmt_node.stmt {
+        match &stmt_node.stmt.clone() {
             Stmt::Let(let_decl) => {
                 let ident = &self.program.ast.identifiers[let_decl.ident];
 
@@ -630,8 +677,25 @@ impl<'a> AnalysisContext<'a> {
             }
 
             Stmt::BlockStmt(block) => {
+                self.symbol_table.enter_scope();
+
                 for stmt in block.statements.clone() {
                     self.generate_symbols_for_statement(stmt)?;
+                }
+
+                self.symbol_table.leave_scope();
+            }
+
+            Stmt::IfStmt {
+                condition,
+                then_block,
+                else_block,
+            } => {
+                self.generate_symbols_for_expression(*condition)?;
+                self.generate_symbols_for_statement(*then_block)?;
+
+                if let Some(else_block) = else_block {
+                    self.generate_symbols_for_statement(*else_block)?;
                 }
             }
 
@@ -651,9 +715,6 @@ impl<'a> AnalysisContext<'a> {
 
             Expr::Ident(ident_id) => {
                 let ident = &self.program.ast.identifiers[*ident_id];
-
-                println!("Generating symbol for ident: {:?}", ident);
-                println!("{:#?}", self.symbol_table);
 
                 if let Some(sym) = self.symbol_table.get(&ident.name) {
                     self.symbol_table.associate_ident(*ident_id, sym.id);

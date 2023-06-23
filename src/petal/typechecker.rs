@@ -6,7 +6,7 @@ use std::{
 use thiserror::Error;
 
 use super::{
-    ast::{ExprId, IdentId},
+    ast::{ExprId, IdentId, StmtId},
     types::*,
 };
 
@@ -175,7 +175,7 @@ impl Types for TypeContext {
 }
 
 impl MonoType {
-    /// Quantify all free variables in the type
+    // Quantify all free variables in the type
     pub fn generalise(&self, ctx: &mut TypeContext) -> PolyType {
         let quantifiers = self
             .free_variables()
@@ -195,7 +195,7 @@ impl MonoType {
 }
 
 impl PolyType {
-    /// Replace all the forall quantifiers with type variables
+    // Replace all the forall quantifiers with type variables
     pub fn instantiate(&self, ty_gen: &mut TypeVarGen) -> MonoType {
         match self {
             PolyType::Mono(ty) => ty.clone(),
@@ -241,6 +241,7 @@ pub struct MonoTypeData {
     pub ty: MonoType,
     pub expr_id: Option<ExprId>,
     pub ident_id: Option<IdentId>,
+    pub parent_stmt_id: Option<StmtId>,
 }
 
 impl MonoTypeData {
@@ -249,6 +250,7 @@ impl MonoTypeData {
             ty,
             expr_id: None,
             ident_id: None,
+            parent_stmt_id: None,
         }
     }
 
@@ -259,6 +261,11 @@ impl MonoTypeData {
 
     pub fn with_ident(mut self, ident_id: IdentId) -> Self {
         self.ident_id = Some(ident_id);
+        self
+    }
+
+    pub fn with_parent_stmt(mut self, stmt_id: StmtId) -> Self {
+        self.parent_stmt_id = Some(stmt_id);
         self
     }
 }

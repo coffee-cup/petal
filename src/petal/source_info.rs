@@ -17,6 +17,10 @@ impl Pos {
     pub fn offset(&self) -> usize {
         self.0
     }
+
+    pub fn span_from_length(&self, length: usize) -> Span {
+        Span::new(self.clone(), Some(Pos::new(self.offset() + length)))
+    }
 }
 
 impl Default for Pos {

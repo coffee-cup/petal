@@ -699,6 +699,7 @@ impl<'a> Parser<'a> {
                 });
             }
 
+            // TODO: Figure out how to add extra context to this
             return Err(ParserError::ExpectedToken {
                 expected: token_type,
                 found: self.next_token.to_string(),
