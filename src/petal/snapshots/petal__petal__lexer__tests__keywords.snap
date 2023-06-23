@@ -49,9 +49,13 @@ expression: "lex(\"let if else false true\".to_string())"
         },
     },
     Token {
-        token_type: False,
+        token_type: Boolean,
         lexeme: "false",
-        literal: None,
+        literal: Some(
+            Boolean(
+                false,
+            ),
+        ),
         span: Span {
             start: Pos(
                 12,
@@ -64,9 +68,13 @@ expression: "lex(\"let if else false true\".to_string())"
         },
     },
     Token {
-        token_type: True,
+        token_type: Boolean,
         lexeme: "true",
-        literal: None,
+        literal: Some(
+            Boolean(
+                true,
+            ),
+        ),
         span: Span {
             start: Pos(
                 18,
