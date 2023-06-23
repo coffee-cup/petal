@@ -242,6 +242,7 @@ pub struct MonoTypeData {
     pub expr_id: Option<ExprId>,
     pub ident_id: Option<IdentId>,
     pub parent_stmt_id: Option<StmtId>,
+    pub parent_expr_id: Option<ExprId>,
 }
 
 impl MonoTypeData {
@@ -251,6 +252,7 @@ impl MonoTypeData {
             expr_id: None,
             ident_id: None,
             parent_stmt_id: None,
+            parent_expr_id: None,
         }
     }
 
@@ -266,6 +268,11 @@ impl MonoTypeData {
 
     pub fn with_parent_stmt(mut self, stmt_id: StmtId) -> Self {
         self.parent_stmt_id = Some(stmt_id);
+        self
+    }
+
+    pub fn with_parent_expr(mut self, expr_id: ExprId) -> Self {
+        self.parent_expr_id = Some(expr_id);
         self
     }
 }

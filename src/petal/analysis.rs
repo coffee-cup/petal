@@ -6,7 +6,10 @@ use std::{
 
 use thiserror::Error;
 
-use crate::petal::{ast::Stmt, typechecker::occurs_check};
+use crate::petal::{
+    ast::{ExprNode, Stmt},
+    typechecker::occurs_check,
+};
 
 use super::{
     ast::{
@@ -97,6 +100,15 @@ pub enum AnalysisError {
         rhs_span: Span,
     },
 
+    #[error("Mismatched types")]
+    ExpectedType {
+        expected: MonoType,
+        found: MonoType,
+
+        #[label("expected type `{expected}`, found `{found}`")]
+        span: Span,
+    },
+
     #[error("If condition invalid type")]
     #[diagnostic(help("The condition of an `if` statement must be a `Bool`"))]
     IfConditionTypeMismatch {
@@ -107,6 +119,25 @@ pub enum AnalysisError {
 
         #[label("the condition must be a `Bool`. Found `{ty}`")]
         span: Span,
+    },
+
+    #[error("Invalid function call")]
+    #[diagnostic(help("The left hand side of a function call must be a function"))]
+    InvalidFunctionCall {
+        #[label("this is not a function")]
+        span: Span,
+    },
+
+    #[error("Functions have different number of arguments")]
+    IncorrectNumberOfArguments {
+        expected: usize,
+        found: usize,
+
+        #[label("this function has {expected} parameters")]
+        func_decl: Span,
+
+        #[label("found {found} arguments")]
+        found_span: Span,
     },
     // #[error("Variable {0} does not have an symbol associated with it")]
     // IdentifierDoesNotHaveSymbol(String),
@@ -283,6 +314,9 @@ impl<'a> AnalysisContext<'a> {
         println!("Analyzing program!");
 
         self.generate_symbols_for_program()?;
+
+        // println!("1: Symbol table:\n{}", self.symbol_table);
+
         self.check_program()?;
 
         println!("Symbol table:\n{}", self.symbol_table);
@@ -382,6 +416,8 @@ impl<'a> AnalysisContext<'a> {
             }
         }
 
+        // println!("Substitution:\n\n{:#?}\n", sub);
+
         self.apply_substition_to_symbol_table(&sub);
 
         Ok(())
@@ -421,7 +457,34 @@ impl<'a> AnalysisContext<'a> {
                     sub
                 }
             }
-            (FunApp(f1), FunApp(f2)) => todo!(),
+            (FunApp(f1), FunApp(f2)) => {
+                if f1.params.len() != f2.params.len() {
+                    unreachable!(
+                        "Function param length should be checked during constraint gathering"
+                    );
+                }
+
+                let mut sub = Substitution::new();
+
+                // Unify the argument types
+                for (a, b) in f1.params.iter().zip(f2.params.iter()) {
+                    sub = sub.combine(self.unify_constraint(
+                        MonoTypeData::new(a.apply(&sub)),
+                        MonoTypeData::new(b.apply(&sub)),
+                    )?);
+                }
+
+                // println!("f1 return: {:?}", f1.return_ty);
+                // println!("f2 return: {:?}", f2.return_ty);
+
+                // Unify the return types
+                sub = sub.combine(self.unify_constraint(
+                    MonoTypeData::new(f1.return_ty.apply(&sub)),
+                    MonoTypeData::new(f2.return_ty.apply(&sub)),
+                )?);
+
+                sub
+            }
 
             (t1 @ Struct(s1), t2 @ Struct(s2)) => {
                 if s1.name != s2.name {
@@ -481,12 +544,27 @@ impl<'a> AnalysisContext<'a> {
             };
         }
 
-        return AnalysisError::MismatchedTypes {
-            lhs: t1.clone(),
-            rhs: t2.clone(),
-            lhs_span: self.span_for_monotype_data(&lhs_data).unwrap_or_default(),
-            rhs_span: self.span_for_monotype_data(&rhs_data).unwrap_or_default(),
-        };
+        match (
+            self.span_for_monotype_data(&lhs_data),
+            self.span_for_monotype_data(&rhs_data),
+        ) {
+            (Some(lhs_span), Some(rhs_span)) => {
+                // If we can, show the span of both types
+                return AnalysisError::MismatchedTypes {
+                    lhs: t1.clone(),
+                    rhs: t2.clone(),
+                    lhs_span,
+                    rhs_span,
+                };
+            }
+            (lhs_span, rhs_span) => {
+                return AnalysisError::ExpectedType {
+                    expected: t2.clone(),
+                    found: t1.clone(),
+                    span: lhs_span.or(rhs_span).unwrap_or_default(),
+                }
+            }
+        }
     }
 
     fn span_for_monotype_data(&self, ty_data: &MonoTypeData) -> Option<Span> {
@@ -563,7 +641,7 @@ impl<'a> AnalysisContext<'a> {
     fn expr_constraints(&mut self, expr_id: ExprId) -> AnalysisResult<MonoType> {
         let expr_node = &self.program.ast.expressions[expr_id];
 
-        match &expr_node.expr {
+        match &expr_node.expr.clone() {
             Expr::Integer(_) => Ok(MonoType::int()),
             Expr::Float(_) => Ok(MonoType::float()),
             Expr::String(_) => Ok(MonoType::string()),
@@ -577,17 +655,82 @@ impl<'a> AnalysisContext<'a> {
                 let instantiated = ty.instantiate(&mut self.ty_gen);
 
                 Ok(instantiated)
-
-                // let sym = self.symbol_for_ident(ident)?;
-                // let ty = match &sym.ty {
-                //     Some(ty) => ty.clone(),
-                //     None => return err!(AnalysisErrorKind::UnknownError, ident.span()),
-                // };
-
-                // let instantiated = self.typechecker.instantiate(ty);
-
-                // Ok(instantiated)
             }
+
+            Expr::Call { callee, args } => {
+                let callee_expr = &self.program.ast.expressions[*callee];
+                let callee_ident = match callee_expr.expr {
+                    Expr::Ident(ident) => ident,
+                    _ => {
+                        return Err(AnalysisError::InvalidFunctionCall {
+                            span: expr_node.span.clone(),
+                        })
+                    }
+                };
+
+                let callee_sym = self.symbol_table.symbol_for_ident(&callee_ident).unwrap();
+                let callee_ty = callee_sym.ty.unwrap().instantiate(&mut self.ty_gen);
+
+                let fun_ty = match callee_ty {
+                    MonoType::FunApp(fun) => fun,
+                    _ => {
+                        return Err(AnalysisError::InvalidFunctionCall {
+                            span: expr_node.span.clone(),
+                        })
+                    }
+                };
+
+                let arg_span = if args.len() > 0 {
+                    Span::new(
+                        self.program.ast.expressions[args[0]].span.start(),
+                        self.program.ast.expressions[args[args.len() - 1]]
+                            .span
+                            .end(),
+                    )
+                } else {
+                    Span::new(
+                        self.program.ast.expressions[*callee].span.start(),
+                        expr_node.span.end(),
+                    )
+                };
+
+                if fun_ty.params.len() != args.len() {
+                    return Err(AnalysisError::IncorrectNumberOfArguments {
+                        expected: fun_ty.params.len(),
+                        found: args.len(),
+                        func_decl: callee_sym.decl_source.clone(),
+                        found_span: arg_span,
+                    });
+                }
+
+                let callee_ty = self.expr_constraints(*callee)?;
+
+                let mut arg_tys = Vec::new();
+                for (arg, param) in args.iter().zip(fun_ty.params.iter()) {
+                    let arg_ty = self.expr_constraints(*arg)?;
+                    self.associate_types(
+                        MonoTypeData::new(arg_ty.clone()).with_expr(*arg),
+                        MonoTypeData::new(param.clone()),
+                    );
+
+                    arg_tys.push(arg_ty);
+                }
+
+                let return_ty = self.ty_gen.gen_var();
+
+                let expected_left_ty = MonoType::FunApp(FunctionAppType {
+                    params: arg_tys.clone(),
+                    return_ty: Box::new(return_ty.clone()),
+                });
+
+                self.associate_types(
+                    MonoTypeData::new(callee_ty).with_expr(*callee),
+                    MonoTypeData::new(expected_left_ty),
+                );
+
+                Ok(return_ty)
+            }
+
             // Expr::PrefixOp { op, right, span } => todo!(),
             // Expr::BinaryOp {
             //     left,
