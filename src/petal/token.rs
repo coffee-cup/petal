@@ -35,6 +35,7 @@ pub enum TokenType {
     String,
     Integer,
     Float,
+    Boolean,
 
     // Keywords.
     Struct,
@@ -43,8 +44,6 @@ pub enum TokenType {
     Let,
     If,
     Else,
-    True,
-    False,
 
     Comment,
     Eof,
@@ -55,6 +54,7 @@ pub enum Literal {
     Identifier(String),
     String(String),
     Integer(i64),
+    Boolean(bool),
     Float(f64),
     Comment(String),
 }
@@ -145,14 +145,13 @@ impl fmt::Display for TokenType {
             String => write!(f, "string"),
             Integer => write!(f, "integer"),
             Float => write!(f, "float"),
+            Boolean => write!(f, "boolean"),
             Struct => write!(f, "struct"),
             Fun => write!(f, "fn"),
             Export => write!(f, "export"),
             Let => write!(f, "let"),
             If => write!(f, "if"),
             Else => write!(f, "else"),
-            True => write!(f, "true"),
-            False => write!(f, "false"),
             Comment => write!(f, "comment"),
             Eof => write!(f, "EOF"),
         }

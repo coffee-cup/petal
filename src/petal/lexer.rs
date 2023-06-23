@@ -57,8 +57,8 @@ lazy_static! {
         m.insert("let", TT::Let);
         m.insert("if", TT::If);
         m.insert("else", TT::Else);
-        m.insert("false", TT::False);
-        m.insert("true", TT::True);
+        m.insert("true", TT::Boolean);
+        m.insert("false", TT::Boolean);
         m
     };
 }
@@ -101,6 +101,13 @@ impl<'a> Lexer<'a> {
         }
 
         match KEYWORDS.get(s.as_str()) {
+            Some(TT::Boolean) => {
+                if s == "true" {
+                    Token::new(TT::Boolean).with_literal(Literal::Boolean(true))
+                } else {
+                    Token::new(TT::Boolean).with_literal(Literal::Boolean(false))
+                }
+            }
             Some(token_type) => Token::new(token_type.clone()),
             None => Token::new(TT::Identifier).with_literal(Literal::Identifier(s)),
         }

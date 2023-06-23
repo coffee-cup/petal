@@ -86,6 +86,21 @@ impl PrefixParselet for NumberParselet {
     }
 }
 
+struct BooleanParselet;
+impl PrefixParselet for BooleanParselet {
+    fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<ExprId> {
+        match token.literal {
+            Some(Literal::Boolean(value)) => {
+                Ok(parser.program.new_expression(Expr::Bool(value), token.span))
+            }
+            _ => Err(ParserError::UnexpectedToken {
+                token: token.to_string(),
+                span: token.span(),
+            }),
+        }
+    }
+}
+
 struct StringParselet;
 impl PrefixParselet for StringParselet {
     fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<ExprId> {
@@ -338,6 +353,7 @@ impl<'a> Parser<'a> {
         register!(parser.prefix_parselets, TT::Float, NumberParselet);
         register!(parser.prefix_parselets, TT::String, StringParselet);
         register!(parser.prefix_parselets, TT::Identifier, IdentParselet);
+        register!(parser.prefix_parselets, TT::Boolean, BooleanParselet);
         // register!(parser.prefix_parselets, TT::Comment, CommentParselet);
         register!(parser.prefix_parselets, TT::LeftParen, GroupParselet);
         // register!(parser.infix_parselets, TT::QuestionMark, ConditionalParselet);

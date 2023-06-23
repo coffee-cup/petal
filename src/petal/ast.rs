@@ -177,6 +177,9 @@ pub enum Expr {
     // "hello"
     String(String),
 
+    // true
+    Bool(bool),
+
     // foo
     Ident(IdentId),
 

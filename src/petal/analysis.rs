@@ -254,7 +254,6 @@ pub struct AnalysisContext<'a> {
     symbol_table: SymbolTable,
     type_symbols: SymbolTable,
 
-    type_ctx: TypeContext,
     ty_gen: TypeVarGen,
     type_constraints: Vec<Constraint>,
 }
@@ -265,18 +264,15 @@ impl<'a> AnalysisContext<'a> {
 
         let mut type_symbols = SymbolTable::new();
 
-        let mut type_ctx = TypeContext::new();
+        let type_ctx = TypeContext::new();
         type_symbols.insert_mono("Int".into(), MonoType::int(), None);
         type_symbols.insert_mono("Float".into(), MonoType::float(), None);
         type_symbols.insert_mono("Bool".into(), MonoType::bool(), None);
         type_symbols.insert_mono("String".into(), MonoType::string(), None);
 
-        let typechecker = Typechecker::new();
-
         Self {
             symbol_table,
             type_symbols,
-            type_ctx,
             ty_gen: TypeVarGen::new(),
             type_constraints: Vec::new(),
             program,
@@ -517,9 +513,7 @@ impl<'a> AnalysisContext<'a> {
             }
 
             Stmt::BlockStmt(block) => {
-                for stmt in block.statements.iter() {
-                    self.stmt_constraints(*stmt)?;
-                }
+                self.block_constraints(&block)?;
             }
 
             Stmt::IfStmt {
@@ -541,25 +535,11 @@ impl<'a> AnalysisContext<'a> {
                 }
             }
 
-            // Stmt::IfStmt {
-            //     condition,
-            //     then_block,
-            //     else_block,
-            //     ..
-            // } => {
-            //     let condition_ty = self.expr_constraints(condition)?;
-            //     self.typechecker
-            //         .associate_types(condition_ty, MonoType::bool(), condition.span());
-            //     self.block_constraints(then_block)?;
+            Stmt::ExprStmt(expr) => {
+                self.expr_constraints(expr)?;
+            }
 
-            //     if let Some(else_block) = else_block {
-            //         self.block_constraints(else_block)?;
-            //     }
-            // }
-            // Stmt::ExprStmt { expr, .. } => {
-            //     let _ty = self.expr_constraints(expr)?;
-            // }
-            _ => todo!("stmt_constraints for {:?}", stmt_node.stmt),
+            Stmt::Comment(_) => {}
         };
 
         Ok(())
@@ -577,9 +557,10 @@ impl<'a> AnalysisContext<'a> {
         let expr_node = &self.program.ast.expressions[expr_id];
 
         match &expr_node.expr {
-            Expr::Integer { .. } => Ok(MonoType::int()),
-            Expr::Float { .. } => Ok(MonoType::float()),
-            Expr::String { .. } => Ok(MonoType::string()),
+            Expr::Integer(_) => Ok(MonoType::int()),
+            Expr::Float(_) => Ok(MonoType::float()),
+            Expr::String(_) => Ok(MonoType::string()),
+            Expr::Bool(_) => Ok(MonoType::bool()),
             Expr::Ident(ident) => {
                 let i = &self.program.ast.identifiers[*ident];
                 println!("Generating constraints for ident: {:?}", i);
@@ -638,7 +619,7 @@ impl<'a> AnalysisContext<'a> {
 
             //     Ok(return_ty)
             // }
-            _ => todo!(),
+            _ => todo!("expr_constraints not implemented for {:?}", expr_node.expr),
         }
     }
 
@@ -699,19 +680,20 @@ impl<'a> AnalysisContext<'a> {
                 }
             }
 
-            _ => todo!("generate_symbols_for_statement: {:?}", stmt_node.stmt),
+            Stmt::Comment(_) => {}
         };
 
         Ok(())
     }
 
     fn generate_symbols_for_expression(&mut self, expr_id: ExprId) -> AnalysisResult<()> {
-        let expr_node = &self.program.ast.expressions[expr_id];
+        let expr_node = self.program.ast.expressions[expr_id].clone();
 
         match &expr_node.expr {
             Expr::Integer(_) => {}
             Expr::Float(_) => {}
             Expr::String(_) => {}
+            Expr::Bool(_) => {}
 
             Expr::Ident(ident_id) => {
                 let ident = &self.program.ast.identifiers[*ident_id];
@@ -726,13 +708,32 @@ impl<'a> AnalysisContext<'a> {
                 }
             }
 
-            _ => todo!(),
+            Expr::PrefixOp { right, .. } => {
+                self.generate_symbols_for_expression(*right)?;
+            }
+
+            Expr::BinaryOp { left, right, .. } => {
+                self.generate_symbols_for_expression(left.clone())?;
+                self.generate_symbols_for_expression(*right)?;
+            }
+
+            Expr::PostfixOp { left, .. } => {
+                self.generate_symbols_for_expression(*left)?;
+            }
+
+            Expr::Call { callee, args } => {
+                self.generate_symbols_for_expression(*callee)?;
+
+                for arg in args {
+                    self.generate_symbols_for_expression(*arg)?;
+                }
+            }
         }
 
         Ok(())
     }
 
-    /// Get the polytype of a function declaration based on its signature
+    // Get the polytype of a function declaration based on its signature
     fn get_type_of_function_decl(&self, func: &FuncDecl) -> AnalysisResult<PolyType> {
         // Get the type of the arguments
         let mut param_tys = Vec::new();
@@ -758,7 +759,7 @@ impl<'a> AnalysisContext<'a> {
         Ok(PolyType::Mono(MonoType::FunApp(func_ty)))
     }
 
-    /// Get the type of a type annotation by looking up the identifier in the type_symbols table
+    // Get the type of a type annotation by looking up the identifier in the type_symbols table
     fn type_for_annotation(&self, annotation: &TypeAnnotation) -> AnalysisResult<MonoType> {
         self.type_symbols
             .get(&annotation.name)
