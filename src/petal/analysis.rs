@@ -122,9 +122,11 @@ pub enum AnalysisError {
     },
 
     #[error("Invalid function call")]
-    #[diagnostic(help("The left hand side of a function call must be a function"))]
+    #[diagnostic(help(
+        "The left hand side of a function call must be an identifier to a function"
+    ))]
     InvalidFunctionCall {
-        #[label("this is not a function")]
+        #[label("this is not an identifier to a function")]
         span: Span,
     },
 
@@ -663,7 +665,7 @@ impl<'a> AnalysisContext<'a> {
                     Expr::Ident(ident) => ident,
                     _ => {
                         return Err(AnalysisError::InvalidFunctionCall {
-                            span: expr_node.span.clone(),
+                            span: callee_expr.span.clone(),
                         })
                     }
                 };
@@ -675,7 +677,7 @@ impl<'a> AnalysisContext<'a> {
                     MonoType::FunApp(fun) => fun,
                     _ => {
                         return Err(AnalysisError::InvalidFunctionCall {
-                            span: expr_node.span.clone(),
+                            span: callee_expr.span.clone(),
                         })
                     }
                 };
