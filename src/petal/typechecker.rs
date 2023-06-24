@@ -175,7 +175,7 @@ impl Types for TypeContext {
 }
 
 impl MonoType {
-    // Quantify all free variables in the type
+    /// Quantify all free variables in the type
     pub fn generalise(&self, ctx: &mut TypeContext) -> PolyType {
         let quantifiers = self
             .free_variables()
@@ -195,7 +195,7 @@ impl MonoType {
 }
 
 impl PolyType {
-    // Replace all the forall quantifiers with type variables
+    /// Replace all the forall quantifiers with type variables
     pub fn instantiate(&self, ty_gen: &mut TypeVarGen) -> MonoType {
         match self {
             PolyType::Mono(ty) => ty.clone(),

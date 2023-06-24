@@ -13,8 +13,8 @@ use crate::petal::{
 
 use super::{
     ast::{
-        Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, Identifier, LetDecl, Program, StmtId,
-        StmtNode, TypeAnnotation,
+        Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, Identifier, LetDecl, PrefixOpType,
+        Program, StmtId, StmtNode, TypeAnnotation,
     },
     source_info::Span,
     typechecker::{
@@ -476,9 +476,6 @@ impl<'a> AnalysisContext<'a> {
                     )?);
                 }
 
-                // println!("f1 return: {:?}", f1.return_ty);
-                // println!("f2 return: {:?}", f2.return_ty);
-
                 // Unify the return types
                 sub = sub.combine(self.unify_constraint(
                     MonoTypeData::new(f1.return_ty.apply(&sub)),
@@ -733,7 +730,29 @@ impl<'a> AnalysisContext<'a> {
                 Ok(return_ty)
             }
 
-            // Expr::PrefixOp { op, right, span } => todo!(),
+            Expr::PrefixOp { op, right } => match op.prefix_type {
+                PrefixOpType::Not => {
+                    let right_ty = self.expr_constraints(*right)?;
+                    self.associate_types(
+                        MonoTypeData::new(right_ty.clone()).with_expr(*right),
+                        MonoType::bool().into(),
+                    );
+
+                    Ok(right_ty)
+                }
+                PrefixOpType::Neg => {
+                    let right_ty = self.expr_constraints(*right)?;
+                    let return_ty = self.ty_gen.gen_var();
+
+                    self.associate_types(
+                        MonoTypeData::new(right_ty).with_expr(*right),
+                        MonoTypeData::new(return_ty.clone()),
+                    );
+
+                    Ok(return_ty)
+                }
+            },
+
             // Expr::BinaryOp {
             //     left,
             //     op,

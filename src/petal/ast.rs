@@ -185,7 +185,7 @@ pub enum Expr {
 
     // -1
     PrefixOp {
-        op: Token,
+        op: PrefixOp,
         right: ExprId,
     },
 
@@ -215,6 +215,18 @@ pub enum Expr {
         callee: ExprId,
         args: Vec<ExprId>,
     },
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum PrefixOpType {
+    Neg,
+    Not,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct PrefixOp {
+    pub prefix_type: PrefixOpType,
+    pub span: Span,
 }
 
 // impl HasSpan for Stmt {

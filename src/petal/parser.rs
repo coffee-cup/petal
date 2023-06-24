@@ -5,8 +5,8 @@ use thiserror::Error;
 use super::{
     analysis::AnalysisError,
     ast::{
-        Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, Identifier, LetDecl, Program, Stmt,
-        StmtId, StructDecl, StructField, TypeAnnotation,
+        Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, Identifier, LetDecl, PrefixOp,
+        PrefixOpType, Program, Stmt, StmtId, StructDecl, StructField, TypeAnnotation,
     },
     lexer::{Lexer, LexerError},
     precedence::Precedence,
@@ -170,9 +170,18 @@ impl PrefixParselet for PrefixOperatorParselet {
             .span
             .merge(token.span());
 
+        let prefix_op_type = match token.token_type {
+            TT::Minus => PrefixOpType::Neg,
+            TT::Bang => PrefixOpType::Not,
+            _ => unreachable!("Invalid prefix operator, {token}"),
+        };
+
         Ok(parser.program.new_expression(
             Expr::PrefixOp {
-                op: token,
+                op: PrefixOp {
+                    prefix_type: prefix_op_type,
+                    span: token.span(),
+                },
                 right: operand,
             },
             span,
