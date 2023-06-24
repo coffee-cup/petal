@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use slotmap::{new_key_type, SlotMap};
 
 use super::{source_info::Span, token::Token};
@@ -191,7 +193,7 @@ pub enum Expr {
 
     // 1 + 2
     BinaryOp {
-        op: Token,
+        op: BinaryOp,
         left: ExprId,
         right: ExprId,
     },
@@ -201,14 +203,6 @@ pub enum Expr {
         op: Token,
         left: ExprId,
     },
-
-    // a ? b : c
-    // Conditional {
-    //     condition: Box<Expr>,
-    //     then_branch: Box<Expr>,
-    //     else_branch: Box<Expr>,
-    //     span: Span,
-    // },
 
     // foo(1, 2, 3)
     Call {
@@ -227,6 +221,33 @@ pub enum PrefixOpType {
 pub struct PrefixOp {
     pub prefix_type: PrefixOpType,
     pub span: Span,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum BinaryOpType {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Power,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub struct BinaryOp {
+    pub binary_type: BinaryOpType,
+    pub span: Span,
+}
+
+impl Display for BinaryOpType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BinaryOpType::Add => write!(f, "+"),
+            BinaryOpType::Subtract => write!(f, "-"),
+            BinaryOpType::Multiply => write!(f, "*"),
+            BinaryOpType::Divide => write!(f, "/"),
+            BinaryOpType::Power => write!(f, "^"),
+        }
+    }
 }
 
 // impl HasSpan for Stmt {

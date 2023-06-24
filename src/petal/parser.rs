@@ -5,8 +5,9 @@ use thiserror::Error;
 use super::{
     analysis::AnalysisError,
     ast::{
-        Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, Identifier, LetDecl, PrefixOp,
-        PrefixOpType, Program, Stmt, StmtId, StructDecl, StructField, TypeAnnotation,
+        BinaryOp, BinaryOpType, Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, Identifier,
+        LetDecl, PrefixOp, PrefixOpType, Program, Stmt, StmtId, StructDecl, StructField,
+        TypeAnnotation,
     },
     lexer::{Lexer, LexerError},
     precedence::Precedence,
@@ -237,10 +238,22 @@ impl InfixParselet for BinaryOperatorParselet {
             .span
             .merge(parser.program.ast.expressions[right].span.clone());
 
+        let binary_type = match token.token_type {
+            TT::Plus => BinaryOpType::Add,
+            TT::Minus => BinaryOpType::Subtract,
+            TT::Star => BinaryOpType::Multiply,
+            TT::Slash => BinaryOpType::Divide,
+            TT::Caret => BinaryOpType::Power,
+            _ => unreachable!("Invalid binary operator, {token}"),
+        };
+
         Ok(parser.program.new_expression(
             Expr::BinaryOp {
                 left,
-                op: token,
+                op: BinaryOp {
+                    binary_type,
+                    span: token.span(),
+                },
                 right,
             },
             span,

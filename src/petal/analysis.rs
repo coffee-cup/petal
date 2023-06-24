@@ -13,8 +13,8 @@ use crate::petal::{
 
 use super::{
     ast::{
-        Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, Identifier, LetDecl, PrefixOpType,
-        Program, StmtId, StmtNode, TypeAnnotation,
+        BinaryOpType, Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, Identifier, LetDecl,
+        PrefixOpType, Program, StmtId, StmtNode, TypeAnnotation,
     },
     source_info::Span,
     typechecker::{
@@ -119,6 +119,25 @@ pub enum AnalysisError {
 
         #[label("the condition must be a `Bool`. Found `{ty}`")]
         span: Span,
+    },
+
+    #[error("Left hand side `{lhs_type}` does not match right hand side `{rhs_type}`")]
+    #[diagnostic(help(
+        "The left and right hand sides of a binary operation must have the same type"
+    ))]
+    InvalidBinaryOperation {
+        op: BinaryOpType,
+        lhs_type: MonoType,
+        rhs_type: MonoType,
+
+        #[label("`{op}` expression")]
+        bin_span: Span,
+
+        #[label("this is of type `{lhs_type}`")]
+        lhs_span: Span,
+
+        #[label("this is of type `{rhs_type}`")]
+        rhs_span: Span,
     },
 
     #[error("Invalid function call")]
@@ -527,6 +546,7 @@ impl<'a> AnalysisContext<'a> {
         lhs_data: &MonoTypeData,
         rhs_data: &MonoTypeData,
     ) -> AnalysisError {
+        // If condition type mismatch
         if let Some(
             n @ StmtNode {
                 stmt: Stmt::IfStmt { .. },
@@ -540,6 +560,26 @@ impl<'a> AnalysisContext<'a> {
                 ty: t1.clone(),
                 span: self.span_for_monotype_data(&lhs_data).unwrap_or_default(),
                 if_span: n.span.start().span_from_length(1),
+            };
+        }
+
+        // Binary operand type mismatch
+        if let Some(
+            n @ ExprNode {
+                expr: Expr::BinaryOp { op, .. },
+                ..
+            },
+        ) = lhs_data
+            .parent_expr_id
+            .map(|expr_id| &self.program.ast.expressions[expr_id])
+        {
+            return AnalysisError::InvalidBinaryOperation {
+                bin_span: op.span.clone(),
+                op: op.binary_type.clone(),
+                lhs_type: t1.clone(),
+                rhs_type: t2.clone(),
+                lhs_span: self.span_for_monotype_data(&lhs_data).unwrap_or_default(),
+                rhs_span: self.span_for_monotype_data(&rhs_data).unwrap_or_default(),
             };
         }
 
@@ -753,6 +793,26 @@ impl<'a> AnalysisContext<'a> {
                 }
             },
 
+            Expr::BinaryOp { left, right, .. } => {
+                let left_ty = self.expr_constraints(*left)?;
+                let right_ty = self.expr_constraints(*right)?;
+
+                self.associate_types(
+                    MonoTypeData::new(left_ty)
+                        .with_expr(*left)
+                        .with_parent_expr(expr_id),
+                    MonoTypeData::new(right_ty.clone()).with_expr(*right),
+                );
+
+                let return_ty = self.ty_gen.gen_var();
+                self.associate_types(
+                    MonoTypeData::new(return_ty.clone()).with_parent_expr(expr_id),
+                    MonoTypeData::new(right_ty).with_expr(*right),
+                );
+
+                Ok(return_ty)
+            }
+
             // Expr::BinaryOp {
             //     left,
             //     op,
@@ -760,36 +820,6 @@ impl<'a> AnalysisContext<'a> {
             //     span,
             // } => todo!(),
             // Expr::PostfixOp { op, left, span } => todo!(),
-            // Expr::Conditional {
-            //     condition,
-            //     then_branch,
-            //     else_branch,
-            //     span,
-            // } => todo!(),
-            // Expr::Call { callee, args, span } => {
-            //     let callee_ty = self.expr_constraints(callee)?;
-
-            //     let arg_tys = args
-            //         .iter()
-            //         .map(|arg| self.expr_constraints(arg))
-            //         .collect::<AnalysisResult<Vec<_>>>()?;
-
-            //     let return_ty = self.typechecker.gen_type_var(expr.span());
-
-            //     // Based on the argument types and return type, this is what the callee type should be
-            //     let expected_left_ty = MonoType::FunApp(FunctionAppType {
-            //         params: arg_tys.clone(),
-            //         return_ty: Box::new(return_ty.clone()),
-            //     });
-
-            //     println!("callee_ty: {}", callee_ty);
-            //     println!("expected_left_ty: {}", expected_left_ty);
-
-            //     self.typechecker
-            //         .associate_types(callee_ty, expected_left_ty, expr.span());
-
-            //     Ok(return_ty)
-            // }
             _ => todo!("expr_constraints not implemented for {:?}", expr_node.expr),
         }
     }
