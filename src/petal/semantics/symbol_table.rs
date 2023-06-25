@@ -39,6 +39,10 @@ impl Symbol {
             ..self.clone()
         }
     }
+
+    pub fn unique_name(&self) -> String {
+        format!("{}#{}", self.name, self.id)
+    }
 }
 
 #[derive(Clone, Debug)]

@@ -92,6 +92,15 @@ impl MonoType {
     }
 }
 
+impl PolyType {
+    pub fn extract_monotype(&self) -> Option<MonoType> {
+        match self {
+            PolyType::Mono(ty) => Some(ty.clone()),
+            _ => None,
+        }
+    }
+}
+
 impl Display for MonoType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
