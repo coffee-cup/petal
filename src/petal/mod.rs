@@ -1,17 +1,16 @@
 // use crate::petal::analysis::Analysis;
 
-use self::{analysis::AnalysisContext, errors::CompilerError, lexer::Lexer};
+use self::{errors::CompilerError, lexer::Lexer, semantics::context::SemanticContext};
 
-mod analysis;
 mod ast;
 // mod codegen;
 pub mod errors;
 mod lexer;
 mod parser;
 mod precedence;
+mod semantics;
 mod source_info;
 mod token;
-mod typechecker;
 mod types;
 // mod wasm;
 // mod wat;
@@ -49,10 +48,10 @@ impl Compiler {
 
         // println!("{:#?}", program);
 
-        let mut analysis = AnalysisContext::new(&mut program);
-        analysis
+        let mut semantics = SemanticContext::new(&mut program);
+        semantics
             .analysis_program()
-            .map_err(CompilerError::AnalysisError)?;
+            .map_err(CompilerError::SemanticError)?;
 
         // let mut typechecker = Typechecker::new(&program);
         // typechecker.check().map_err(CompilerError::TypecheckError)?;

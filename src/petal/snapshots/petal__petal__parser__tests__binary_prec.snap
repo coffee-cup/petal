@@ -35,10 +35,8 @@ expression: "parse_expr(\"1 + 2 + 3\")"
     },
     ExprNode {
         expr: BinaryOp {
-            op: Token {
-                token_type: Plus,
-                lexeme: "+",
-                literal: None,
+            op: BinaryOp {
+                binary_type: Add,
                 span: Span {
                     start: Pos(
                         2,
@@ -85,10 +83,8 @@ expression: "parse_expr(\"1 + 2 + 3\")"
     },
     ExprNode {
         expr: BinaryOp {
-            op: Token {
-                token_type: Plus,
-                lexeme: "+",
-                literal: None,
+            op: BinaryOp {
+                binary_type: Add,
                 span: Span {
                     start: Pos(
                         6,

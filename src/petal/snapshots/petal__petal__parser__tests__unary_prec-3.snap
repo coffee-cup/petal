@@ -22,10 +22,8 @@ expression: "parse_expr(\"!-a\")"
     },
     ExprNode {
         expr: PrefixOp {
-            op: Token {
-                token_type: Minus,
-                lexeme: "-",
-                literal: None,
+            op: PrefixOp {
+                prefix_type: Neg,
                 span: Span {
                     start: Pos(
                         1,
@@ -54,10 +52,8 @@ expression: "parse_expr(\"!-a\")"
     },
     ExprNode {
         expr: PrefixOp {
-            op: Token {
-                token_type: Bang,
-                lexeme: "!",
-                literal: None,
+            op: PrefixOp {
+                prefix_type: Not,
                 span: Span {
                     start: Pos(
                         0,

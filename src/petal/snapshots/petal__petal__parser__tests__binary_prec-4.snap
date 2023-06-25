@@ -35,10 +35,8 @@ expression: "parse_expr(\"1 ^ 2\")"
     },
     ExprNode {
         expr: BinaryOp {
-            op: Token {
-                token_type: Caret,
-                lexeme: "^",
-                literal: None,
+            op: BinaryOp {
+                binary_type: Power,
                 span: Span {
                     start: Pos(
                         2,

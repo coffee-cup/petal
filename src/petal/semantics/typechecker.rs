@@ -3,11 +3,15 @@ use std::{
     fmt::Display,
 };
 
-use thiserror::Error;
+use crate::petal::{
+    ast::{Expr, ExprId, ExprNode, IdentId, Stmt, StmtId, StmtNode},
+    source_info::Span,
+    types::{FunctionAppType, MonoType, PolyType, StructType, TyVar, TypeQuantifier},
+};
 
 use super::{
-    ast::{ExprId, IdentId, StmtId},
-    types::*,
+    context::SemanticContext,
+    errors::{SemanticError, SemanticResult},
 };
 
 #[derive(Clone, Debug)]
@@ -324,104 +328,6 @@ impl Typechecker {
         }
     }
 
-    // pub fn solve_constraints(&self) -> TypeResult<Substitution> {
-    //     let mut sub = Substitution::new();
-
-    //     for constraint in &self.constraints {
-    //         match constraint {
-    //             Constraint::Equal { lhs, rhs, origin } => {
-    //                 println!("Unifying {} and {}", lhs.apply(&sub), rhs.apply(&sub));
-
-    //                 let sub2 =
-    //                     self.unify_equality_constraint(lhs.apply(&sub), rhs.apply(&sub), origin)?;
-    //                 println!("Substitution: {:?}", sub2);
-    //                 sub = sub.combine(sub2);
-    //             }
-    //             Constraint::Oneof(_lhs, _tys) => todo!(),
-    //         }
-    //     }
-
-    //     Ok(sub)
-    // }
-
-    // pub fn unify_equality_constraint(
-    //     &self,
-    //     lhs: MonoType,
-    //     rhs: MonoType,
-    // ) -> TypeResult<Substitution> {
-    //     use MonoType::*;
-
-    //     let sub = match (&lhs, &rhs) {
-    //         (Variable(v1), Variable(v2)) => {
-    //             if v1 == v2 {
-    //                 Substitution::new()
-    //             } else {
-    //                 let mut sub = Substitution::new();
-    //                 sub.insert(v1.clone(), Variable(v2.clone()));
-    //                 sub
-    //             }
-    //         }
-    //         (Variable(v), ty) | (ty, Variable(v)) => {
-    //             if occurs_check(ty, &Variable(v.clone())) {
-    //                 panic!("Infinite type");
-    //             } else {
-    //                 let mut sub = Substitution::new();
-    //                 sub.insert(v.clone(), ty.clone());
-    //                 sub
-    //             }
-    //         }
-    //         (FunApp(f1), FunApp(f2)) => {
-    //             if f1.params.len() != f2.params.len() {
-    //                 panic!(
-    //                     "Functions have different number of arguments: {} and {}",
-    //                     f1.params.len(),
-    //                     f2.params.len()
-    //                 );
-    //             }
-
-    //             let mut sub = Substitution::new();
-    //             for (a, b) in f1.params.iter().zip(f2.params.iter()) {
-    //                 sub =
-    //                     sub.combine(self.unify_equality_constraint(a.apply(&sub), b.apply(&sub))?);
-    //             }
-
-    //             sub = sub.combine(self.unify_equality_constraint(
-    //                 f1.return_ty.apply(&sub),
-    //                 f2.return_ty.apply(&sub),
-    //             )?);
-    //             sub
-    //         }
-    //         (Struct(t1), Struct(t2)) => {
-    //             if t1.name != t2.name {
-    //                 println!("{:?}", self.type_spans);
-    //                 return Err(TypecheckingError::new(
-    //                     TypecheckingErrorKind::MismatchedTypes(lhs, rhs),
-    //                 ));
-    //             }
-
-    //             let mut sub = Substitution::new();
-    //             for (a, b) in t1.params.iter().zip(t2.params.iter()) {
-    //                 sub =
-    //                     sub.combine(self.unify_equality_constraint(a.apply(&sub), b.apply(&sub))?);
-    //             }
-
-    //             sub
-    //         }
-    //         (v1, v2) => {
-    //             if v1 != v2 {
-    //                 panic!("Types {:?} and {:?} do not unify", v1, v2)
-    //             }
-    //             Substitution::new()
-    //         }
-    //     };
-
-    //     Ok(sub)
-    // }
-
-    // pub fn associate_types(&mut self, lhs: MonoType, rhs: MonoType) {
-    //     self.constraints.push(Constraint::equal(lhs, rhs));
-    // }
-
     pub fn instantiate(&mut self, poly: PolyType) -> MonoType {
         poly.instantiate(&mut self.ty_gen)
     }
@@ -436,6 +342,195 @@ impl Typechecker {
         for constraint in &self.constraints {
             println!("{}", constraint);
         }
+    }
+}
+
+impl<'a> SemanticContext<'a> {
+    pub fn solve_constraints(&mut self) -> SemanticResult<()> {
+        let mut sub = Substitution::new();
+
+        for constraint in self.type_constraints.clone() {
+            match constraint {
+                Constraint::Equal { lhs, rhs } => {
+                    let sub2 = self.unify_constraint(lhs.apply(&sub), rhs.apply(&sub))?;
+                    sub = sub.combine(sub2);
+                }
+            }
+        }
+
+        self.apply_substition_to_symbol_table(&sub);
+
+        Ok(())
+    }
+
+    fn apply_substition_to_symbol_table(&mut self, sub: &Substitution) {
+        for (_, sym) in self.symbol_table.symbols.iter_mut() {
+            if let Some(ty) = &mut sym.ty {
+                *ty = ty.apply(sub);
+            }
+        }
+    }
+
+    fn unify_constraint(
+        &mut self,
+        lhs_data: MonoTypeData,
+        rhs_data: MonoTypeData,
+    ) -> SemanticResult<Substitution> {
+        use MonoType::*;
+
+        let sub = match (&lhs_data.ty, &rhs_data.ty) {
+            (Variable(v1), Variable(v2)) => {
+                if v1 == v2 {
+                    Substitution::new()
+                } else {
+                    let mut sub = Substitution::new();
+                    sub.insert(v1.clone(), Variable(v2.clone()));
+                    sub
+                }
+            }
+            (Variable(v), ty) | (ty, Variable(v)) => {
+                if occurs_check(ty, &Variable(v.clone())) {
+                    panic!("Infinite type")
+                } else {
+                    let mut sub = Substitution::new();
+                    sub.insert(v.clone(), ty.clone());
+                    sub
+                }
+            }
+            (FunApp(f1), FunApp(f2)) => {
+                if f1.params.len() != f2.params.len() {
+                    unreachable!(
+                        "Function param length should be checked during constraint gathering"
+                    );
+                }
+
+                let mut sub = Substitution::new();
+
+                // Unify the argument types
+                for (a, b) in f1.params.iter().zip(f2.params.iter()) {
+                    sub = sub.combine(self.unify_constraint(
+                        MonoTypeData::new(a.apply(&sub)),
+                        MonoTypeData::new(b.apply(&sub)),
+                    )?);
+                }
+
+                // Unify the return types
+                sub = sub.combine(self.unify_constraint(
+                    MonoTypeData::new(f1.return_ty.apply(&sub)),
+                    MonoTypeData::new(f2.return_ty.apply(&sub)),
+                )?);
+
+                sub
+            }
+
+            (t1 @ Struct(s1), t2 @ Struct(s2)) => {
+                if s1.name != s2.name {
+                    println!("s1 = {}, s2 = {}", s1.name, s2.name);
+
+                    return Err(self.mismatch_type_error(t1, t2, &lhs_data, &rhs_data));
+                }
+
+                let mut sub = Substitution::new();
+                for (a, b) in s1.params.iter().zip(s2.params.iter()) {
+                    // TODO: Create a MonoTypeData for each param
+                    // For this, I need to associate the param with an identifier node
+
+                    sub = sub.combine(self.unify_constraint(
+                        MonoTypeData::new(a.apply(&sub)),
+                        MonoTypeData::new(b.apply(&sub)),
+                    )?);
+                }
+
+                sub
+            }
+
+            (t1, t2) => {
+                if t1 != t2 {
+                    return Err(self.mismatch_type_error(t1, t2, &lhs_data, &rhs_data));
+                }
+
+                Substitution::new()
+            }
+        };
+
+        Ok(sub)
+    }
+
+    // Return an error for mismatched types
+    // This will use the most specific error possible for the given lhs and rhs types
+    fn mismatch_type_error(
+        &self,
+        t1: &MonoType,
+        t2: &MonoType,
+        lhs_data: &MonoTypeData,
+        rhs_data: &MonoTypeData,
+    ) -> SemanticError {
+        // If condition type mismatch
+        if let Some(
+            n @ StmtNode {
+                stmt: Stmt::IfStmt { .. },
+                ..
+            },
+        ) = lhs_data
+            .parent_stmt_id
+            .map(|stmt_id| &self.program.ast.statements[stmt_id])
+        {
+            return SemanticError::IfConditionTypeMismatch {
+                ty: t1.clone(),
+                span: self.span_for_monotype_data(lhs_data).unwrap_or_default(),
+                if_span: n.span.start().span_from_length(1),
+            };
+        }
+
+        // Binary operand type mismatch
+        if let Some(
+            _n @ ExprNode {
+                expr: Expr::BinaryOp { op, .. },
+                ..
+            },
+        ) = lhs_data
+            .parent_expr_id
+            .map(|expr_id| &self.program.ast.expressions[expr_id])
+        {
+            return SemanticError::InvalidBinaryOperation {
+                bin_span: op.span.clone(),
+                op: op.binary_type.clone(),
+                lhs_type: t1.clone(),
+                rhs_type: t2.clone(),
+                lhs_span: self.span_for_monotype_data(lhs_data).unwrap_or_default(),
+                rhs_span: self.span_for_monotype_data(rhs_data).unwrap_or_default(),
+            };
+        }
+
+        match (
+            self.span_for_monotype_data(lhs_data),
+            self.span_for_monotype_data(rhs_data),
+        ) {
+            (Some(lhs_span), Some(rhs_span)) => {
+                // If we can, show the span of both types
+                SemanticError::MismatchedTypes {
+                    lhs: t1.clone(),
+                    rhs: t2.clone(),
+                    lhs_span,
+                    rhs_span,
+                }
+            }
+            (lhs_span, rhs_span) => SemanticError::ExpectedType {
+                expected: t2.clone(),
+                found: t1.clone(),
+                span: lhs_span.or(rhs_span).unwrap_or_default(),
+            },
+        }
+    }
+
+    fn span_for_monotype_data(&self, ty_data: &MonoTypeData) -> Option<Span> {
+        if let Some(expr_id) = ty_data.expr_id {
+            return Some(self.program.ast.expressions[expr_id].span.clone());
+        } else if let Some(ident_id) = ty_data.ident_id {
+            return Some(self.program.ast.identifiers[ident_id].span.clone());
+        }
+
+        None
     }
 }
 
@@ -477,87 +572,79 @@ mod test {
     use MonoType::*;
     use PolyType::*;
 
-    // #[test]
-    // fn test_ty_var_gen() {
-    //     let mut gen = TypeVarGen::new();
-    //     assert_eq!(gen.next(), "t0");
-    //     assert_eq!(gen.next(), "t1");
-    //     assert_eq!(gen.next(), "t2");
-    // }
+    #[test]
+    fn test_ty_var_gen() {
+        let mut gen = TypeVarGen::new();
+        assert_eq!(gen.next(), "t0");
+        assert_eq!(gen.next(), "t1");
+        assert_eq!(gen.next(), "t2");
+    }
 
-    // #[test]
-    // fn test_free_variables() {
-    //     // Monotypes
-    //     assert_eq!(MonoType::int().free_variables(), BTreeSet::new());
-    //     assert_eq!(MonoType::bool().free_variables(), BTreeSet::new());
-    //     assert_eq!(
-    //         FunApp(FunctionAppType {
-    //             params: vec![MonoType::int(), Variable("a".into())],
-    //             return_ty: Box::new(Variable("b".into()))
-    //         })
-    //         .free_variables(),
-    //         ["a".into(), "b".into()].into()
-    //     );
+    #[test]
+    fn test_free_variables() {
+        // Monotypes
+        assert_eq!(MonoType::int().free_variables(), BTreeSet::new());
+        assert_eq!(MonoType::bool().free_variables(), BTreeSet::new());
+        assert_eq!(
+            FunApp(FunctionAppType {
+                params: vec![MonoType::int(), Variable("a".into())],
+                return_ty: Box::new(Variable("b".into()))
+            })
+            .free_variables(),
+            ["a", "b"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect::<BTreeSet<_>>()
+        );
 
-    //     // Polytypes
-    //     assert_eq!(
-    //         Quantifier(TypeQuantifier {
-    //             quantifiers: vec!["a".into()],
-    //             ty: Variable("a".into())
-    //         })
-    //         .free_variables(),
-    //         BTreeSet::new()
-    //     );
-    //     assert_eq!(
-    //         Quantifier(TypeQuantifier {
-    //             quantifiers: vec!["a".into()],
-    //             ty: Variable("b".into())
-    //         })
-    //         .free_variables(),
-    //         ["b".into()].into()
-    //     );
-    // }
+        // Polytypes
+        assert_eq!(
+            Quantifier(TypeQuantifier {
+                quantifiers: vec!["a".into()],
+                ty: Variable("a".into())
+            })
+            .free_variables(),
+            BTreeSet::new()
+        );
+        assert_eq!(
+            Quantifier(TypeQuantifier {
+                quantifiers: vec!["a".into()],
+                ty: Variable("b".into())
+            })
+            .free_variables(),
+            ["b".into()].into()
+        );
+    }
 
-    // #[test]
-    // fn test_substitution_combine() {
-    //     use MonoType::*;
+    #[test]
+    fn test_substitution_combine() {
+        use MonoType::*;
 
-    //     let mut sub1 = Substitution::new();
-    //     sub1.insert("x".to_string(), Variable("y".to_string()));
-    //     sub1.insert("a".to_string(), MonoType::int());
+        let mut sub1 = Substitution::new();
+        sub1.insert("x".to_string(), Variable("y".to_string()));
+        sub1.insert("a".to_string(), MonoType::int());
 
-    //     let mut sub2 = Substitution::new();
-    //     sub2.insert(
-    //         "z".into(),
-    //         FunApp(FunctionAppType {
-    //             params: vec![MonoType::bool()],
-    //             return_ty: Box::new(Variable("x".into())),
-    //         }),
-    //     );
-    //     sub2.insert("a".to_string(), MonoType::bool());
+        let mut sub2 = Substitution::new();
+        sub2.insert(
+            "z".into(),
+            FunApp(FunctionAppType {
+                params: vec![MonoType::bool()],
+                return_ty: Box::new(Variable("x".into())),
+            }),
+        );
+        sub2.insert("a".to_string(), MonoType::bool());
 
-    //     let mut sub3 = Substitution::new();
-    //     sub3.insert("x".to_string(), Variable("y".to_string()));
-    //     sub3.insert(
-    //         "z".into(),
-    //         FunApp(FunctionAppType {
-    //             params: vec![MonoType::bool()],
-    //             return_ty: Box::new(Variable("y".into())),
-    //         }),
-    //     );
-    //     sub3.insert("a".to_string(), MonoType::bool());
+        let mut sub3 = Substitution::new();
+        sub3.insert("x".to_string(), Variable("y".to_string()));
+        sub3.insert(
+            "z".into(),
+            FunApp(FunctionAppType {
+                params: vec![MonoType::bool()],
+                return_ty: Box::new(Variable("y".into())),
+            }),
+        );
+        sub3.insert("a".to_string(), MonoType::bool());
 
-    //     assert_eq!(sub1.combine(sub2), sub3);
-    // }
+        assert_eq!(sub1.combine(sub2), sub3);
+    }
 }
-
-// ---
-
-// Statements have no type, only expressions do
-// However, walking the program and statements is necessary to build the type environment
-// We can generate constraints using this type environment by walking all expressions
-//
-// We will also likely need a TypedExpr type, which is the same as Expr but with a type annotation
-// Not sure how to represent this in the top-level AST. Maybe we can just have a TypedProgram type
-//
-// We could also convert to an HIR at the same time as typechecking

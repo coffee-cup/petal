@@ -1,9 +1,9 @@
 use miette::SourceSpan;
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone, Default)]
 pub struct Pos(usize);
 
-#[derive(Eq, PartialEq, Debug, Clone)]
+#[derive(Eq, PartialEq, Debug, Clone, Default)]
 pub struct Span {
     pub start: Pos,
     pub end: Option<Pos>,
@@ -20,12 +20,6 @@ impl Pos {
 
     pub fn span_from_length(&self, length: usize) -> Span {
         Span::new(self.clone(), Some(Pos::new(self.offset() + length)))
-    }
-}
-
-impl Default for Pos {
-    fn default() -> Self {
-        Pos(0)
     }
 }
 
@@ -57,15 +51,6 @@ impl Span {
         };
 
         Self { start, end }
-    }
-}
-
-impl Default for Span {
-    fn default() -> Self {
-        Span {
-            start: Pos::default(),
-            end: None,
-        }
     }
 }
 

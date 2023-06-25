@@ -22,10 +22,8 @@ expression: "parse_expr(\"-ab\")"
     },
     ExprNode {
         expr: PrefixOp {
-            op: Token {
-                token_type: Minus,
-                lexeme: "-",
-                literal: None,
+            op: PrefixOp {
+                prefix_type: Neg,
                 span: Span {
                     start: Pos(
                         0,

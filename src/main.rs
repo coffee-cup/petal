@@ -1,7 +1,5 @@
-
-
 use clap::{Parser, Subcommand};
-use petal::{Compiler};
+use petal::Compiler;
 
 #[macro_use]
 extern crate lazy_static;
@@ -39,7 +37,11 @@ fn main() {
     let args = Cli::parse();
 
     match args.command {
-        Commands::Build { file, wat: _, output } => {
+        Commands::Build {
+            file,
+            wat: _,
+            output,
+        } => {
             let compiler = Compiler::new();
 
             match compiler.compile_file(&file) {

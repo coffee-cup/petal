@@ -3,11 +3,9 @@ use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
 
 use super::{
-    analysis::AnalysisError,
     ast::{
-        BinaryOp, BinaryOpType, Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, Identifier,
-        LetDecl, PrefixOp, PrefixOpType, Program, Stmt, StmtId, StructDecl, StructField,
-        TypeAnnotation,
+        BinaryOp, BinaryOpType, Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, LetDecl, PrefixOp,
+        PrefixOpType, Program, Stmt, StmtId, StructDecl, StructField, TypeAnnotation,
     },
     lexer::{Lexer, LexerError},
     precedence::Precedence,

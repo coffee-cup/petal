@@ -22,10 +22,8 @@ expression: "parse_expr(\"!foo\")"
     },
     ExprNode {
         expr: PrefixOp {
-            op: Token {
-                token_type: Bang,
-                lexeme: "!",
-                literal: None,
+            op: PrefixOp {
+                prefix_type: Not,
                 span: Span {
                     start: Pos(
                         0,
