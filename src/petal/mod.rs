@@ -5,6 +5,7 @@ use self::{errors::CompilerError, lexer::Lexer, semantics::context::SemanticCont
 mod ast;
 // mod codegen;
 pub mod errors;
+mod ir;
 mod lexer;
 mod parser;
 mod precedence;
@@ -52,6 +53,8 @@ impl Compiler {
         semantics
             .analysis_program()
             .map_err(CompilerError::SemanticError)?;
+
+        let mut ir_generator = ir::IRGeneration::new(&semantics);
 
         // let mut typechecker = Typechecker::new(&program);
         // typechecker.check().map_err(CompilerError::TypecheckError)?;

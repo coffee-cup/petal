@@ -25,6 +25,7 @@ impl<'a> SemanticContext<'a> {
 
                 let expr_ty = self.expr_constraints(let_decl.init)?;
 
+                // The type of the variable must be equal to the type of the expression
                 self.associate_types(
                     MonoTypeData::new(var_ty).with_ident(let_decl.ident),
                     MonoTypeData::new(expr_ty).with_expr(let_decl.init),
@@ -41,6 +42,8 @@ impl<'a> SemanticContext<'a> {
                 else_block,
             } => {
                 let condition_ty = self.expr_constraints(condition)?;
+
+                // The condition must be a boolean
                 self.associate_types(
                     MonoTypeData::new(condition_ty)
                         .with_expr(condition)

@@ -14,6 +14,7 @@ use super::{
     errors::{SemanticError, SemanticResult},
 };
 
+/// Generates fresh type variables
 #[derive(Clone, Debug)]
 pub struct TypeVarGen {
     counter: usize,
@@ -240,6 +241,8 @@ impl TypeContext {
     }
 }
 
+/// Container to associate a type with an expression/identifier/parent
+/// This is mainly used for error reporting
 #[derive(Clone, Debug)]
 pub struct MonoTypeData {
     pub ty: MonoType,
@@ -300,6 +303,7 @@ impl From<MonoType> for MonoTypeData {
     }
 }
 
+/// A constraint between two types
 #[derive(Clone, Debug)]
 pub enum Constraint {
     /// lhs = rhs
@@ -363,6 +367,7 @@ impl<'a> SemanticContext<'a> {
         Ok(())
     }
 
+    /// Apply a substitution to the symbol table
     fn apply_substition_to_symbol_table(&mut self, sub: &Substitution) {
         for (_, sym) in self.symbol_table.symbols.iter_mut() {
             if let Some(ty) = &mut sym.ty {
@@ -371,6 +376,9 @@ impl<'a> SemanticContext<'a> {
         }
     }
 
+    /// Unify two types
+    /// Returns a substitution that can be applied to both types to make them equal
+    /// If the types cannot be unified, an error is returned
     fn unify_constraint(
         &mut self,
         lhs_data: MonoTypeData,
@@ -456,8 +464,8 @@ impl<'a> SemanticContext<'a> {
         Ok(sub)
     }
 
-    // Return an error for mismatched types
-    // This will use the most specific error possible for the given lhs and rhs types
+    /// Return an error for mismatched types
+    /// This will use the most specific error possible for the given lhs and rhs types
     fn mismatch_type_error(
         &self,
         t1: &MonoType,
@@ -523,6 +531,7 @@ impl<'a> SemanticContext<'a> {
         }
     }
 
+    /// Returns the span for the given monotype data
     fn span_for_monotype_data(&self, ty_data: &MonoTypeData) -> Option<Span> {
         if let Some(expr_id) = ty_data.expr_id {
             return Some(self.program.ast.expressions[expr_id].span.clone());

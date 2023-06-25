@@ -70,12 +70,14 @@ impl SymbolTable {
         }
     }
 
+    /// Get the symbol for the given identifier
     pub fn symbol_for_ident(&self, ident: &IdentId) -> Option<Symbol> {
         self.ident_lookup
             .get(ident)
             .and_then(|id| self.symbols.get(id).cloned())
     }
 
+    /// Associate an identifier with a symbol
     pub fn associate_ident(&mut self, ident: IdentId, symbol: SymbolId) {
         self.ident_lookup.insert(ident, symbol);
     }

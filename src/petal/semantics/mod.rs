@@ -46,7 +46,6 @@ impl<'a> SemanticContext<'a> {
             self.stmt_constraints(*stmt)?;
         }
 
-        // TODO: Generate constraints for literally all the functions
         for func in self.program.functions.clone().iter() {
             self.stmt_constraints(func.body)?;
         }
