@@ -9,7 +9,7 @@ mod constraint_generation;
 pub mod context;
 pub mod errors;
 mod symbol_generation;
-mod symbol_table;
+pub mod symbol_table;
 mod typechecker;
 
 impl<'a> SemanticContext<'a> {

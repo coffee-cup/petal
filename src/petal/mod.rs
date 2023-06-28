@@ -54,8 +54,9 @@ impl Compiler {
             .analysis_program()
             .map_err(CompilerError::SemanticError)?;
 
-        let mut ir_generator = ir::IRGeneration::new(&semantics);
-        ir_generator.generate_ir();
+        let ir_generator = ir::IRGeneration::new(&semantics);
+        let ir = ir_generator.generate_ir();
+        println!("--- IR:\n{}", ir);
 
         // let mut typechecker = Typechecker::new(&program);
         // typechecker.check().map_err(CompilerError::TypecheckError)?;
