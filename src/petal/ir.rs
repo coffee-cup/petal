@@ -365,7 +365,7 @@ impl Display for IRExpression {
         match self {
             IRExpression::IntLiteral(n) => write!(f, "{}", n),
             IRExpression::FloatLiteral(n) => write!(f, "{}", n),
-            IRExpression::StringLiteral(s) => write!(f, "{}", s),
+            IRExpression::StringLiteral(s) => write!(f, "\"{}\"", s),
             IRExpression::BoolLiteral(b) => write!(f, "{}", b),
             IRExpression::PrefixOp {
                 op,

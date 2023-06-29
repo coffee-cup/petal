@@ -141,6 +141,16 @@ pub enum SemanticError {
         #[label("found {found} arguments")]
         found_span: Span,
     },
+
+    #[error("{op} operations are only valid for `Int` or `Float` types. We found `{ty}`")]
+    InvalidBinaryExpressionTypes {
+        ty: MonoType,
+
+        op: BinaryOpType,
+
+        #[label("found `{ty}`. expected `Int` or `Float`")]
+        span: Span,
+    },
 }
 
 pub type SemanticResult<T> = Result<T, SemanticError>;

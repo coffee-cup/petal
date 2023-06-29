@@ -10,6 +10,7 @@ use super::{
     types::MonoType,
 };
 
+mod analysis;
 mod constraint_generation;
 pub mod context;
 pub mod errors;
@@ -41,6 +42,7 @@ impl<'a> SemanticContext<'a> {
     pub fn analysis_program(&mut self) -> SemanticResult<()> {
         self.generate_symbols_for_program()?;
         self.check_program()?;
+        self.analysis()?;
 
         println!("Symbol table:\n{}", self.symbol_table);
 
