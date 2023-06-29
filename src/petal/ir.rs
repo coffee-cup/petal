@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use super::{
-    ast::{Expr, ExprId, FuncArg, FuncDecl, Stmt, StmtId},
+    ast::{BinaryOpType, Expr, ExprId, FuncArg, FuncDecl, PrefixOpType, Stmt, StmtId},
     semantics::{context::SemanticContext, symbol_table::Symbol},
     types::{FunctionAppType, MonoType},
 };
@@ -56,6 +56,17 @@ pub enum IRExpression {
     FloatLiteral(f64),
     StringLiteral(String),
     BoolLiteral(bool),
+    PrefixOp {
+        op: IRUnOpType,
+        expr: Box<IRExpression>,
+        // ty: MonoType,
+    },
+    BinOp {
+        op: IRBinOpType,
+        left: Box<IRExpression>,
+        right: Box<IRExpression>,
+        // ty: MonoType,
+    },
     Ident {
         name: String,
         ty: MonoType,
@@ -65,6 +76,51 @@ pub enum IRExpression {
         args: Vec<IRExpression>,
         ty: MonoType,
     },
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum IRBinOpType {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Mod,
+    Pow,
+    And,
+    Or,
+    Eq,
+    Neq,
+    Lt,
+    Gt,
+    Leq,
+    Geq,
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum IRUnOpType {
+    Neg,
+    Not,
+}
+
+impl From<BinaryOpType> for IRBinOpType {
+    fn from(value: BinaryOpType) -> Self {
+        match value {
+            BinaryOpType::Add => IRBinOpType::Add,
+            BinaryOpType::Subtract => IRBinOpType::Sub,
+            BinaryOpType::Multiply => IRBinOpType::Mul,
+            BinaryOpType::Divide => IRBinOpType::Div,
+            BinaryOpType::Power => IRBinOpType::Pow,
+        }
+    }
+}
+
+impl From<PrefixOpType> for IRUnOpType {
+    fn from(value: PrefixOpType) -> Self {
+        match value {
+            PrefixOpType::Neg => IRUnOpType::Neg,
+            PrefixOpType::Not => IRUnOpType::Not,
+        }
+    }
 }
 
 pub struct IRGeneration<'a> {
@@ -208,8 +264,26 @@ impl<'a> IRGeneration<'a> {
                     ty,
                 }
             }
-            Expr::PrefixOp { op, right } => todo!(),
-            Expr::BinaryOp { op, left, right } => todo!(),
+            Expr::PrefixOp { op, right } => {
+                let op = op.prefix_type.into();
+                let expr = self.ir_for_expr(right);
+                // TODO: Get type of prefix op
+                IRExpression::PrefixOp {
+                    op,
+                    expr: Box::new(expr),
+                }
+            }
+            Expr::BinaryOp { op, left, right } => {
+                let op = op.binary_type.into();
+                let left = self.ir_for_expr(left);
+                let right = self.ir_for_expr(right);
+
+                IRExpression::BinOp {
+                    op,
+                    left: Box::new(left),
+                    right: Box::new(right),
+                }
+            }
             Expr::PostfixOp { op, left } => todo!(),
             Expr::Call { callee, args } => todo!(),
         }
@@ -292,7 +366,13 @@ impl Display for IRExpression {
             IRExpression::FloatLiteral(n) => write!(f, "{}", n),
             IRExpression::StringLiteral(s) => write!(f, "{}", s),
             IRExpression::BoolLiteral(b) => write!(f, "{}", b),
-            IRExpression::Ident { name, ty } => write!(f, "{}: {}", name, ty),
+            IRExpression::PrefixOp { op, expr } => write!(f, "{}{}", op, expr),
+            IRExpression::BinOp {
+                op,
+                left: lhs,
+                right: rhs,
+            } => write!(f, "({} {} {})", lhs, op, rhs),
+            IRExpression::Ident { name, ty } => write!(f, "{}:{}", name, ty),
             IRExpression::Call { name, args, ty } => {
                 let args_str = args
                     .iter()
@@ -301,6 +381,36 @@ impl Display for IRExpression {
                     .join(", ");
                 write!(f, "{}({}): {}", name, args_str, ty)
             }
+        }
+    }
+}
+
+impl Display for IRUnOpType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            IRUnOpType::Neg => write!(f, "-"),
+            IRUnOpType::Not => write!(f, "!"),
+        }
+    }
+}
+
+impl Display for IRBinOpType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            IRBinOpType::Add => write!(f, "+"),
+            IRBinOpType::Sub => write!(f, "-"),
+            IRBinOpType::Mul => write!(f, "*"),
+            IRBinOpType::Div => write!(f, "/"),
+            IRBinOpType::Mod => write!(f, "%"),
+            IRBinOpType::Pow => write!(f, "^"),
+            IRBinOpType::Eq => write!(f, "=="),
+            IRBinOpType::Neq => write!(f, "!="),
+            IRBinOpType::Lt => write!(f, "<"),
+            IRBinOpType::Gt => write!(f, ">"),
+            IRBinOpType::Leq => write!(f, "<="),
+            IRBinOpType::Geq => write!(f, ">="),
+            IRBinOpType::And => write!(f, "&&"),
+            IRBinOpType::Or => write!(f, "||"),
         }
     }
 }
