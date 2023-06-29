@@ -1,9 +1,14 @@
+use std::collections::HashMap;
+
 use self::{
     context::SemanticContext, errors::SemanticResult, symbol_table::SymbolTable,
     typechecker::TypeVarGen,
 };
 
-use super::{ast::Program, types::MonoType};
+use super::{
+    ast::{ExprId, Program},
+    types::MonoType,
+};
 
 mod constraint_generation;
 pub mod context;
@@ -28,6 +33,7 @@ impl<'a> SemanticContext<'a> {
             type_symbols,
             ty_gen: TypeVarGen::new(),
             type_constraints: Vec::new(),
+            expr_types: HashMap::new(),
             program,
         }
     }
@@ -59,5 +65,9 @@ impl<'a> SemanticContext<'a> {
         self.solve_constraints()?;
 
         Ok(())
+    }
+
+    pub fn type_for_expr(&self, expr: &ExprId) -> Option<MonoType> {
+        self.expr_types.get(expr).map(|ty| ty.clone())
     }
 }

@@ -24,7 +24,7 @@ pub enum ParserError {
     UnexpectedToken {
         token: String,
 
-        #[label("we came across this token, `{token}`, and don't know how to parse it")]
+        #[label("we came across the token `{token}` and don't know how to parse it")]
         span: Span,
     },
 
@@ -241,7 +241,7 @@ impl InfixParselet for BinaryOperatorParselet {
             TT::Minus => BinaryOpType::Subtract,
             TT::Star => BinaryOpType::Multiply,
             TT::Slash => BinaryOpType::Divide,
-            TT::Caret => BinaryOpType::Power,
+            // TT::Caret => BinaryOpType::Power,
             _ => unreachable!("Invalid binary operator, {token}"),
         };
 
@@ -388,7 +388,7 @@ impl<'a> Parser<'a> {
         infix_left!(parser.infix_parselets, TT::Plus, Precedence::Sum);
         infix_left!(parser.infix_parselets, TT::Star, Precedence::Product);
         infix_left!(parser.infix_parselets, TT::Slash, Precedence::Product);
-        infix_right!(parser.infix_parselets, TT::Caret, Precedence::Exponent);
+        // infix_right!(parser.infix_parselets, TT::Caret, Precedence::Exponent);
 
         Ok(parser)
     }

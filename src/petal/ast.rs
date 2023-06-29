@@ -229,7 +229,6 @@ pub enum BinaryOpType {
     Subtract,
     Multiply,
     Divide,
-    Power,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -245,7 +244,6 @@ impl Display for BinaryOpType {
             BinaryOpType::Subtract => write!(f, "-"),
             BinaryOpType::Multiply => write!(f, "*"),
             BinaryOpType::Divide => write!(f, "/"),
-            BinaryOpType::Power => write!(f, "^"),
         }
     }
 }

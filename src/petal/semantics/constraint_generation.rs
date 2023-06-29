@@ -1,5 +1,5 @@
 use crate::petal::{
-    ast::{Block, Expr, ExprId, PrefixOpType, Stmt, StmtId},
+    ast::{BinaryOpType, Block, Expr, ExprId, PrefixOpType, Stmt, StmtId},
     source_info::Span,
     types::{FunctionAppType, MonoType},
 };
@@ -78,11 +78,11 @@ impl<'a> SemanticContext<'a> {
     fn expr_constraints(&mut self, expr_id: ExprId) -> SemanticResult<MonoType> {
         let expr_node = &self.program.ast.expressions[expr_id];
 
-        match &expr_node.expr.clone() {
-            Expr::Integer(_) => Ok(MonoType::int()),
-            Expr::Float(_) => Ok(MonoType::float()),
-            Expr::String(_) => Ok(MonoType::string()),
-            Expr::Bool(_) => Ok(MonoType::bool()),
+        let ty = match &expr_node.expr.clone() {
+            Expr::Integer(_) => MonoType::int(),
+            Expr::Float(_) => MonoType::float(),
+            Expr::String(_) => MonoType::string(),
+            Expr::Bool(_) => MonoType::bool(),
             Expr::Ident(ident) => {
                 let i = &self.program.ast.identifiers[*ident];
                 println!("Generating constraints for ident: {:?}", i);
@@ -91,7 +91,7 @@ impl<'a> SemanticContext<'a> {
 
                 let instantiated = ty.instantiate(&mut self.ty_gen);
 
-                Ok(instantiated)
+                instantiated
             }
 
             Expr::Call { callee, args } => {
@@ -165,7 +165,7 @@ impl<'a> SemanticContext<'a> {
                     MonoTypeData::new(expected_left_ty),
                 );
 
-                Ok(return_ty)
+                return_ty
             }
 
             Expr::PrefixOp { op, right } => match op.prefix_type {
@@ -176,7 +176,7 @@ impl<'a> SemanticContext<'a> {
                         MonoType::bool().into(),
                     );
 
-                    Ok(right_ty)
+                    right_ty
                 }
                 PrefixOpType::Neg => {
                     let right_ty = self.expr_constraints(*right)?;
@@ -187,13 +187,14 @@ impl<'a> SemanticContext<'a> {
                         MonoTypeData::new(return_ty.clone()),
                     );
 
-                    Ok(return_ty)
+                    return_ty
                 }
             },
 
-            Expr::BinaryOp { left, right, .. } => {
+            Expr::BinaryOp { left, right, op } => {
                 let left_ty = self.expr_constraints(*left)?;
                 let right_ty = self.expr_constraints(*right)?;
+                let return_ty = self.ty_gen.gen_var();
 
                 self.associate_types(
                     MonoTypeData::new(left_ty)
@@ -208,10 +209,14 @@ impl<'a> SemanticContext<'a> {
                     MonoTypeData::new(right_ty).with_expr(*right),
                 );
 
-                Ok(return_ty)
+                return_ty
             }
 
             Expr::PostfixOp { op: _, left: _ } => todo!(),
-        }
+        };
+
+        self.expr_types.insert(expr_id, ty.clone());
+
+        Ok(ty)
     }
 }

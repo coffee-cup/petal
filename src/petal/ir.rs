@@ -58,14 +58,14 @@ pub enum IRExpression {
     BoolLiteral(bool),
     PrefixOp {
         op: IRUnOpType,
-        expr: Box<IRExpression>,
-        // ty: MonoType,
+        right: Box<IRExpression>,
+        ty: MonoType,
     },
     BinOp {
         op: IRBinOpType,
         left: Box<IRExpression>,
         right: Box<IRExpression>,
-        // ty: MonoType,
+        ty: MonoType,
     },
     Ident {
         name: String,
@@ -85,7 +85,6 @@ pub enum IRBinOpType {
     Mul,
     Div,
     Mod,
-    Pow,
     And,
     Or,
     Eq,
@@ -109,7 +108,6 @@ impl From<BinaryOpType> for IRBinOpType {
             BinaryOpType::Subtract => IRBinOpType::Sub,
             BinaryOpType::Multiply => IRBinOpType::Mul,
             BinaryOpType::Divide => IRBinOpType::Div,
-            BinaryOpType::Power => IRBinOpType::Pow,
         }
     }
 }
@@ -266,22 +264,25 @@ impl<'a> IRGeneration<'a> {
             }
             Expr::PrefixOp { op, right } => {
                 let op = op.prefix_type.into();
-                let expr = self.ir_for_expr(right);
-                // TODO: Get type of prefix op
+                let right = self.ir_for_expr(right);
+                let ty = self.semantics.type_for_expr(&expr).unwrap();
                 IRExpression::PrefixOp {
                     op,
-                    expr: Box::new(expr),
+                    right: Box::new(right),
+                    ty,
                 }
             }
             Expr::BinaryOp { op, left, right } => {
                 let op = op.binary_type.into();
                 let left = self.ir_for_expr(left);
                 let right = self.ir_for_expr(right);
+                let ty = self.semantics.type_for_expr(&expr).unwrap();
 
                 IRExpression::BinOp {
                     op,
                     left: Box::new(left),
                     right: Box::new(right),
+                    ty,
                 }
             }
             Expr::PostfixOp { op, left } => todo!(),
@@ -366,12 +367,17 @@ impl Display for IRExpression {
             IRExpression::FloatLiteral(n) => write!(f, "{}", n),
             IRExpression::StringLiteral(s) => write!(f, "{}", s),
             IRExpression::BoolLiteral(b) => write!(f, "{}", b),
-            IRExpression::PrefixOp { op, expr } => write!(f, "{}{}", op, expr),
+            IRExpression::PrefixOp {
+                op,
+                right: expr,
+                ty,
+            } => write!(f, "({}{}):{}", op, expr, ty),
             IRExpression::BinOp {
                 op,
                 left: lhs,
                 right: rhs,
-            } => write!(f, "({} {} {})", lhs, op, rhs),
+                ty,
+            } => write!(f, "({} {} {}):{}", lhs, op, rhs, ty),
             IRExpression::Ident { name, ty } => write!(f, "{}:{}", name, ty),
             IRExpression::Call { name, args, ty } => {
                 let args_str = args
@@ -402,7 +408,6 @@ impl Display for IRBinOpType {
             IRBinOpType::Mul => write!(f, "*"),
             IRBinOpType::Div => write!(f, "/"),
             IRBinOpType::Mod => write!(f, "%"),
-            IRBinOpType::Pow => write!(f, "^"),
             IRBinOpType::Eq => write!(f, "=="),
             IRBinOpType::Neq => write!(f, "!="),
             IRBinOpType::Lt => write!(f, "<"),

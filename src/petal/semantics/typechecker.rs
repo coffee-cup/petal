@@ -362,18 +362,24 @@ impl<'a> SemanticContext<'a> {
             }
         }
 
-        self.apply_substition_to_symbol_table(&sub);
+        self.apply_substition_to_symbol_table_and_expressions(&sub);
 
         Ok(())
     }
 
     /// Apply a substitution to the symbol table
-    fn apply_substition_to_symbol_table(&mut self, sub: &Substitution) {
-        for (_, sym) in self.symbol_table.symbols.iter_mut() {
+    fn apply_substition_to_symbol_table_and_expressions(&mut self, sub: &Substitution) {
+        self.symbol_table.symbols.iter_mut().for_each(|(_, sym)| {
             if let Some(ty) = &mut sym.ty {
                 *ty = ty.apply(sub);
             }
-        }
+        });
+
+        self.expr_types.iter_mut().for_each(|(_, ty)| {
+            *ty = ty.apply(sub);
+        });
+
+        println!("--- Expression types:\n{:#?}", self.expr_types);
     }
 
     /// Unify two types

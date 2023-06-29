@@ -1,4 +1,9 @@
-use crate::petal::ast::Program;
+use std::collections::HashMap;
+
+use crate::petal::{
+    ast::{ExprId, Program},
+    types::MonoType,
+};
 
 use super::{
     symbol_table::SymbolTable,
@@ -8,6 +13,7 @@ use super::{
 pub struct SemanticContext<'a> {
     pub program: &'a mut Program,
     pub symbol_table: SymbolTable,
+    pub expr_types: HashMap<ExprId, MonoType>,
     pub type_symbols: SymbolTable,
 
     pub ty_gen: TypeVarGen,

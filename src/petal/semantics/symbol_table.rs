@@ -1,5 +1,5 @@
 use crate::petal::{
-    ast::IdentId,
+    ast::{ExprId, IdentId},
     source_info::Span,
     types::{MonoType, PolyType},
 };
