@@ -64,7 +64,7 @@ impl<'a> SemanticContext<'a> {
                 let left_ty = self.type_for_expr(&left).unwrap();
                 let right_ty = self.type_for_expr(&right).unwrap();
 
-                if left_ty != MonoType::int() || left_ty != MonoType::float() {
+                if left_ty != MonoType::int() && left_ty != MonoType::float() {
                     let left_expr = self.program.ast.expressions[left].clone();
                     return Err(SemanticError::InvalidBinaryExpressionTypes {
                         ty: left_ty,
