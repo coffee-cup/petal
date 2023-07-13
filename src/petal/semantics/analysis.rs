@@ -39,7 +39,11 @@ impl<'a> SemanticContext<'a> {
                 then_block,
                 else_block,
             } => todo!(),
-            Stmt::BlockStmt(_) => todo!(),
+            Stmt::BlockStmt(block) => {
+                for stmt in block.statements.iter() {
+                    self.analysis_statement(*stmt)?;
+                }
+            }
             Stmt::ExprStmt(e) => self.analysis_expression(e)?,
             Stmt::Comment(_) => {}
         }

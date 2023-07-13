@@ -4,6 +4,7 @@ use self::{errors::CompilerError, lexer::Lexer, semantics::context::SemanticCont
 
 mod ast;
 // mod codegen;
+mod codegen;
 pub mod errors;
 mod ir;
 mod lexer;
@@ -13,8 +14,7 @@ mod semantics;
 mod source_info;
 mod token;
 mod types;
-// mod wasm;
-// mod wat;
+mod wat;
 
 type CompilerResult<T> = Result<T, CompilerError>;
 
@@ -57,6 +57,11 @@ impl Compiler {
         let ir_generator = ir::IRGeneration::new(&semantics);
         let ir = ir_generator.generate_ir();
         println!("--- IR:\n{}", ir);
+
+        let codegen = codegen::context::CodegenContext::new(&ir);
+        let wat = codegen.generate_wat();
+
+        println!("--- WAT:\n{:#?}", wat);
 
         // let mut typechecker = Typechecker::new(&program);
         // typechecker.check().map_err(CompilerError::TypecheckError)?;

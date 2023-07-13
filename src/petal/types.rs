@@ -90,6 +90,13 @@ impl MonoType {
             params: Vec::new(),
         })
     }
+
+    pub fn is_unit(&self) -> bool {
+        match self {
+            MonoType::Struct(struct_ty) => struct_ty.name == "Unit",
+            _ => false,
+        }
+    }
 }
 
 impl PolyType {

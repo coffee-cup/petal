@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use super::{
-    ast::{BinaryOpType, Expr, ExprId, FuncArg, FuncDecl, PrefixOpType, Stmt, StmtId},
+    ast::{BinaryOpType, Expr, ExprId, FuncArg, FuncDecl, PrefixOpType, Stmt, StmtId, StmtNode},
     semantics::{context::SemanticContext, symbol_table::Symbol},
     types::{FunctionAppType, MonoType},
 };
@@ -22,12 +22,20 @@ pub struct IRFunctionSignature {
     pub name: String,
     pub params: Vec<IRParam>,
     pub return_type: MonoType,
+    pub is_exported: bool,
 }
 
 #[derive(Clone, Debug)]
 pub struct IRFunction {
     pub signature: IRFunctionSignature,
+    pub locals: Vec<IRLocal>,
     pub body: IRStatement,
+}
+
+#[derive(Clone, Debug)]
+pub struct IRLocal {
+    pub name: String,
+    pub ty: MonoType,
 }
 
 #[derive(Clone, Debug)]
@@ -145,16 +153,25 @@ impl<'a> IRGeneration<'a> {
                 .iter()
                 .map(|stmt| self.ir_for_statement(*stmt))
                 .collect::<Vec<_>>();
+
             let main_ir_sig = IRFunctionSignature {
                 name: "_start".into(),
                 params: vec![],
                 return_type: MonoType::unit(),
+                is_exported: true,
             };
+
+            let mut main_locals = Vec::new();
+            for stmt in self.semantics.program.main_stmts.iter() {
+                self.get_locals(*stmt, &mut main_locals);
+            }
+
             let main_func_ir = IRFunction {
                 signature: main_ir_sig,
                 body: IRStatement::Block {
                     statements: main_stmts,
                 },
+                locals: main_locals,
             };
 
             main_func_ir
@@ -171,12 +188,25 @@ impl<'a> IRGeneration<'a> {
             .symbol_for_ident(&func.ident)
             .unwrap();
 
-        let signature = self.signature_for_func(&sym, &func.args);
+        let signature = self.signature_for_func(&sym, &func.args, func.is_exported);
         let body = self.ir_for_statement(func.body);
-        IRFunction { signature, body }
+
+        let mut locals = Vec::new();
+        self.get_locals(func.body, &mut locals);
+
+        IRFunction {
+            signature,
+            body,
+            locals,
+        }
     }
 
-    fn signature_for_func(&self, sym: &Symbol, args: &Vec<FuncArg>) -> IRFunctionSignature {
+    fn signature_for_func(
+        &self,
+        sym: &Symbol,
+        args: &Vec<FuncArg>,
+        is_exported: bool,
+    ) -> IRFunctionSignature {
         let ty = sym.ty.clone().unwrap().extract_monotype().unwrap();
 
         let return_ty = match ty {
@@ -205,7 +235,31 @@ impl<'a> IRGeneration<'a> {
             name: sym.unique_name(),
             params,
             return_type: *return_ty,
+            is_exported,
         }
+    }
+
+    fn get_locals(&self, stmt: StmtId, locals: &mut Vec<IRLocal>) {
+        match self.get_stmt(stmt) {
+            Stmt::Let(let_decl) => {
+                let sym = self
+                    .semantics
+                    .symbol_table
+                    .symbol_for_ident(&let_decl.ident)
+                    .unwrap();
+
+                locals.push(IRLocal {
+                    name: sym.unique_name(),
+                    ty: sym.ty.clone().unwrap().extract_monotype().unwrap(),
+                });
+            }
+            Stmt::BlockStmt(block) => {
+                for stmt in block.statements.iter() {
+                    self.get_locals(*stmt, locals);
+                }
+            }
+            _ => {}
+        };
     }
 
     fn ir_for_statement(&self, stmt: StmtId) -> IRStatement {
