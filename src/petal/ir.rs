@@ -48,7 +48,7 @@ pub enum IRStatement {
 
     If {
         condition: IRExpression,
-        then: Vec<IRStatement>,
+        then: Box<IRStatement>,
     },
 
     Block {
@@ -282,7 +282,16 @@ impl<'a> IRGeneration<'a> {
                 condition,
                 then_block,
                 else_block,
-            } => todo!(),
+            } => {
+                let condition = self.ir_for_expr(condition);
+
+                let then = self.ir_for_statement(then_block);
+
+                IRStatement::If {
+                    condition,
+                    then: Box::new(then),
+                }
+            }
 
             Stmt::BlockStmt(block) => {
                 let stmts = block
@@ -293,7 +302,11 @@ impl<'a> IRGeneration<'a> {
                 IRStatement::Block { statements: stmts }
             }
 
-            Stmt::ExprStmt(_) => todo!(),
+            Stmt::ExprStmt(stmt) => {
+                let expr = self.ir_for_expr(stmt);
+                IRStatement::Expr(expr)
+            }
+
             Stmt::Comment(_) => todo!(),
         }
     }
@@ -366,6 +379,12 @@ impl Display for IRFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "fn {}", self.signature)?;
         write!(f, " {{\n")?;
+
+        for local in self.locals.iter() {
+            write!(f, "    local {}: {};\n", local.name, local.ty)?;
+        }
+        write!(f, "\n")?;
+
         write!(f, "{}", self.body)?;
         write!(f, "}}\n")
     }
@@ -402,9 +421,7 @@ impl Display for IRStatement {
             }
             IRStatement::If { condition, then } => {
                 write!(f, "if {} {{\n", condition)?;
-                for stmt in then.iter() {
-                    write!(f, "    {}\n", stmt)?;
-                }
+                write!(f, "    {}\n", then)?;
                 write!(f, "}}\n")
             }
             IRStatement::Expr(e) => {

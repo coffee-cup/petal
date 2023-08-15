@@ -38,7 +38,14 @@ impl<'a> SemanticContext<'a> {
                 condition,
                 then_block,
                 else_block,
-            } => todo!(),
+            } => {
+                self.analysis_expression(condition)?;
+                self.analysis_statement(then_block)?;
+                if let Some(else_block) = else_block {
+                    self.analysis_statement(else_block)?;
+                }
+            }
+
             Stmt::BlockStmt(block) => {
                 for stmt in block.statements.iter() {
                     self.analysis_statement(*stmt)?;
