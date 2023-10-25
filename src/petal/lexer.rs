@@ -165,7 +165,7 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        if seen_dot {
+        let t = if seen_dot {
             let value = number
                 .parse::<f64>()
                 .map_err(|_e| LexerError::InvalidNumber {
@@ -173,7 +173,7 @@ impl<'a> Lexer<'a> {
                     help: None,
                 })?;
 
-            Ok(Token::new(TT::Float).with_literal(Literal::Float(value)))
+            Token::new(TT::Float).with_literal(Literal::Float(value))
         } else {
             let value = number
                 .parse::<i64>()
@@ -182,8 +182,25 @@ impl<'a> Lexer<'a> {
                     help: None,
                 })?;
 
-            Ok(Token::new(TT::Integer).with_literal(Literal::Integer(value)))
-        }
+            Token::new(TT::Integer).with_literal(Literal::Integer(value))
+        };
+
+        self.expect_whitespace_or_eof()?;
+        Ok(t)
+    }
+
+    fn expect_whitespace_or_eof(&mut self) -> LexerResult<()> {
+        match self.peek() {
+            Some(c) if !c.is_whitespace() => {
+                return Err(LexerError::UnexpectedChar {
+                    c,
+                    span: Pos::new(self.offset + 1).into(),
+                })
+            }
+            _ => {}
+        };
+
+        Ok(())
     }
 
     fn match_result(&mut self, expected: char, left: TokenType, right: TokenType) -> Token {

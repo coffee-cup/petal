@@ -164,7 +164,9 @@ impl Display for WatFunction {
             f,
             "(func ${name} {export} {params} {return_ty}
 {locals}
+
 {body}
+
 )",
             name = self.signature.name,
             export = if self.signature.is_exported {
@@ -198,7 +200,7 @@ impl Display for WatModule {
 
 {funcs}
     
-    )",
+)",
             funcs = funcs,
         )
     }

@@ -41,9 +41,8 @@ impl Compiler {
         //     }
         // };
 
-        // println!("Tokens: {:#?}", tokens);
-
         let mut lexer = Lexer::new(&file);
+
         let mut parser = parser::Parser::new(&mut lexer).map_err(CompilerError::ParserError)?;
 
         let mut program = parser.parse().map_err(CompilerError::ParserError)?;
