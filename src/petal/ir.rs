@@ -157,7 +157,7 @@ impl<'a> IRGeneration<'a> {
             let main_ir_sig = IRFunctionSignature {
                 name: "_start".into(),
                 params: vec![],
-                return_type: MonoType::unit(),
+                return_type: MonoType::int(),
                 is_exported: true,
             };
 

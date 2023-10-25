@@ -194,7 +194,6 @@ impl<'a> SemanticContext<'a> {
             Expr::BinaryOp { left, right, op } => {
                 let left_ty = self.expr_constraints(*left)?;
                 let right_ty = self.expr_constraints(*right)?;
-                let return_ty = self.ty_gen.gen_var();
 
                 self.associate_types(
                     MonoTypeData::new(left_ty)

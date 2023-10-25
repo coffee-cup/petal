@@ -1,7 +1,13 @@
 use self::context::CodegenContext;
 
-use super::{ir::IRFunctionSignature, wat::*};
-use super::{ir::IRProgram, types::MonoType};
+use super::{
+    ir::{IRExpression, IRProgram},
+    types::MonoType,
+};
+use super::{
+    ir::{IRFunctionSignature, IRStatement},
+    wat::*,
+};
 
 pub mod context;
 
@@ -23,10 +29,13 @@ impl<'a> CodegenContext<'a> {
                 })
                 .collect::<Vec<_>>();
 
+            let mut instructions = Vec::new();
+            self.visit_statement(&func.body, &mut instructions);
+
             let func = WatFunction {
                 signature: self.get_wat_signature(&func.signature),
                 locals,
-                instructions: Vec::new(),
+                instructions,
             };
 
             wat_funcs.push(func);
@@ -60,6 +69,43 @@ impl<'a> CodegenContext<'a> {
             is_exported: ir_sig.is_exported,
             return_ty,
             params,
+        }
+    }
+
+    fn visit_statement(&self, stmt: &IRStatement, instrs: &mut Vec<WatInstruction>) {
+        match stmt {
+            IRStatement::Let { name, ty, init } => {
+                instrs.push(self.visit_expression(init));
+                instrs.push(WatInstruction::SetLocal(name.clone()));
+            }
+
+            IRStatement::If { condition, then } => todo!(),
+
+            IRStatement::Block { statements } => {
+                for stmt in statements {
+                    self.visit_statement(stmt, instrs);
+                }
+            }
+
+            IRStatement::Expr(x) => instrs.push(self.visit_expression(x)),
+        };
+    }
+
+    fn visit_expression(&self, expr: &IRExpression) -> WatInstruction {
+        match expr {
+            IRExpression::IntLiteral(n) => WatInstruction::Const(WatValue::I64(*n)),
+            IRExpression::FloatLiteral(n) => WatInstruction::Const(WatValue::F64(*n)),
+            IRExpression::BoolLiteral(b) => WatInstruction::Const(WatValue::I32(*b as i32)),
+            IRExpression::StringLiteral(_) => todo!(),
+            IRExpression::PrefixOp { op, right, ty } => todo!(),
+            IRExpression::BinOp {
+                op,
+                left,
+                right,
+                ty,
+            } => todo!(),
+            IRExpression::Ident { name, ty } => todo!(),
+            IRExpression::Call { name, args, ty } => todo!(),
         }
     }
 

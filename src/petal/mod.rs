@@ -1,6 +1,6 @@
 // use crate::petal::analysis::Analysis;
 
-use self::{errors::CompilerError, lexer::Lexer, semantics::context::SemanticContext};
+use self::{errors::CompilerError, lexer::Lexer, semantics::context::SemanticContext, wasm::Wasm};
 
 mod ast;
 // mod codegen;
@@ -14,6 +14,7 @@ mod semantics;
 mod source_info;
 mod token;
 mod types;
+mod wasm;
 mod wat;
 
 type CompilerResult<T> = Result<T, CompilerError>;
@@ -25,7 +26,7 @@ impl Compiler {
         Self {}
     }
 
-    pub fn compile_file(&self, filename: &str) -> CompilerResult<()> {
+    pub fn compile_file(&self, filename: &str) -> CompilerResult<Wasm> {
         let file = std::fs::read_to_string(filename).expect("Could not read file");
 
         // let f2 = file.clone();
@@ -63,10 +64,19 @@ impl Compiler {
 
         println!("--- WAT:\n{:#?}", wat);
 
+        println!("\n---.wat\n{}", wat);
+
+        let wasm = Wasm::new(&wat).map_err(|(e, wat_string)| {
+            CompilerError::WasmGenerationError(e.to_string(), wat_string)
+        })?;
+
+        wasm.validate()
+            .map_err(|e| CompilerError::WasmValidationError(e.to_string(), wasm.print_wat()))?;
+
+        Ok(wasm)
+
         // let mut typechecker = Typechecker::new(&program);
         // typechecker.check().map_err(CompilerError::TypecheckError)?;
-
-        Err(CompilerError::Unknown)
 
         // let mut ir_generator = IRGenerator::new();
         // let ir_module = ir_generator.generate_ir_from_program(&program);

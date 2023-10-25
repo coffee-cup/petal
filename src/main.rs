@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use clap::{Parser, Subcommand};
 use petal::Compiler;
 
@@ -51,22 +53,23 @@ fn main() {
 
                     petal::errors::print_compiler_error(&file, e);
                 }
-                Ok(_wasm) => {
+                Ok(wasm) => {
                     // if wat {
                     //     println!("{}", wasm.print_wat())
                     // }
 
                     // Ensure that the output directory exists
-                    std::fs::create_dir_all(output).expect("Unable to create output directory");
+                    std::fs::create_dir_all(output.clone())
+                        .expect("Unable to create output directory");
 
-                    let _file_name = file.clone().replace("petal", "wasm");
+                    let file_name = file.clone().replace("petal", "wasm");
 
                     // Save the WASM binary to the output directory
-                    // let mut file = std::fs::File::create(format!("{}/{}", output, file_name))
-                    //     .expect("Unable to create output file");
+                    let mut file = std::fs::File::create(format!("{}/{}", output, file_name))
+                        .expect("Unable to create output file");
 
-                    // file.write_all(wasm.bytes())
-                    //     .expect("Unable to write the .wasm binary");
+                    file.write_all(wasm.bytes())
+                        .expect("Unable to write the .wasm binary");
                 }
             }
         }

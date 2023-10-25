@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+use wast::Wat;
+
 use crate::petal::{
     ir::{IRFunction, IRFunctionSignature, IRProgram},
     types::MonoType,
@@ -86,4 +90,116 @@ pub struct WatModule {
     pub functions: Vec<WatFunction>,
 }
 
-pub struct WatGeneration {}
+impl Display for WatValueType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use WatValueType::*;
+
+        match self {
+            I32 => write!(f, "i32"),
+            I64 => write!(f, "i64"),
+            F32 => write!(f, "f32"),
+            F64 => write!(f, "f64"),
+        }
+    }
+}
+
+impl Display for WatValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use WatValue::*;
+
+        match self {
+            I32(i) => write!(f, "{}", i),
+            I64(i) => write!(f, "{}", i),
+            F32(i) => write!(f, "{}", i),
+            F64(i) => write!(f, "{}", i),
+        }
+    }
+}
+
+impl Display for WatInstruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use WatInstruction::*;
+
+        match self {
+            Const(value) => match value {
+                WatValue::I32(value) => write!(f, "i32.const {}", value),
+                WatValue::I64(value) => write!(f, "i64.const {}", value),
+                WatValue::F32(value) => write!(f, "f32.const {}", value),
+                WatValue::F64(value) => write!(f, "f64.const {}", value),
+            },
+            Equal(ty) => write!(f, "eq.{}", ty),
+            NotEqual(ty) => write!(f, "ne.{}", ty),
+            SetLocal(name) => write!(f, "local.set ${}", name),
+
+            v => todo!("implement fmt for {:?}", v),
+        }
+    }
+}
+
+impl Display for WatFunction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params = self
+            .signature
+            .params
+            .iter()
+            .map(|p| format!("(param ${}: {})", p.name, p.ty))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        let locals = self
+            .locals
+            .iter()
+            .map(|l| format!("(local ${} {})", l.name, l.ty))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        let body = self
+            .instructions
+            .iter()
+            .map(|i| format!("  {}", i))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        write!(
+            f,
+            "(func ${name} {export} {params} {return_ty}
+{locals}
+{body}
+)",
+            name = self.signature.name,
+            export = if self.signature.is_exported {
+                format!("(export \"{}\")", self.signature.name)
+            } else {
+                String::new()
+            },
+            params = params,
+            return_ty = match &self.signature.return_ty {
+                Some(ty) => format!("(result {})", ty),
+                None => String::new(),
+            },
+            locals = locals,
+            body = body,
+        )
+    }
+}
+
+impl Display for WatModule {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let funcs = self
+            .functions
+            .iter()
+            .map(|f| f.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        write!(
+            f,
+            "(module
+
+{funcs}
+    
+    )",
+            funcs = funcs,
+        )
+    }
+}
