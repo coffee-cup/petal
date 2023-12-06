@@ -1,3 +1,0 @@
-[alias]
-snapshot = "insta test --review"
-lint = "clippy --all-features --all-targets --allow-dirty --allow-staged"
