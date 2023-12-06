@@ -4,6 +4,7 @@ use super::wat::WatModule;
 
 pub struct Wasm {
     wasm_binary: Vec<u8>,
+    pub main_func: String,
 }
 
 impl Wasm {
@@ -12,7 +13,10 @@ impl Wasm {
 
         let wasm_binary = wat::parse_str(&wat_string).map_err(|e| (e.to_string(), wat_string))?;
 
-        Ok(Self { wasm_binary })
+        Ok(Self {
+            wasm_binary,
+            main_func: wat.main_func.clone(),
+        })
     }
 
     pub fn validate(&self) -> Result<(), BinaryReaderError> {

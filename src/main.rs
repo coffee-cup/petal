@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use clap::{Parser, Subcommand};
-use petal::Compiler;
+use petal::{run::run_wasm, Compiler};
 
 #[macro_use]
 extern crate lazy_static;
@@ -33,10 +33,17 @@ enum Commands {
         #[arg(short = 'o', long = "output", default_value = "build")]
         output: String,
     },
+
+    /// Run a petal file
+    Run {
+        /// The petal file to run
+        file: String,
+    },
 }
 
 fn main() {
     let args = Cli::parse();
+    let compiler = Compiler::new();
 
     match args.command {
         Commands::Build {
@@ -44,20 +51,13 @@ fn main() {
             wat: _,
             output,
         } => {
-            let compiler = Compiler::new();
-
             match compiler.compile_file(&file) {
                 Err(e) => {
                     // We should not need to re-read the file here
                     let file = std::fs::read_to_string(file).expect("Could not read file");
-
                     petal::errors::print_compiler_error(&file, e);
                 }
                 Ok(wasm) => {
-                    // if wat {
-                    //     println!("{}", wasm.print_wat())
-                    // }
-
                     // Ensure that the output directory exists
                     std::fs::create_dir_all(output.clone())
                         .expect("Unable to create output directory");
@@ -70,6 +70,20 @@ fn main() {
 
                     file.write_all(wasm.bytes())
                         .expect("Unable to write the .wasm binary");
+                }
+            }
+        }
+
+        Commands::Run { file } => {
+            match compiler.compile_file(&file) {
+                Err(e) => {
+                    // We should not need to re-read the file here
+                    let file = std::fs::read_to_string(file).expect("Could not read file");
+
+                    petal::errors::print_compiler_error(&file, e);
+                }
+                Ok(wasm) => {
+                    run_wasm(wasm).expect("Failed to run wasm");
                 }
             }
         }

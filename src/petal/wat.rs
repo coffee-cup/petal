@@ -88,6 +88,7 @@ pub struct WatFunctionSignature {
 #[derive(Clone, Debug)]
 pub struct WatModule {
     pub functions: Vec<WatFunction>,
+    pub main_func: String,
 }
 
 impl Display for WatValueType {

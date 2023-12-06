@@ -9,6 +9,7 @@ use super::{
 #[derive(Clone, Debug)]
 pub struct IRProgram {
     pub functions: Vec<IRFunction>,
+    pub main_func: String,
 }
 
 #[derive(Clone, Debug)]
@@ -109,6 +110,8 @@ pub enum IRUnOpType {
     Not,
 }
 
+const MAIN_FUNC_NAME: &str = "_start";
+
 impl From<BinaryOpType> for IRBinOpType {
     fn from(value: BinaryOpType) -> Self {
         match value {
@@ -139,7 +142,10 @@ impl<'a> IRGeneration<'a> {
     }
 
     pub fn generate_ir(&self) -> IRProgram {
-        let mut ir = IRProgram { functions: vec![] };
+        let mut ir = IRProgram {
+            functions: vec![],
+            main_func: MAIN_FUNC_NAME.into(),
+        };
         for func in self.semantics.program.functions.iter() {
             let func_ir = self.ir_for_function(func);
             ir.functions.push(func_ir);
@@ -155,7 +161,7 @@ impl<'a> IRGeneration<'a> {
                 .collect::<Vec<_>>();
 
             let main_ir_sig = IRFunctionSignature {
-                name: "_start".into(),
+                name: MAIN_FUNC_NAME.into(),
                 params: vec![],
                 return_type: MonoType::int(),
                 is_exported: true,

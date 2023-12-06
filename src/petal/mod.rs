@@ -10,6 +10,7 @@ mod ir;
 mod lexer;
 mod parser;
 mod precedence;
+pub mod run;
 mod semantics;
 mod source_info;
 mod token;
@@ -42,9 +43,7 @@ impl Compiler {
         // };
 
         let mut lexer = Lexer::new(&file);
-
         let mut parser = parser::Parser::new(&mut lexer).map_err(CompilerError::ParserError)?;
-
         let mut program = parser.parse().map_err(CompilerError::ParserError)?;
 
         // println!("{:#?}", program);
@@ -69,6 +68,7 @@ impl Compiler {
             CompilerError::WasmGenerationError(e.to_string(), wat_string)
         })?;
 
+        // Validate the generated WASM to ensure it is valid
         wasm.validate()
             .map_err(|e| CompilerError::WasmValidationError(e.to_string(), wasm.print_wat()))?;
 

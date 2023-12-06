@@ -43,6 +43,7 @@ impl<'a> CodegenContext<'a> {
 
         let module = WatModule {
             functions: wat_funcs,
+            main_func: self.ir.main_func.clone(),
         };
 
         module
