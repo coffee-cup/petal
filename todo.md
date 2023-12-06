@@ -13,6 +13,7 @@
 - [ ] Functions
   - [ ] Creation
   - [ ] Calling
+  - [ ] Return values
 - [ ] Number casting
 - [ ] Structs
 - [ ] Strings
