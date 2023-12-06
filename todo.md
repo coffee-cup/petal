@@ -1,0 +1,20 @@
+- [x] Compiler structure setup
+  - [x] Errors
+  - [x] Lexer/Parser
+  - [x] IR generation
+  - [x] Type checking
+  - [x] Wat generation
+  - [x] Wasm bytes generation
+- [x] Primitive constants
+- [ ] Binary/unary operations
+- [ ] Control flow
+  - [ ] If
+  - [ ] Match statements
+- [ ] Functions
+  - [ ] Creation
+  - [ ] Calling
+- [ ] Number casting
+- [ ] Structs
+- [ ] Strings
+- [ ] Arrays
+- [ ] TypeScript bindings
