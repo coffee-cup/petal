@@ -1,5 +1,7 @@
+use std::fmt::Display;
+
 use anyhow::{Context, Result};
-use wasmtime::{Caller, Engine, Func, Instance, Linker, Module, Store};
+use wasmtime::{Caller, Engine, Func, Instance, Linker, Module, Store, Val};
 
 use super::wasm::Wasm;
 
@@ -23,21 +25,53 @@ pub fn run_wasm(wasm: Wasm, function: Option<String>) -> Result<()> {
     let instance =
         Instance::new(&mut store, &module, &imports).context("creating wasmtime instance")?;
 
-    // let run = instance
-    //     .get_typed_func::<(), i64>(&mut store, &wasm.main_func)
-    //     .context("getting main petal function")?;
-
     let func_name = function.unwrap_or_else(|| wasm.main_func.clone());
 
-    let run = instance
+    let func = instance
         .get_func(&mut store, &func_name)
-        .context(format!("getting petal function `{func_name}`"))?
-        .typed::<(), i64>(&store)?;
+        .context(format!("getting petal function `{func_name}`"))?;
 
-    let result = run.call(&mut store, ()).context("running main func")?;
+    let ty = func.ty(&store);
+
+    // Create a vector to hold the results
+    let mut results: Vec<Val> = Vec::new();
+    (0..ty.results().len()).for_each(|_i| {
+        results.push(Val::I32(0));
+    });
+
+    match func.call(&mut store, &[], &mut results) {
+        Ok(()) => {}
+        Err(trap) => {
+            panic!("execution of `foo` resulted in a wasm trap: {}", trap);
+        }
+    };
 
     println!("\n\n--- Result");
-    println!("{result}",);
+
+    if results.is_empty() {
+        println!("No results")
+    } else {
+        println!(
+            "{}",
+            results
+                .iter()
+                .map(|val| format!("{}", to_val_string(val)))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+    }
 
     Ok(())
+}
+
+fn to_val_string(val: &Val) -> String {
+    match val {
+        Val::I32(i) => format!("{}", i),
+        Val::I64(i) => format!("{}", i),
+        Val::F32(f) => format!("{}", f),
+        Val::F64(f) => format!("{}", f),
+        Val::V128(_) => String::from("v128"),
+        Val::ExternRef(_) => String::from("externref"),
+        Val::FuncRef(_) => String::from("funcref"),
+    }
 }
