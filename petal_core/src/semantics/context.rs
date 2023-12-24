@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::petal::{
+use crate::{
     ast::{ExprId, Program},
     types::MonoType,
 };

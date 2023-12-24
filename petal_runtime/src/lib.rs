@@ -1,9 +1,6 @@
-use std::fmt::Display;
-
 use anyhow::{Context, Result};
+use petal_core::wasm::Wasm;
 use wasmtime::{Caller, Engine, Func, Instance, Linker, Module, Store, Val};
-
-use super::wasm::Wasm;
 
 struct HostState {
     pub value: i32,

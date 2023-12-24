@@ -1,21 +1,23 @@
-// use crate::petal::analysis::Analysis;
-
 use self::{errors::CompilerError, lexer::Lexer, semantics::context::SemanticContext, wasm::Wasm};
 
+#[macro_use]
+extern crate lazy_static;
+
+#[macro_use]
+extern crate num_derive;
+
 mod ast;
-// mod codegen;
 mod codegen;
 pub mod errors;
 mod ir;
 mod lexer;
 mod parser;
 mod precedence;
-pub mod run;
 mod semantics;
 mod source_info;
 mod token;
 mod types;
-mod wasm;
+pub mod wasm;
 mod wat;
 
 type CompilerResult<T> = Result<T, CompilerError>;

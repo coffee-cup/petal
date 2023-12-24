@@ -1,4 +1,4 @@
-use crate::petal::{
+use crate::{
     ast::{ExprId, FuncDecl, StmtId},
     semantics::errors::SemanticError,
 };
@@ -27,7 +27,7 @@ impl<'a> SemanticContext<'a> {
     }
 
     fn analysis_statement(&self, stmt: StmtId) -> SemanticResult<()> {
-        use crate::petal::ast::Stmt;
+        use crate::ast::Stmt;
 
         let stmt_node = self.program.ast.statements[stmt].clone();
         match stmt_node.stmt {
@@ -65,8 +65,8 @@ impl<'a> SemanticContext<'a> {
     }
 
     fn analysis_expression(&self, expr: ExprId) -> SemanticResult<()> {
-        use crate::petal::ast::Expr;
-        use crate::petal::types::MonoType;
+        use crate::ast::Expr;
+        use crate::types::MonoType;
 
         let expr_node = self.program.ast.expressions[expr].clone();
 

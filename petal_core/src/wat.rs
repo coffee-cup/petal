@@ -1,12 +1,5 @@
 use std::fmt::Display;
 
-use wast::Wat;
-
-use crate::petal::{
-    ir::{IRFunction, IRFunctionSignature, IRProgram},
-    types::MonoType,
-};
-
 #[derive(PartialEq, Clone, Debug)]
 pub enum WatValueType {
     I32,

@@ -1,15 +1,8 @@
 use std::io::Write;
 
 use clap::{Parser, Subcommand};
-use petal::{run::run_wasm, Compiler};
-
-#[macro_use]
-extern crate lazy_static;
-
-#[macro_use]
-extern crate num_derive;
-
-mod petal;
+use petal_core::Compiler;
+use petal_runtime::run_wasm;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -59,7 +52,7 @@ fn main() {
                 Err(e) => {
                     // We should not need to re-read the file here
                     let file = std::fs::read_to_string(file).expect("Could not read file");
-                    petal::errors::print_compiler_error(&file, e);
+                    petal_core::errors::print_compiler_error(&file, e);
                 }
                 Ok(wasm) => {
                     // Ensure that the output directory exists
@@ -94,7 +87,7 @@ fn main() {
                     // We should not need to re-read the file here
                     let file = std::fs::read_to_string(file).expect("Could not read file");
 
-                    petal::errors::print_compiler_error(&file, e);
+                    petal_core::errors::print_compiler_error(&file, e);
                 }
                 Ok(wasm) => {
                     run_wasm(wasm, function).expect("Failed to run wasm");

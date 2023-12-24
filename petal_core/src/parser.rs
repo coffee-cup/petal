@@ -783,7 +783,7 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::petal::ast::{ExprNode, Identifier, StmtNode};
+    use crate::ast::{ExprNode, Identifier, StmtNode};
 
     use super::*;
 

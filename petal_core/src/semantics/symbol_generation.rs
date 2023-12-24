@@ -1,4 +1,4 @@
-use crate::petal::{
+use crate::{
     ast::{Expr, ExprId, FuncDecl, Stmt, StmtId, TypeAnnotation},
     types::{FunctionAppType, MonoType, PolyType},
 };

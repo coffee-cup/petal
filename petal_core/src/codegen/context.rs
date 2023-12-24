@@ -1,4 +1,4 @@
-use crate::petal::ir::IRProgram;
+use crate::ir::IRProgram;
 
 pub struct CodegenContext<'a> {
     pub ir: &'a IRProgram,

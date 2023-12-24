@@ -3,7 +3,7 @@ use std::{
     fmt::Display,
 };
 
-use crate::petal::{
+use crate::{
     ast::{Expr, ExprId, ExprNode, IdentId, Stmt, StmtId, StmtNode},
     source_info::Span,
     types::{FunctionAppType, MonoType, PolyType, StructType, TyVar, TypeQuantifier},

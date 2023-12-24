@@ -1,0 +1,21 @@
+[package]
+name = "petal_core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { workspace = true }
+colored = { workspace = true }
+miette = { workspace = true }
+thiserror = { workspace = true }
+lazy_static = { workspace = true }
+insta = { workspace = true }
+num = "0.4.0"
+num-derive = "0.3.3"
+num-traits = "0.2.15"
+slotmap = "1.0.6"
+wasm-encoder = "0.26.0"
+wasmparser = "0.104.0"
+wasmprinter = "0.2.56"
+wast = "57.0.0"
+wat = "1.0.63"

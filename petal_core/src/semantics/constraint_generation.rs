@@ -1,4 +1,4 @@
-use crate::petal::{
+use crate::{
     ast::{BinaryOpType, Block, Expr, ExprId, FuncDecl, PrefixOpType, Stmt, StmtId},
     source_info::Span,
     types::{FunctionAppType, MonoType},

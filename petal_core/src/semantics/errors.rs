@@ -2,7 +2,7 @@ use miette::Diagnostic;
 
 use thiserror::Error;
 
-use crate::petal::{ast::BinaryOpType, source_info::Span, types::MonoType};
+use crate::{ast::BinaryOpType, source_info::Span, types::MonoType};
 
 #[derive(Diagnostic, Error, Clone, Debug)]
 pub enum SemanticError {

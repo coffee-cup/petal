@@ -1,4 +1,4 @@
-use crate::petal::{
+use crate::{
     ast::{ExprId, IdentId},
     source_info::Span,
     types::{MonoType, PolyType},

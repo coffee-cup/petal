@@ -1,0 +1,14 @@
+[package]
+name = "petal_cli"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jake Runzer <jakerunzer@gmail.com>"]
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { version = "4.2.4", features = ["derive"] }
+colored = { workspace = true }
+miette = { workspace = true }
+thiserror = { workspace = true }
+petal_core = { path = "../petal_core" }
+petal_runtime = { path = "../petal_runtime" }
