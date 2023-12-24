@@ -72,3 +72,30 @@ impl From<Span> for SourceSpan {
         Self::new(start.into(), length.into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_span_merge() {
+        let s1 = Span::new(Pos::new(0), Some(Pos::new(10)));
+        let s2 = Span::new(Pos::new(5), Some(Pos::new(15)));
+
+        let merged = s1.merge(s2);
+
+        assert_eq!(merged.start.offset(), 0);
+        assert_eq!(merged.end.unwrap().offset(), 15);
+    }
+
+    #[test]
+    fn test_span_merge_none() {
+        let s1 = Span::new(Pos::new(0), Some(Pos::new(10)));
+        let s2 = Span::new(Pos::new(5), None);
+
+        let merged = s1.merge(s2);
+
+        assert_eq!(merged.start.offset(), 0);
+        assert_eq!(merged.end.unwrap().offset(), 10);
+    }
+}
