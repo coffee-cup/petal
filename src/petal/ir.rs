@@ -52,6 +52,10 @@ pub enum IRStatement {
         then: Box<IRStatement>,
     },
 
+    Return {
+        expr: Option<IRExpression>,
+    },
+
     Block {
         statements: Vec<IRStatement>,
     },
@@ -163,7 +167,7 @@ impl<'a> IRGeneration<'a> {
             let main_ir_sig = IRFunctionSignature {
                 name: MAIN_FUNC_NAME.into(),
                 params: vec![],
-                return_type: MonoType::int(),
+                return_type: MonoType::unit(),
                 is_exported: true,
             };
 
@@ -238,7 +242,7 @@ impl<'a> IRGeneration<'a> {
             .collect::<Vec<_>>();
 
         IRFunctionSignature {
-            name: sym.unique_name(),
+            name: sym.name.clone(),
             params,
             return_type: *return_ty,
             is_exported,
@@ -299,7 +303,9 @@ impl<'a> IRGeneration<'a> {
                 }
             }
 
-            Stmt::Return(_) => todo!(),
+            Stmt::Return(expr) => IRStatement::Return {
+                expr: expr.map(|expr| self.ir_for_expr(expr)),
+            },
 
             Stmt::BlockStmt(block) => {
                 let stmts = block
@@ -431,6 +437,13 @@ impl Display for IRStatement {
                 write!(f, "if {} {{\n", condition)?;
                 write!(f, "    {}\n", then)?;
                 write!(f, "}}\n")
+            }
+            IRStatement::Return { expr } => {
+                if let Some(expr) = expr {
+                    write!(f, "return {}", expr)
+                } else {
+                    write!(f, "return")
+                }
             }
             IRStatement::Expr(e) => {
                 write!(f, "{}", e)

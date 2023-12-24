@@ -7,7 +7,7 @@ struct HostState {
     pub value: i32,
 }
 
-pub fn run_wasm(wasm: Wasm) -> Result<()> {
+pub fn run_wasm(wasm: Wasm, function: Option<String>) -> Result<()> {
     let engine = Engine::default();
     let module = Module::new(&engine, wasm.bytes()).context("creating wasm module")?;
 
@@ -27,9 +27,11 @@ pub fn run_wasm(wasm: Wasm) -> Result<()> {
     //     .get_typed_func::<(), i64>(&mut store, &wasm.main_func)
     //     .context("getting main petal function")?;
 
+    let func_name = function.unwrap_or_else(|| wasm.main_func.clone());
+
     let run = instance
-        .get_func(&mut store, &wasm.main_func)
-        .context("getting main petal function")?
+        .get_func(&mut store, &func_name)
+        .context(format!("getting petal function `{func_name}`"))?
         .typed::<(), i64>(&store)?;
 
     let result = run.call(&mut store, ()).context("running main func")?;

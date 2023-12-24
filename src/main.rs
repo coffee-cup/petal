@@ -38,6 +38,10 @@ enum Commands {
     Run {
         /// The petal file to run
         file: String,
+
+        /// Function in the WASM to run
+        #[arg(short = 'f', long = "function")]
+        function: Option<String>,
     },
 }
 
@@ -74,7 +78,7 @@ fn main() {
             }
         }
 
-        Commands::Run { file } => {
+        Commands::Run { file, function } => {
             match compiler.compile_file(&file) {
                 Err(e) => {
                     // We should not need to re-read the file here
@@ -83,7 +87,7 @@ fn main() {
                     petal::errors::print_compiler_error(&file, e);
                 }
                 Ok(wasm) => {
-                    run_wasm(wasm).expect("Failed to run wasm");
+                    run_wasm(wasm, function).expect("Failed to run wasm");
                 }
             }
         }

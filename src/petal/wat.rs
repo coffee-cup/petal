@@ -56,6 +56,7 @@ pub enum WatInstruction {
     // Control flow
     If(Vec<WatInstruction>, Vec<WatInstruction>),
     Drop,
+    Return,
 }
 
 #[derive(Clone, Debug)]
@@ -136,6 +137,9 @@ impl Display for WatInstruction {
             Sub(ty) => write!(f, "{}.sub", ty),
             Mult(ty) => write!(f, "{}.mul", ty),
             Div(ty) => write!(f, "{}.div", ty),
+
+            Return => write!(f, "return"),
+            Drop => write!(f, "drop"),
 
             v => todo!("implement fmt for {:?}", v),
         }

@@ -82,13 +82,23 @@ impl<'a> CodegenContext<'a> {
 
             IRStatement::If { condition, then } => todo!(),
 
+            IRStatement::Return { expr } => {
+                if let Some(expr) = expr {
+                    self.visit_expression(expr, instrs);
+                }
+                instrs.push(WatInstruction::Return);
+            }
+
             IRStatement::Block { statements } => {
                 for stmt in statements {
                     self.visit_statement(stmt, instrs);
                 }
             }
 
-            IRStatement::Expr(x) => self.visit_expression(x, instrs),
+            IRStatement::Expr(x) => {
+                self.visit_expression(x, instrs);
+                instrs.push(WatInstruction::Drop)
+            }
         };
     }
 
