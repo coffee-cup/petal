@@ -299,6 +299,8 @@ impl<'a> IRGeneration<'a> {
                 }
             }
 
+            Stmt::Return(_) => todo!(),
+
             Stmt::BlockStmt(block) => {
                 let stmts = block
                     .statements

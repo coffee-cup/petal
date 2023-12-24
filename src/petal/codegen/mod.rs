@@ -1,7 +1,7 @@
 use self::context::CodegenContext;
 
 use super::{
-    ir::{IRExpression, IRProgram},
+    ir::{IRBinOpType, IRExpression, IRProgram},
     types::MonoType,
 };
 use super::{
@@ -76,7 +76,7 @@ impl<'a> CodegenContext<'a> {
     fn visit_statement(&self, stmt: &IRStatement, instrs: &mut Vec<WatInstruction>) {
         match stmt {
             IRStatement::Let { name, ty, init } => {
-                instrs.push(self.visit_expression(init));
+                self.visit_expression(init, instrs);
                 instrs.push(WatInstruction::SetLocal(name.clone()));
             }
 
@@ -88,15 +88,17 @@ impl<'a> CodegenContext<'a> {
                 }
             }
 
-            IRStatement::Expr(x) => instrs.push(self.visit_expression(x)),
+            IRStatement::Expr(x) => self.visit_expression(x, instrs),
         };
     }
 
-    fn visit_expression(&self, expr: &IRExpression) -> WatInstruction {
+    fn visit_expression(&self, expr: &IRExpression, instrs: &mut Vec<WatInstruction>) {
         match expr {
-            IRExpression::IntLiteral(n) => WatInstruction::Const(WatValue::I64(*n)),
-            IRExpression::FloatLiteral(n) => WatInstruction::Const(WatValue::F64(*n)),
-            IRExpression::BoolLiteral(b) => WatInstruction::Const(WatValue::I32(*b as i32)),
+            IRExpression::IntLiteral(n) => instrs.push(WatInstruction::Const(WatValue::I64(*n))),
+            IRExpression::FloatLiteral(n) => instrs.push(WatInstruction::Const(WatValue::F64(*n))),
+            IRExpression::BoolLiteral(b) => {
+                instrs.push(WatInstruction::Const(WatValue::I32(*b as i32)))
+            }
             IRExpression::StringLiteral(_) => todo!(),
             IRExpression::PrefixOp { op, right, ty } => todo!(),
             IRExpression::BinOp {
@@ -104,7 +106,37 @@ impl<'a> CodegenContext<'a> {
                 left,
                 right,
                 ty,
-            } => todo!(),
+            } => {
+                self.visit_expression(left, instrs);
+                self.visit_expression(right, instrs);
+
+                match op {
+                    IRBinOpType::Add => {
+                        instrs.push(WatInstruction::Add(self.type_for_monotype(ty)))
+                    }
+                    IRBinOpType::Sub => {
+                        instrs.push(WatInstruction::Sub(self.type_for_monotype(ty)))
+                    }
+                    IRBinOpType::Mul => {
+                        instrs.push(WatInstruction::Mult(self.type_for_monotype(ty)))
+                    }
+                    IRBinOpType::Div => {
+                        instrs.push(WatInstruction::Div(self.type_for_monotype(ty)))
+                    }
+                    IRBinOpType::Mod => {
+                        todo!()
+                        // instrs.push(WatInstruction::Rem(self.type_for_monotype(ty)))
+                    }
+                    IRBinOpType::And => todo!(),
+                    IRBinOpType::Or => todo!(),
+                    IRBinOpType::Eq => todo!(),
+                    IRBinOpType::Neq => todo!(),
+                    IRBinOpType::Lt => todo!(),
+                    IRBinOpType::Gt => todo!(),
+                    IRBinOpType::Leq => todo!(),
+                    IRBinOpType::Geq => todo!(),
+                }
+            }
             IRExpression::Ident { name, ty } => todo!(),
             IRExpression::Call { name, args, ty } => todo!(),
         }

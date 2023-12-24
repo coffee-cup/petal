@@ -132,6 +132,11 @@ impl Display for WatInstruction {
             NotEqual(ty) => write!(f, "ne.{}", ty),
             SetLocal(name) => write!(f, "local.set ${}", name),
 
+            Add(ty) => write!(f, "{}.add", ty),
+            Sub(ty) => write!(f, "{}.sub", ty),
+            Mult(ty) => write!(f, "{}.mul", ty),
+            Div(ty) => write!(f, "{}.div", ty),
+
             v => todo!("implement fmt for {:?}", v),
         }
     }
