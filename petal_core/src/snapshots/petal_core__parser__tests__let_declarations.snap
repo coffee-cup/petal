@@ -1,0 +1,81 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_stmt(\"let a = b\")"
+---
+(
+    [
+        Identifier {
+            name: "a",
+            span: Span {
+                start: Pos(
+                    4,
+                ),
+                end: Some(
+                    Pos(
+                        4,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "b",
+            span: Span {
+                start: Pos(
+                    8,
+                ),
+                end: Some(
+                    Pos(
+                        8,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
+    [
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    2v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    8,
+                ),
+                end: Some(
+                    Pos(
+                        8,
+                    ),
+                ),
+            },
+        },
+    ],
+    [
+        StmtNode {
+            stmt: Let(
+                LetDecl {
+                    ident: IdentId(
+                        1v1,
+                    ),
+                    ty: None,
+                    init: ExprId(
+                        1v1,
+                    ),
+                },
+            ),
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        8,
+                    ),
+                ),
+            },
+        },
+    ],
+    [],
+)

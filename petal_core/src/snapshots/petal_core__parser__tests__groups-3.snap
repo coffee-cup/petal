@@ -1,0 +1,120 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_expr(\"1 * (2 - 3)\")"
+---
+(
+    [],
+    [
+        ExprNode {
+            expr: Integer(
+                1,
+            ),
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        0,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: Integer(
+                2,
+            ),
+            span: Span {
+                start: Pos(
+                    5,
+                ),
+                end: Some(
+                    Pos(
+                        5,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: Integer(
+                3,
+            ),
+            span: Span {
+                start: Pos(
+                    9,
+                ),
+                end: Some(
+                    Pos(
+                        9,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: BinaryOp {
+                op: BinaryOp {
+                    binary_type: Subtract,
+                    span: Span {
+                        start: Pos(
+                            7,
+                        ),
+                        end: Some(
+                            Pos(
+                                7,
+                            ),
+                        ),
+                    },
+                },
+                left: ExprId(
+                    2v1,
+                ),
+                right: ExprId(
+                    3v1,
+                ),
+            },
+            span: Span {
+                start: Pos(
+                    5,
+                ),
+                end: Some(
+                    Pos(
+                        9,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: BinaryOp {
+                op: BinaryOp {
+                    binary_type: Multiply,
+                    span: Span {
+                        start: Pos(
+                            2,
+                        ),
+                        end: Some(
+                            Pos(
+                                2,
+                            ),
+                        ),
+                    },
+                },
+                left: ExprId(
+                    1v1,
+                ),
+                right: ExprId(
+                    4v1,
+                ),
+            },
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        9,
+                    ),
+                ),
+            },
+        },
+    ],
+)

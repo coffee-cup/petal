@@ -1,0 +1,104 @@
+---
+source: petal_core/src/lexer.rs
+expression: "lex(\"let if else false true return\".to_string())"
+---
+[
+    Token {
+        token_type: Let,
+        lexeme: "let",
+        literal: None,
+        span: Span {
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    2,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: If,
+        lexeme: "if",
+        literal: None,
+        span: Span {
+            start: Pos(
+                4,
+            ),
+            end: Some(
+                Pos(
+                    5,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Else,
+        lexeme: "else",
+        literal: None,
+        span: Span {
+            start: Pos(
+                7,
+            ),
+            end: Some(
+                Pos(
+                    10,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Boolean,
+        lexeme: "false",
+        literal: Some(
+            Boolean(
+                false,
+            ),
+        ),
+        span: Span {
+            start: Pos(
+                12,
+            ),
+            end: Some(
+                Pos(
+                    16,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Boolean,
+        lexeme: "true",
+        literal: Some(
+            Boolean(
+                true,
+            ),
+        ),
+        span: Span {
+            start: Pos(
+                18,
+            ),
+            end: Some(
+                Pos(
+                    21,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Return,
+        lexeme: "return",
+        literal: None,
+        span: Span {
+            start: Pos(
+                23,
+            ),
+            end: Some(
+                Pos(
+                    28,
+                ),
+            ),
+        },
+    },
+]

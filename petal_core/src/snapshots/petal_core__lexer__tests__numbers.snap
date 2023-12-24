@@ -1,0 +1,63 @@
+---
+source: petal_core/src/lexer.rs
+expression: "lex(\"1 123 123.456\".to_string())"
+---
+[
+    Token {
+        token_type: Integer,
+        lexeme: "1",
+        literal: Some(
+            Integer(
+                1,
+            ),
+        ),
+        span: Span {
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    0,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Integer,
+        lexeme: "123",
+        literal: Some(
+            Integer(
+                123,
+            ),
+        ),
+        span: Span {
+            start: Pos(
+                2,
+            ),
+            end: Some(
+                Pos(
+                    4,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Float,
+        lexeme: "123.456",
+        literal: Some(
+            Float(
+                123.456,
+            ),
+        ),
+        span: Span {
+            start: Pos(
+                6,
+            ),
+            end: Some(
+                Pos(
+                    12,
+                ),
+            ),
+        },
+    },
+]

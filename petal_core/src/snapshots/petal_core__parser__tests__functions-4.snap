@@ -1,0 +1,288 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_stmt(\"\n            fn foo(foo: Int, bar: Int) {\n                let a = foo + bar\n            }\")"
+---
+(
+    [
+        Identifier {
+            name: "foo",
+            span: Span {
+                start: Pos(
+                    16,
+                ),
+                end: Some(
+                    Pos(
+                        18,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "foo",
+            span: Span {
+                start: Pos(
+                    20,
+                ),
+                end: Some(
+                    Pos(
+                        22,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "bar",
+            span: Span {
+                start: Pos(
+                    30,
+                ),
+                end: Some(
+                    Pos(
+                        32,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "a",
+            span: Span {
+                start: Pos(
+                    62,
+                ),
+                end: Some(
+                    Pos(
+                        62,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "foo",
+            span: Span {
+                start: Pos(
+                    66,
+                ),
+                end: Some(
+                    Pos(
+                        68,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "bar",
+            span: Span {
+                start: Pos(
+                    72,
+                ),
+                end: Some(
+                    Pos(
+                        74,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
+    [
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    5v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    66,
+                ),
+                end: Some(
+                    Pos(
+                        68,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    6v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    72,
+                ),
+                end: Some(
+                    Pos(
+                        74,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: BinaryOp {
+                op: BinaryOp {
+                    binary_type: Add,
+                    span: Span {
+                        start: Pos(
+                            70,
+                        ),
+                        end: Some(
+                            Pos(
+                                70,
+                            ),
+                        ),
+                    },
+                },
+                left: ExprId(
+                    1v1,
+                ),
+                right: ExprId(
+                    2v1,
+                ),
+            },
+            span: Span {
+                start: Pos(
+                    66,
+                ),
+                end: Some(
+                    Pos(
+                        74,
+                    ),
+                ),
+            },
+        },
+    ],
+    [
+        StmtNode {
+            stmt: Let(
+                LetDecl {
+                    ident: IdentId(
+                        4v1,
+                    ),
+                    ty: None,
+                    init: ExprId(
+                        3v1,
+                    ),
+                },
+            ),
+            span: Span {
+                start: Pos(
+                    58,
+                ),
+                end: Some(
+                    Pos(
+                        74,
+                    ),
+                ),
+            },
+        },
+        StmtNode {
+            stmt: BlockStmt(
+                Block {
+                    statements: [
+                        StmtId(
+                            1v1,
+                        ),
+                    ],
+                },
+            ),
+            span: Span {
+                start: Pos(
+                    40,
+                ),
+                end: Some(
+                    Pos(
+                        88,
+                    ),
+                ),
+            },
+        },
+    ],
+    [
+        FuncDecl {
+            ident: IdentId(
+                1v1,
+            ),
+            is_exported: false,
+            type_params: [],
+            args: [
+                FuncArg {
+                    ident: IdentId(
+                        2v1,
+                    ),
+                    ty: TypeAnnotation {
+                        name: "Int",
+                        span: Span {
+                            start: Pos(
+                                25,
+                            ),
+                            end: Some(
+                                Pos(
+                                    27,
+                                ),
+                            ),
+                        },
+                    },
+                    span: Span {
+                        start: Pos(
+                            20,
+                        ),
+                        end: Some(
+                            Pos(
+                                27,
+                            ),
+                        ),
+                    },
+                },
+                FuncArg {
+                    ident: IdentId(
+                        3v1,
+                    ),
+                    ty: TypeAnnotation {
+                        name: "Int",
+                        span: Span {
+                            start: Pos(
+                                35,
+                            ),
+                            end: Some(
+                                Pos(
+                                    37,
+                                ),
+                            ),
+                        },
+                    },
+                    span: Span {
+                        start: Pos(
+                            30,
+                        ),
+                        end: Some(
+                            Pos(
+                                37,
+                            ),
+                        ),
+                    },
+                },
+            ],
+            return_ty: None,
+            body: StmtId(
+                2v1,
+            ),
+            span: Span {
+                start: Pos(
+                    13,
+                ),
+                end: Some(
+                    Pos(
+                        88,
+                    ),
+                ),
+            },
+        },
+    ],
+)

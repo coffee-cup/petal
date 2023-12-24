@@ -1,0 +1,130 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_expr(\"foo(a, 1, \\\"hello\\\")\")"
+---
+(
+    [
+        Identifier {
+            name: "foo",
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        2,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "a",
+            span: Span {
+                start: Pos(
+                    4,
+                ),
+                end: Some(
+                    Pos(
+                        4,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
+    [
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    1v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        2,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    2v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    4,
+                ),
+                end: Some(
+                    Pos(
+                        4,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: Integer(
+                1,
+            ),
+            span: Span {
+                start: Pos(
+                    7,
+                ),
+                end: Some(
+                    Pos(
+                        7,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: String(
+                "hello",
+            ),
+            span: Span {
+                start: Pos(
+                    10,
+                ),
+                end: Some(
+                    Pos(
+                        16,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: Call {
+                callee: ExprId(
+                    1v1,
+                ),
+                args: [
+                    ExprId(
+                        2v1,
+                    ),
+                    ExprId(
+                        3v1,
+                    ),
+                    ExprId(
+                        4v1,
+                    ),
+                ],
+            },
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        17,
+                    ),
+                ),
+            },
+        },
+    ],
+)

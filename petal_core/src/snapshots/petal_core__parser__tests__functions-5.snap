@@ -1,0 +1,66 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_stmt(\"export fn foo() {}\")"
+---
+(
+    [
+        Identifier {
+            name: "foo",
+            span: Span {
+                start: Pos(
+                    10,
+                ),
+                end: Some(
+                    Pos(
+                        12,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
+    [],
+    [
+        StmtNode {
+            stmt: BlockStmt(
+                Block {
+                    statements: [],
+                },
+            ),
+            span: Span {
+                start: Pos(
+                    16,
+                ),
+                end: Some(
+                    Pos(
+                        17,
+                    ),
+                ),
+            },
+        },
+    ],
+    [
+        FuncDecl {
+            ident: IdentId(
+                1v1,
+            ),
+            is_exported: true,
+            type_params: [],
+            args: [],
+            return_ty: None,
+            body: StmtId(
+                1v1,
+            ),
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        17,
+                    ),
+                ),
+            },
+        },
+    ],
+)

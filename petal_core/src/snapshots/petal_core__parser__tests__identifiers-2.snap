@@ -1,0 +1,41 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_expr(\"foo\")"
+---
+(
+    [
+        Identifier {
+            name: "foo",
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        2,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
+    [
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    1v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        2,
+                    ),
+                ),
+            },
+        },
+    ],
+)

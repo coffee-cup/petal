@@ -1,0 +1,109 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_stmt(\"fn foo(a: Int) {}\")"
+---
+(
+    [
+        Identifier {
+            name: "foo",
+            span: Span {
+                start: Pos(
+                    3,
+                ),
+                end: Some(
+                    Pos(
+                        5,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "a",
+            span: Span {
+                start: Pos(
+                    7,
+                ),
+                end: Some(
+                    Pos(
+                        7,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
+    [],
+    [
+        StmtNode {
+            stmt: BlockStmt(
+                Block {
+                    statements: [],
+                },
+            ),
+            span: Span {
+                start: Pos(
+                    15,
+                ),
+                end: Some(
+                    Pos(
+                        16,
+                    ),
+                ),
+            },
+        },
+    ],
+    [
+        FuncDecl {
+            ident: IdentId(
+                1v1,
+            ),
+            is_exported: false,
+            type_params: [],
+            args: [
+                FuncArg {
+                    ident: IdentId(
+                        2v1,
+                    ),
+                    ty: TypeAnnotation {
+                        name: "Int",
+                        span: Span {
+                            start: Pos(
+                                10,
+                            ),
+                            end: Some(
+                                Pos(
+                                    12,
+                                ),
+                            ),
+                        },
+                    },
+                    span: Span {
+                        start: Pos(
+                            7,
+                        ),
+                        end: Some(
+                            Pos(
+                                12,
+                            ),
+                        ),
+                    },
+                },
+            ],
+            return_ty: None,
+            body: StmtId(
+                1v1,
+            ),
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        16,
+                    ),
+                ),
+            },
+        },
+    ],
+)

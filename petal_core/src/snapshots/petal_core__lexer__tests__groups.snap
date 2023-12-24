@@ -1,0 +1,187 @@
+---
+source: petal_core/src/lexer.rs
+expression: "lex(\"(a) (1) (1 + 2)\".to_string())"
+---
+[
+    Token {
+        token_type: LeftParen,
+        lexeme: "(",
+        literal: None,
+        span: Span {
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    0,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Identifier,
+        lexeme: "a",
+        literal: Some(
+            Identifier(
+                "a",
+            ),
+        ),
+        span: Span {
+            start: Pos(
+                1,
+            ),
+            end: Some(
+                Pos(
+                    1,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: RightParen,
+        lexeme: ")",
+        literal: None,
+        span: Span {
+            start: Pos(
+                2,
+            ),
+            end: Some(
+                Pos(
+                    2,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: LeftParen,
+        lexeme: "(",
+        literal: None,
+        span: Span {
+            start: Pos(
+                4,
+            ),
+            end: Some(
+                Pos(
+                    4,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Integer,
+        lexeme: "1",
+        literal: Some(
+            Integer(
+                1,
+            ),
+        ),
+        span: Span {
+            start: Pos(
+                5,
+            ),
+            end: Some(
+                Pos(
+                    5,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: RightParen,
+        lexeme: ")",
+        literal: None,
+        span: Span {
+            start: Pos(
+                6,
+            ),
+            end: Some(
+                Pos(
+                    6,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: LeftParen,
+        lexeme: "(",
+        literal: None,
+        span: Span {
+            start: Pos(
+                8,
+            ),
+            end: Some(
+                Pos(
+                    8,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Integer,
+        lexeme: "1",
+        literal: Some(
+            Integer(
+                1,
+            ),
+        ),
+        span: Span {
+            start: Pos(
+                9,
+            ),
+            end: Some(
+                Pos(
+                    9,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Plus,
+        lexeme: "+",
+        literal: None,
+        span: Span {
+            start: Pos(
+                11,
+            ),
+            end: Some(
+                Pos(
+                    11,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Integer,
+        lexeme: "2",
+        literal: Some(
+            Integer(
+                2,
+            ),
+        ),
+        span: Span {
+            start: Pos(
+                13,
+            ),
+            end: Some(
+                Pos(
+                    13,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: RightParen,
+        lexeme: ")",
+        literal: None,
+        span: Span {
+            start: Pos(
+                14,
+            ),
+            end: Some(
+                Pos(
+                    14,
+                ),
+            ),
+        },
+    },
+]

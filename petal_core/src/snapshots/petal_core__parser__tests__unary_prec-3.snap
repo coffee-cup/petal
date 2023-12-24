@@ -1,0 +1,101 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_expr(\"!-a\")"
+---
+(
+    [
+        Identifier {
+            name: "a",
+            span: Span {
+                start: Pos(
+                    2,
+                ),
+                end: Some(
+                    Pos(
+                        2,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
+    [
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    1v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    2,
+                ),
+                end: Some(
+                    Pos(
+                        2,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: PrefixOp {
+                op: PrefixOp {
+                    prefix_type: Neg,
+                    span: Span {
+                        start: Pos(
+                            1,
+                        ),
+                        end: Some(
+                            Pos(
+                                1,
+                            ),
+                        ),
+                    },
+                },
+                right: ExprId(
+                    1v1,
+                ),
+            },
+            span: Span {
+                start: Pos(
+                    2,
+                ),
+                end: Some(
+                    Pos(
+                        1,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: PrefixOp {
+                op: PrefixOp {
+                    prefix_type: Not,
+                    span: Span {
+                        start: Pos(
+                            0,
+                        ),
+                        end: Some(
+                            Pos(
+                                0,
+                            ),
+                        ),
+                    },
+                },
+                right: ExprId(
+                    2v1,
+                ),
+            },
+            span: Span {
+                start: Pos(
+                    2,
+                ),
+                end: Some(
+                    Pos(
+                        0,
+                    ),
+                ),
+            },
+        },
+    ],
+)

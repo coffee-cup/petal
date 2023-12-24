@@ -1,0 +1,135 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_expr(\"-a * b\")"
+---
+(
+    [
+        Identifier {
+            name: "a",
+            span: Span {
+                start: Pos(
+                    1,
+                ),
+                end: Some(
+                    Pos(
+                        1,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "b",
+            span: Span {
+                start: Pos(
+                    5,
+                ),
+                end: Some(
+                    Pos(
+                        5,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
+    [
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    1v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    1,
+                ),
+                end: Some(
+                    Pos(
+                        1,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: PrefixOp {
+                op: PrefixOp {
+                    prefix_type: Neg,
+                    span: Span {
+                        start: Pos(
+                            0,
+                        ),
+                        end: Some(
+                            Pos(
+                                0,
+                            ),
+                        ),
+                    },
+                },
+                right: ExprId(
+                    1v1,
+                ),
+            },
+            span: Span {
+                start: Pos(
+                    1,
+                ),
+                end: Some(
+                    Pos(
+                        0,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    2v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    5,
+                ),
+                end: Some(
+                    Pos(
+                        5,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: BinaryOp {
+                op: BinaryOp {
+                    binary_type: Multiply,
+                    span: Span {
+                        start: Pos(
+                            3,
+                        ),
+                        end: Some(
+                            Pos(
+                                3,
+                            ),
+                        ),
+                    },
+                },
+                left: ExprId(
+                    2v1,
+                ),
+                right: ExprId(
+                    3v1,
+                ),
+            },
+            span: Span {
+                start: Pos(
+                    1,
+                ),
+                end: Some(
+                    Pos(
+                        5,
+                    ),
+                ),
+            },
+        },
+    ],
+)

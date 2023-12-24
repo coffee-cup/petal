@@ -1,0 +1,25 @@
+---
+source: petal_core/src/lexer.rs
+expression: "lex(\"\\\"multi\\nline\\nstring\\\"\".to_string())"
+---
+[
+    Token {
+        token_type: String,
+        lexeme: "\"multi\nline\nstring\"",
+        literal: Some(
+            String(
+                "multi\nline\nstring",
+            ),
+        ),
+        span: Span {
+            start: Pos(
+                0,
+            ),
+            end: Some(
+                Pos(
+                    18,
+                ),
+            ),
+        },
+    },
+]
