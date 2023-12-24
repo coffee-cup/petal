@@ -82,7 +82,7 @@ fn main() {
                         std::fs::File::create(format!("{}/{}", output, wat_file_name))
                             .expect("Unable to create output wat file");
                     wat_file
-                        .write(wasm.wat_string.as_bytes())
+                        .write_all(wasm.wat_string.as_bytes())
                         .expect("Unable to write the .wat binary");
                 }
             }
