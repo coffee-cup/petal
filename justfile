@@ -1,7 +1,7 @@
 build:
   cargo build
 
-test: build
+test:
   cargo test
 
 snapshot:

@@ -1,6 +1,6 @@
 ---
 source: src/petal/parser.rs
-expression: "parse_expr(\"!foo\")"
+expression: "parse_expr(\"foo()\")"
 ---
 (
     [
@@ -8,11 +8,11 @@ expression: "parse_expr(\"!foo\")"
             name: "foo",
             span: Span {
                 start: Pos(
-                    1,
+                    0,
                 ),
                 end: Some(
                     Pos(
-                        3,
+                        2,
                     ),
                 ),
             },
@@ -28,41 +28,29 @@ expression: "parse_expr(\"!foo\")"
             ),
             span: Span {
                 start: Pos(
-                    1,
+                    0,
                 ),
                 end: Some(
                     Pos(
-                        3,
+                        2,
                     ),
                 ),
             },
         },
         ExprNode {
-            expr: PrefixOp {
-                op: PrefixOp {
-                    prefix_type: Not,
-                    span: Span {
-                        start: Pos(
-                            0,
-                        ),
-                        end: Some(
-                            Pos(
-                                0,
-                            ),
-                        ),
-                    },
-                },
-                right: ExprId(
+            expr: Call {
+                callee: ExprId(
                     1v1,
                 ),
+                args: [],
             },
             span: Span {
                 start: Pos(
-                    1,
+                    0,
                 ),
                 end: Some(
                     Pos(
-                        0,
+                        4,
                     ),
                 ),
             },

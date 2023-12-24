@@ -1,6 +1,6 @@
 ---
 source: src/petal/parser.rs
-expression: "parse_expr(\"foo\")"
+expression: "parse_expr(\"(foo)\")"
 ---
 (
     [
@@ -8,11 +8,11 @@ expression: "parse_expr(\"foo\")"
             name: "foo",
             span: Span {
                 start: Pos(
-                    0,
+                    1,
                 ),
                 end: Some(
                     Pos(
-                        2,
+                        3,
                     ),
                 ),
             },
@@ -28,11 +28,11 @@ expression: "parse_expr(\"foo\")"
             ),
             span: Span {
                 start: Pos(
-                    0,
+                    1,
                 ),
                 end: Some(
                     Pos(
-                        2,
+                        3,
                     ),
                 ),
             },

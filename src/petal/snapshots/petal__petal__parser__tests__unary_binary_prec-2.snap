@@ -1,18 +1,18 @@
 ---
 source: src/petal/parser.rs
-expression: "parse_expr(\"!foo\")"
+expression: "parse_expr(\"!a ^ b\")"
 ---
 (
     [
         Identifier {
-            name: "foo",
+            name: "a",
             span: Span {
                 start: Pos(
                     1,
                 ),
                 end: Some(
                     Pos(
-                        3,
+                        1,
                     ),
                 ),
             },
@@ -32,7 +32,7 @@ expression: "parse_expr(\"!foo\")"
                 ),
                 end: Some(
                     Pos(
-                        3,
+                        1,
                     ),
                 ),
             },

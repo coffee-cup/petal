@@ -152,6 +152,8 @@ impl PrefixParselet for IdentParselet {
 struct GroupParselet;
 impl PrefixParselet for GroupParselet {
     fn parse(&self, parser: &mut Parser, _token: Token) -> ParserResult<ExprId> {
+        println!("Parsing group! {:?}", _token);
+
         let expr = parser.parse_expression(Precedence::Lowest)?;
         parser.consume_expected(TT::RightParen)?;
         Ok(expr)
@@ -781,21 +783,54 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::petal::ast::ExprNode;
+    use crate::petal::ast::{ExprNode, Identifier, StmtNode};
 
     use super::*;
 
-    fn parse_expr(s: &str) -> Vec<ExprNode> {
+    fn parse_expr(s: &str) -> (Vec<Identifier>, Vec<ExprNode>) {
         let mut lexer = Lexer::new(s);
         let mut parser = Parser::new(&mut lexer).unwrap();
         parser.parse_expression(Precedence::Lowest).unwrap();
 
-        let mut nodes = Vec::new();
-        for (_, expr) in parser.program.ast.expressions.iter() {
-            nodes.push(expr.clone())
+        let mut idents = Vec::new();
+        for (_, ident) in parser.program.ast.identifiers.iter() {
+            idents.push(ident.clone())
         }
 
-        nodes
+        let mut exprs = Vec::new();
+        for (_, expr) in parser.program.ast.expressions.iter() {
+            exprs.push(expr.clone())
+        }
+
+        (idents, exprs)
+    }
+
+    fn parse_stmt(s: &str) -> (Vec<Identifier>, Vec<ExprNode>, Vec<StmtNode>, Vec<FuncDecl>) {
+        let mut lexer = Lexer::new(s);
+        let mut parser = Parser::new(&mut lexer).unwrap();
+        parser.parse_program().unwrap();
+
+        let mut idents = Vec::new();
+        for (_, ident) in parser.program.ast.identifiers.iter() {
+            idents.push(ident.clone())
+        }
+
+        let mut exprs = Vec::new();
+        for (_, expr) in parser.program.ast.expressions.iter() {
+            exprs.push(expr.clone())
+        }
+
+        let mut stmts = Vec::new();
+        for (_, stmt) in parser.program.ast.statements.iter() {
+            stmts.push(stmt.clone())
+        }
+
+        let mut funcs = Vec::new();
+        for func in parser.program.functions.iter() {
+            funcs.push(func.clone())
+        }
+
+        (idents, exprs, stmts, funcs)
     }
 
     #[test]
@@ -826,18 +861,18 @@ mod tests {
         insta::assert_debug_snapshot!(parse_expr("1 ^ 2"));
     }
 
-    // #[test]
-    // fn test_unary_binary_prec() {
-    //     insta::assert_debug_snapshot!(parse_expr("-a * b"));
-    //     insta::assert_debug_snapshot!(parse_expr("!a ^ b"));
-    // }
+    #[test]
+    fn test_unary_binary_prec() {
+        insta::assert_debug_snapshot!(parse_expr("-a * b"));
+        insta::assert_debug_snapshot!(parse_expr("!a ^ b"));
+    }
 
-    // #[test]
-    // fn test_binary_associativity() {
-    //     insta::assert_debug_snapshot!(parse_expr("a + b - c"));
-    //     insta::assert_debug_snapshot!(parse_expr("a * b / c"));
-    //     insta::assert_debug_snapshot!(parse_expr("a ^ b ^ c"));
-    // }
+    #[test]
+    fn test_binary_associativity() {
+        insta::assert_debug_snapshot!(parse_expr("a + b - c"));
+        insta::assert_debug_snapshot!(parse_expr("a * b / c"));
+        insta::assert_debug_snapshot!(parse_expr("a ^ b ^ c"));
+    }
 
     // #[test]
     // fn test_conditionals() {
@@ -846,29 +881,29 @@ mod tests {
     //     insta::assert_debug_snapshot!(parse_expr("a + b ? c * d : e / f",));
     // }
 
-    // #[test]
-    // fn test_groups() {
-    //     insta::assert_debug_snapshot!(parse_expr("(foo)"));
-    //     insta::assert_debug_snapshot!(parse_expr("(1 + 2) * 3"));
-    //     insta::assert_debug_snapshot!(parse_expr("1 * (2 - 3)"));
-    //     insta::assert_debug_snapshot!(parse_expr("a ^ (b + c)"));
-    //     insta::assert_debug_snapshot!(parse_expr("(a ^ b) ^ c"));
-    // }
+    #[test]
+    fn test_groups() {
+        insta::assert_debug_snapshot!(parse_expr("(foo)"));
+        insta::assert_debug_snapshot!(parse_expr("(1 + 2) * 3"));
+        insta::assert_debug_snapshot!(parse_expr("1 * (2 - 3)"));
+        // insta::assert_debug_snapshot!(parse_expr("a ^ (b + c)"));
+        // insta::assert_debug_snapshot!(parse_expr("(a ^ b) ^ c"));
+    }
 
-    // #[test]
-    // fn test_calls() {
-    //     insta::assert_debug_snapshot!(parse_expr("foo()"));
-    //     insta::assert_debug_snapshot!(parse_expr("foo(a, 1, \"hello\")"));
-    //     insta::assert_debug_snapshot!(parse_expr("a(b) + c(d)"));
-    //     insta::assert_debug_snapshot!(parse_expr("a(b)(c)"));
-    // }
+    #[test]
+    fn test_calls() {
+        insta::assert_debug_snapshot!(parse_expr("foo()"));
+        insta::assert_debug_snapshot!(parse_expr("foo(a, 1, \"hello\")"));
+        insta::assert_debug_snapshot!(parse_expr("a(b) + c(d)"));
+        insta::assert_debug_snapshot!(parse_expr("a(b)(c)"));
+    }
 
-    // #[test]
-    // fn test_let_declarations() {
-    //     insta::assert_debug_snapshot!(parse_stmt("let a = b"));
-    //     insta::assert_debug_snapshot!(parse_stmt("let a = b + c * d"));
-    //     insta::assert_debug_snapshot!(parse_stmt("let a: Int = b"));
-    // }
+    #[test]
+    fn test_let_declarations() {
+        insta::assert_debug_snapshot!(parse_stmt("let a = b"));
+        insta::assert_debug_snapshot!(parse_stmt("let a = b + c * d"));
+        insta::assert_debug_snapshot!(parse_stmt("let a: Float = b"));
+    }
 
     // #[test]
     // fn test_ifs() {
@@ -902,24 +937,20 @@ mod tests {
     //     ));
     // }
 
-    // #[test]
-    // fn test_functions() {
-    //     insta::assert_debug_snapshot!(parse_stmt("fn foo() {}"));
-    //     insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
-    //     insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int, b: String) {}"));
-    //     insta::assert_debug_snapshot!(parse_stmt(
-    //         "
-    //     fn foo(foo: Int, bar: Int) {
-    //         let a = foo + bar
-    //     }"
-    //     ));
-    //     insta::assert_debug_snapshot!(parse_stmt("export fn foo() {}"));
+    #[test]
+    fn test_functions() {
+        insta::assert_debug_snapshot!(parse_stmt("fn foo() {}"));
+        insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
+        insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int, b: String) {}"));
+        insta::assert_debug_snapshot!(parse_stmt(
+            "
+            fn foo(foo: Int, bar: Int) {
+                let a = foo + bar
+            }"
+        ));
+        insta::assert_debug_snapshot!(parse_stmt("export fn foo() {}"));
 
-    //     insta::assert_debug_snapshot!(parse_stmt("fn foo(a: Int) {}"));
-
-    //     insta::assert_debug_snapshot!(parse_stmt("fn foo<T>() {}"));
-    //     insta::assert_debug_snapshot!(parse_stmt("fn foo<T>(a: T) {}"));
-
-    //     insta::assert_debug_snapshot!(parse_stmt("fn foo(): Int {}"));
-    // }
+        //     insta::assert_debug_snapshot!(parse_stmt("fn foo<T>() {}"));
+        //     insta::assert_debug_snapshot!(parse_stmt("fn foo<T>(a: T) {}"));
+    }
 }

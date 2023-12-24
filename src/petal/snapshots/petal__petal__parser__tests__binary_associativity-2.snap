@@ -1,13 +1,58 @@
 ---
 source: src/petal/parser.rs
-expression: "parse_expr(\"1 * 2 + 3\")"
+expression: "parse_expr(\"a * b / c\")"
 ---
 (
-    [],
+    [
+        Identifier {
+            name: "a",
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        0,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "b",
+            span: Span {
+                start: Pos(
+                    4,
+                ),
+                end: Some(
+                    Pos(
+                        4,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "c",
+            span: Span {
+                start: Pos(
+                    8,
+                ),
+                end: Some(
+                    Pos(
+                        8,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
     [
         ExprNode {
-            expr: Integer(
-                1,
+            expr: Ident(
+                IdentId(
+                    1v1,
+                ),
             ),
             span: Span {
                 start: Pos(
@@ -21,8 +66,10 @@ expression: "parse_expr(\"1 * 2 + 3\")"
             },
         },
         ExprNode {
-            expr: Integer(
-                2,
+            expr: Ident(
+                IdentId(
+                    2v1,
+                ),
             ),
             span: Span {
                 start: Pos(
@@ -69,8 +116,10 @@ expression: "parse_expr(\"1 * 2 + 3\")"
             },
         },
         ExprNode {
-            expr: Integer(
-                3,
+            expr: Ident(
+                IdentId(
+                    3v1,
+                ),
             ),
             span: Span {
                 start: Pos(
@@ -86,7 +135,7 @@ expression: "parse_expr(\"1 * 2 + 3\")"
         ExprNode {
             expr: BinaryOp {
                 op: BinaryOp {
-                    binary_type: Add,
+                    binary_type: Divide,
                     span: Span {
                         start: Pos(
                             6,

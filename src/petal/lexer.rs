@@ -186,22 +186,7 @@ impl<'a> Lexer<'a> {
             Token::new(TT::Integer).with_literal(Literal::Integer(value))
         };
 
-        self.expect_whitespace_or_eof()?;
         Ok(t)
-    }
-
-    fn expect_whitespace_or_eof(&mut self) -> LexerResult<()> {
-        match self.peek() {
-            Some(c) if !c.is_whitespace() => {
-                return Err(LexerError::UnexpectedChar {
-                    c,
-                    span: Pos::new(self.offset + 1).into(),
-                })
-            }
-            _ => {}
-        };
-
-        Ok(())
     }
 
     fn match_result(&mut self, expected: char, left: TokenType, right: TokenType) -> Token {
@@ -372,5 +357,10 @@ mod tests {
     #[test]
     fn test_identifiers() {
         insta::assert_debug_snapshot!(lex("a boop hello world".to_string()));
+    }
+
+    #[test]
+    fn test_groups() {
+        insta::assert_debug_snapshot!(lex("(a) (1) (1 + 2)".to_string()));
     }
 }

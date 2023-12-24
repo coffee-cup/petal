@@ -2,20 +2,23 @@
 source: src/petal/parser.rs
 expression: "parse_expr(\"\\\"hello\\\"\")"
 ---
-[
-    ExprNode {
-        expr: String(
-            "hello",
-        ),
-        span: Span {
-            start: Pos(
-                0,
+(
+    [],
+    [
+        ExprNode {
+            expr: String(
+                "hello",
             ),
-            end: Some(
-                Pos(
-                    6,
+            span: Span {
+                start: Pos(
+                    0,
                 ),
-            ),
+                end: Some(
+                    Pos(
+                        6,
+                    ),
+                ),
+            },
         },
-    },
-]
+    ],
+)
