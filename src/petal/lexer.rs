@@ -59,6 +59,7 @@ lazy_static! {
         m.insert("else", TT::Else);
         m.insert("true", TT::Boolean);
         m.insert("false", TT::Boolean);
+        m.insert("return", TT::Return);
         m
     };
 }
@@ -365,7 +366,7 @@ mod tests {
 
     #[test]
     fn test_keywords() {
-        insta::assert_debug_snapshot!(lex("let if else false true".to_string()));
+        insta::assert_debug_snapshot!(lex("let if else false true return".to_string()));
     }
 
     #[test]

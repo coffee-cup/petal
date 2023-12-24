@@ -160,6 +160,9 @@ pub enum Stmt {
         else_block: Option<StmtId>,
     },
 
+    // return 1
+    Return(Option<ExprId>),
+
     BlockStmt(Block),
 
     ExprStmt(ExprId),

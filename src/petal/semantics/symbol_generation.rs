@@ -125,6 +125,12 @@ impl<'a> SemanticContext<'a> {
                 }
             }
 
+            Stmt::Return(return_expr) => {
+                if let Some(return_expr) = return_expr {
+                    self.generate_symbols_for_expression(*return_expr)?;
+                }
+            }
+
             Stmt::Comment(_) => {}
         };
 
@@ -202,7 +208,7 @@ impl<'a> SemanticContext<'a> {
     }
 
     // Get the type of a type annotation by looking up the identifier in the type_symbols table
-    fn type_for_annotation(&self, annotation: &TypeAnnotation) -> SemanticResult<MonoType> {
+    pub fn type_for_annotation(&self, annotation: &TypeAnnotation) -> SemanticResult<MonoType> {
         self.type_symbols
             .get(&annotation.name)
             .and_then(|sym| sym.ty)

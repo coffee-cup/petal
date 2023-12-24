@@ -44,6 +44,7 @@ pub enum TokenType {
     Let,
     If,
     Else,
+    Return,
 
     Comment,
     Eof,
@@ -152,6 +153,7 @@ impl fmt::Display for TokenType {
             Let => write!(f, "let"),
             If => write!(f, "if"),
             Else => write!(f, "else"),
+            Return => write!(f, "return"),
             Comment => write!(f, "comment"),
             Eof => write!(f, "EOF"),
         }

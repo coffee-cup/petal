@@ -46,6 +46,12 @@ impl<'a> SemanticContext<'a> {
                 }
             }
 
+            Stmt::Return(expr) => {
+                if let Some(expr) = expr {
+                    self.analysis_expression(expr)?;
+                }
+            }
+
             Stmt::BlockStmt(block) => {
                 for stmt in block.statements.iter() {
                     self.analysis_statement(*stmt)?;

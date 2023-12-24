@@ -589,8 +589,25 @@ impl<'a> Parser<'a> {
     fn parse_declaration(&mut self) -> ParserResult<StmtId> {
         match self.peek().token_type {
             TT::Let => self.parse_let_declaration(),
+            TT::Return => self.parse_return(),
             _ => self.parse_statement(),
         }
+    }
+
+    fn parse_return(&mut self) -> ParserResult<StmtId> {
+        let token = self.consume()?;
+        let mut span = token.span();
+
+        let expr = self
+            .parse_expression(Precedence::Lowest)
+            .map(|e| Some(e))
+            .unwrap_or(None);
+
+        if let Some(expr) = expr {
+            span = span.merge(self.program.ast.expressions[expr].span.clone());
+        }
+
+        Ok(self.program.new_statement(Stmt::Return(expr), span))
     }
 
     fn parse_let_declaration(&mut self) -> ParserResult<StmtId> {

@@ -1,6 +1,6 @@
 ---
 source: src/petal/lexer.rs
-expression: "lex(\"let if else false true\".to_string())"
+expression: "lex(\"let if else false true return\".to_string())"
 ---
 [
     Token {
@@ -82,6 +82,21 @@ expression: "lex(\"let if else false true\".to_string())"
             end: Some(
                 Pos(
                     21,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Return,
+        lexeme: "return",
+        literal: None,
+        span: Span {
+            start: Pos(
+                23,
+            ),
+            end: Some(
+                Pos(
+                    28,
                 ),
             ),
         },

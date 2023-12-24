@@ -1,5 +1,5 @@
 use crate::petal::{
-    ast::{BinaryOpType, Block, Expr, ExprId, PrefixOpType, Stmt, StmtId},
+    ast::{BinaryOpType, Block, Expr, ExprId, FuncDecl, PrefixOpType, Stmt, StmtId},
     source_info::Span,
     types::{FunctionAppType, MonoType},
 };
@@ -15,7 +15,11 @@ impl<'a> SemanticContext<'a> {
         self.type_constraints.push(Constraint::Equal { lhs, rhs });
     }
 
-    pub fn stmt_constraints(&mut self, stmt_id: StmtId) -> SemanticResult<()> {
+    pub fn stmt_constraints(
+        &mut self,
+        stmt_id: StmtId,
+        curr_func: &Option<FuncDecl>,
+    ) -> SemanticResult<()> {
         let stmt_node = &self.program.ast.statements[stmt_id];
 
         match stmt_node.stmt.clone() {
@@ -33,7 +37,9 @@ impl<'a> SemanticContext<'a> {
             }
 
             Stmt::BlockStmt(block) => {
-                self.block_constraints(&block)?;
+                for stmt in &block.statements {
+                    self.stmt_constraints(*stmt, curr_func)?;
+                }
             }
 
             Stmt::IfStmt {
@@ -51,9 +57,41 @@ impl<'a> SemanticContext<'a> {
                     MonoType::bool().into(),
                 );
 
-                self.stmt_constraints(then_block)?;
+                self.stmt_constraints(then_block, curr_func)?;
                 if let Some(else_block) = else_block {
-                    self.stmt_constraints(else_block)?;
+                    self.stmt_constraints(else_block, curr_func)?;
+                }
+            }
+
+            Stmt::Return(expr) => {
+                let stmt_span = stmt_node.span.clone();
+
+                match &expr {
+                    Some(expr) => {
+                        let expr_ty = self.expr_constraints(*expr)?;
+
+                        match &curr_func.clone() {
+                            Some(func) => {
+                                let return_ty_data = if let Some(return_ty) = &func.return_ty {
+                                    MonoTypeData::new(self.type_for_annotation(&return_ty).unwrap())
+                                        .with_span(return_ty.span.clone())
+                                } else {
+                                    MonoTypeData::new(MonoType::unit()).with_ident(func.ident)
+                                };
+
+                                self.associate_types(
+                                    MonoTypeData::new(expr_ty).with_parent_stmt(stmt_id),
+                                    return_ty_data,
+                                );
+                            }
+                            None => {
+                                return Err(SemanticError::ReturnOutsideOfFunction {
+                                    span: stmt_span,
+                                });
+                            }
+                        }
+                    }
+                    None => {}
                 }
             }
 
@@ -63,14 +101,6 @@ impl<'a> SemanticContext<'a> {
 
             Stmt::Comment(_) => {}
         };
-
-        Ok(())
-    }
-
-    fn block_constraints(&mut self, block: &Block) -> SemanticResult<()> {
-        for stmt in &block.statements {
-            self.stmt_constraints(*stmt)?;
-        }
 
         Ok(())
     }

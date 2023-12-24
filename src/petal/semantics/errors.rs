@@ -102,6 +102,20 @@ pub enum SemanticError {
         span: Span,
     },
 
+    #[error("Expected `{func_ty}` in return statement. Found `{return_ty}`")]
+    #[diagnostic(help("The type returned must match the function's return type"))]
+    ReturnTypeMismatch {
+        func_ty: MonoType,
+
+        #[label("the return type of the function")]
+        func_return_span: Span,
+
+        return_ty: MonoType,
+
+        #[label("does not match this return type")]
+        return_span: Span,
+    },
+
     #[error("Left hand side `{lhs_type}` does not match right hand side `{rhs_type}`")]
     #[diagnostic(help(
         "The left and right hand sides of a binary operation must have the same type"
@@ -149,6 +163,12 @@ pub enum SemanticError {
         op: BinaryOpType,
 
         #[label("found `{ty}`. expected `Int` or `Float`")]
+        span: Span,
+    },
+
+    #[error("Return statements can only be used inside functions")]
+    ReturnOutsideOfFunction {
+        #[label("return statements can only be used inside functions")]
         span: Span,
     },
 }

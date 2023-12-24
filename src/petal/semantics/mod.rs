@@ -51,11 +51,11 @@ impl<'a> SemanticContext<'a> {
 
     pub fn check_program(&mut self) -> SemanticResult<()> {
         for stmt in self.program.main_stmts.clone().iter() {
-            self.stmt_constraints(*stmt)?;
+            self.stmt_constraints(*stmt, &None)?;
         }
 
         for func in self.program.functions.clone().iter() {
-            self.stmt_constraints(func.body)?;
+            self.stmt_constraints(func.body, &Some(func.clone()))?;
         }
 
         println!("\n--- Constraints:");

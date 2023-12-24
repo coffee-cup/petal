@@ -250,6 +250,7 @@ pub struct MonoTypeData {
     pub ident_id: Option<IdentId>,
     pub parent_stmt_id: Option<StmtId>,
     pub parent_expr_id: Option<ExprId>,
+    pub span: Option<Span>,
 }
 
 impl MonoTypeData {
@@ -260,6 +261,7 @@ impl MonoTypeData {
             ident_id: None,
             parent_stmt_id: None,
             parent_expr_id: None,
+            span: None,
         }
     }
 
@@ -280,6 +282,11 @@ impl MonoTypeData {
 
     pub fn with_parent_expr(mut self, expr_id: ExprId) -> Self {
         self.parent_expr_id = Some(expr_id);
+        self
+    }
+
+    pub fn with_span(mut self, span: Span) -> Self {
+        self.span = Some(span);
         self
     }
 }
@@ -311,42 +318,6 @@ pub enum Constraint {
         lhs: MonoTypeData,
         rhs: MonoTypeData,
     },
-}
-
-impl Constraint {
-    pub fn equal(lhs: MonoTypeData, rhs: MonoTypeData) -> Self {
-        Self::Equal { lhs, rhs }
-    }
-}
-
-pub struct Typechecker {
-    ty_gen: TypeVarGen,
-    constraints: Vec<Constraint>,
-}
-
-impl Typechecker {
-    pub fn new() -> Self {
-        Self {
-            ty_gen: TypeVarGen::new(),
-            constraints: Vec::new(),
-        }
-    }
-
-    pub fn instantiate(&mut self, poly: PolyType) -> MonoType {
-        poly.instantiate(&mut self.ty_gen)
-    }
-
-    pub fn gen_type_var(&mut self) -> MonoType {
-        let t = self.ty_gen.next();
-
-        MonoType::Variable(t)
-    }
-
-    pub fn print_constraints(&self) {
-        for constraint in &self.constraints {
-            println!("{}", constraint);
-        }
-    }
 }
 
 impl<'a> SemanticContext<'a> {
@@ -516,6 +487,25 @@ impl<'a> SemanticContext<'a> {
             };
         }
 
+        // Return type mismatch
+        if let Some(
+            n @ StmtNode {
+                stmt: Stmt::Return { .. },
+                ..
+            },
+        ) = lhs_data
+            .parent_stmt_id
+            .map(|stmt_id| &self.program.ast.statements[stmt_id])
+        {
+            return SemanticError::ReturnTypeMismatch {
+                return_ty: t1.clone(),
+                return_span: n.span.clone(),
+
+                func_ty: t2.clone(),
+                func_return_span: self.span_for_monotype_data(rhs_data).unwrap_or_default(),
+            };
+        }
+
         match (
             self.span_for_monotype_data(lhs_data),
             self.span_for_monotype_data(rhs_data),
@@ -539,7 +529,9 @@ impl<'a> SemanticContext<'a> {
 
     /// Returns the span for the given monotype data
     fn span_for_monotype_data(&self, ty_data: &MonoTypeData) -> Option<Span> {
-        if let Some(expr_id) = ty_data.expr_id {
+        if let Some(span) = &ty_data.span {
+            return Some(span.clone());
+        } else if let Some(expr_id) = ty_data.expr_id {
             return Some(self.program.ast.expressions[expr_id].span.clone());
         } else if let Some(ident_id) = ty_data.ident_id {
             return Some(self.program.ast.identifiers[ident_id].span.clone());
