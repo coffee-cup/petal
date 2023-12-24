@@ -147,7 +147,10 @@ impl<'a> CodegenContext<'a> {
                     IRBinOpType::Geq => todo!(),
                 }
             }
-            IRExpression::Ident { name, ty } => todo!(),
+            IRExpression::Ident { name, ty } => {
+                instrs.push(WatInstruction::GetLocal(name.clone()));
+            }
+
             IRExpression::Call { name, args, ty } => todo!(),
         }
     }

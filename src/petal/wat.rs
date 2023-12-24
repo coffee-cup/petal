@@ -131,6 +131,8 @@ impl Display for WatInstruction {
             },
             Equal(ty) => write!(f, "eq.{}", ty),
             NotEqual(ty) => write!(f, "ne.{}", ty),
+
+            GetLocal(name) => write!(f, "local.get ${}", name),
             SetLocal(name) => write!(f, "local.set ${}", name),
 
             Add(ty) => write!(f, "{}.add", ty),
