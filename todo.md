@@ -5,15 +5,20 @@
   - [x] Type checking
   - [x] Wat generation
   - [x] Wasm bytes generation
+- [ ] Testing architecture
+  - [x] Snapshot tests
+  - [ ] Assertions
+  - [ ] Stdout comparison
+  - [ ] Type assertions
 - [x] Primitive constants
 - [ ] Binary/unary operations
 - [ ] Control flow
   - [ ] If
   - [ ] Match statements
 - [ ] Functions
-  - [ ] Creation
+  - [x] Creation
   - [ ] Calling
-  - [ ] Return values
+  - [x] Return values
 - [ ] Number casting
 - [ ] Structs
 - [ ] Strings

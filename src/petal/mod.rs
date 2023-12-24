@@ -73,21 +73,5 @@ impl Compiler {
             .map_err(|e| CompilerError::WasmValidationError(e.to_string(), wasm.print_wat()))?;
 
         Ok(wasm)
-
-        // let mut typechecker = Typechecker::new(&program);
-        // typechecker.check().map_err(CompilerError::TypecheckError)?;
-
-        // let mut ir_generator = IRGenerator::new();
-        // let ir_module = ir_generator.generate_ir_from_program(&program);
-
-        // println!("{:#?}", ir_module);
-
-        // let wasm = Wasm::new(&ir_module)
-        //     .map_err(|(e, wat_string)| CompilerError::WasmGenerationError(e, wat_string))?;
-
-        // wasm.validate()
-        //     .map_err(|e| CompilerError::WasmValidationError(e.to_string(), wasm.print_wat()))?;
-
-        // Ok(wasm)
     }
 }

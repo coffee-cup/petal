@@ -9,3 +9,7 @@ snapshot:
 
 fix:
   clippy --all-features --all-targets --allow-dirty --allow-staged
+
+clean:
+  cargo clean
+  rm -rf build

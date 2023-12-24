@@ -66,14 +66,24 @@ fn main() {
                     std::fs::create_dir_all(output.clone())
                         .expect("Unable to create output directory");
 
-                    let file_name = file.clone().replace("petal", "wasm");
-
                     // Save the WASM binary to the output directory
-                    let mut file = std::fs::File::create(format!("{}/{}", output, file_name))
-                        .expect("Unable to create output file");
-
-                    file.write_all(wasm.bytes())
+                    let wasm_file_name = file.clone().replace("petal", "wasm");
+                    let mut wasm_file =
+                        std::fs::File::create(format!("{}/{}", output, wasm_file_name))
+                            .expect("Unable to create output wasm file");
+                    wasm_file
+                        .write_all(wasm.bytes())
                         .expect("Unable to write the .wasm binary");
+
+                    // Additionally, save the wat text to the output directory
+                    // This is useful for debugging
+                    let wat_file_name = file.clone().replace("petal", "wat");
+                    let mut wat_file =
+                        std::fs::File::create(format!("{}/{}", output, wat_file_name))
+                            .expect("Unable to create output wat file");
+                    wat_file
+                        .write(wasm.wat_string.as_bytes())
+                        .expect("Unable to write the .wat binary");
                 }
             }
         }

@@ -173,7 +173,7 @@ impl Display for WatFunction {
         write!(
             f,
             "(func ${name} {export} {params} {return_ty}
-{locals}
+  {locals}
 
 {body}
 
@@ -202,7 +202,7 @@ impl Display for WatModule {
             .iter()
             .map(|f| f.to_string())
             .collect::<Vec<_>>()
-            .join("\n");
+            .join("\n\n");
 
         write!(
             f,
