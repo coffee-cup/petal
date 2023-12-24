@@ -24,23 +24,29 @@ expose fn do_work(n: int) -> int {
 
 This is a rough list of everything that needs to be done
 
-- [x] Lexer
-- [ ] Parsing expressions
-  - [x] Literals
-  - [x] Mathematical
-  - [x] Function calls
-- [ ] Parsing statements
-  - [ ] Conditionals
-  - [ ] Declarations
-- [ ] Parsing types
-- [ ] Pattern matching
+- [x] Compiler structure setup
+  - [x] Errors
+  - [x] Lexer/Parser
+  - [x] IR generation
+  - [x] Type checking
+  - [x] Wat generation
+  - [x] Wasm bytes generation
+- [ ] Testing architecture
+  - [x] Snapshot tests
+  - [ ] Assertions
+  - [ ] Stdout comparison
+  - [ ] Type assertions
+- [x] Primitive constants
+- [ ] Binary/unary operations
+- [ ] Control flow
+  - [ ] If
+  - [ ] Match statements
+- [ ] Functions
+  - [x] Creation
+  - [ ] Calling
+  - [x] Return values
+- [ ] Number casting
 - [ ] Structs
-- [ ] Traits
-- [ ] Typechecker
-  - [ ] Inference
-- [ ] Code generation
-  - [ ] Basic wasm module
-  - [ ] Interaction with host
-  - [ ] TypeScript API
-- [ ] CLI
-  - [ ] Ability to run compiled wasm modules
+- [ ] Strings
+- [ ] Arrays
+- [ ] TypeScript bindings
