@@ -176,8 +176,6 @@ impl<'a> IRGeneration<'a> {
                 self.get_locals(*stmt, &mut main_locals);
             }
 
-            
-
             IRFunction {
                 signature: main_ir_sig,
                 body: IRStatement::Block {

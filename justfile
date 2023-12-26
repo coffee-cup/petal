@@ -8,7 +8,8 @@ snapshot:
   cargo insta test --review -p petal_core
 
 fix:
-  clippy --all-features --all-targets --allow-dirty --allow-staged
+  cargo fmt --all -- --check
+  cargo clippy --fix --all-features --all-targets --allow-dirty --allow-staged
 
 clean:
   cargo clean

@@ -118,8 +118,6 @@ impl<'a> SemanticContext<'a> {
                 let sym = self.symbol_table.symbol_for_ident(ident).unwrap();
                 let ty = sym.ty.unwrap();
 
-                
-
                 ty.instantiate(&mut self.ty_gen)
             }
 

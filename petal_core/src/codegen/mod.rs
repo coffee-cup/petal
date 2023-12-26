@@ -41,8 +41,6 @@ impl<'a> CodegenContext<'a> {
             wat_funcs.push(func);
         }
 
-        
-
         WatModule {
             functions: wat_funcs,
             main_func: self.ir.main_func.clone(),
@@ -80,7 +78,10 @@ impl<'a> CodegenContext<'a> {
                 instrs.push(WatInstruction::SetLocal(name.clone()));
             }
 
-            IRStatement::If { condition: _, then: _ } => todo!(),
+            IRStatement::If {
+                condition: _,
+                then: _,
+            } => todo!(),
 
             IRStatement::Return { expr } => {
                 if let Some(expr) = expr {
@@ -110,7 +111,11 @@ impl<'a> CodegenContext<'a> {
                 instrs.push(WatInstruction::Const(WatValue::I32(*b as i32)))
             }
             IRExpression::StringLiteral(_) => todo!(),
-            IRExpression::PrefixOp { op: _, right: _, ty: _ } => todo!(),
+            IRExpression::PrefixOp {
+                op: _,
+                right: _,
+                ty: _,
+            } => todo!(),
             IRExpression::BinOp {
                 op,
                 left,
@@ -151,7 +156,11 @@ impl<'a> CodegenContext<'a> {
                 instrs.push(WatInstruction::GetLocal(name.clone()));
             }
 
-            IRExpression::Call { name: _, args: _, ty: _ } => todo!(),
+            IRExpression::Call {
+                name: _,
+                args: _,
+                ty: _,
+            } => todo!(),
         }
     }
 
