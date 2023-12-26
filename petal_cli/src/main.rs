@@ -95,7 +95,7 @@ fn main() {
                         "{}",
                         results
                             .iter()
-                            .map(|v| to_val_string(v))
+                            .map(to_val_string)
                             .collect::<Vec<_>>()
                             .join(",")
                     )

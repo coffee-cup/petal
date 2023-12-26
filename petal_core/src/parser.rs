@@ -608,7 +608,7 @@ impl<'a> Parser<'a> {
 
         let expr = self
             .parse_expression(Precedence::Lowest)
-            .map(|e| Some(e))
+            .map(Some)
             .unwrap_or(None);
 
         if let Some(expr) = expr {

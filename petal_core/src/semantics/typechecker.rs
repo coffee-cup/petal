@@ -20,6 +20,12 @@ pub struct TypeVarGen {
     counter: usize,
 }
 
+impl Default for TypeVarGen {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TypeVarGen {
     pub fn new() -> Self {
         Self { counter: 0 }
@@ -219,6 +225,12 @@ impl PolyType {
 pub struct TypeContext {
     /// Maps type names to their definitions
     types: BTreeMap<TyVar, PolyType>,
+}
+
+impl Default for TypeContext {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TypeContext {

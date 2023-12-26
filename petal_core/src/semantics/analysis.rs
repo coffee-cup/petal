@@ -76,10 +76,10 @@ impl<'a> SemanticContext<'a> {
             Expr::String(_) => {}
             Expr::Bool(_) => {}
             Expr::Ident(_) => {}
-            Expr::PrefixOp { op, right } => todo!(),
+            Expr::PrefixOp { op: _, right: _ } => todo!(),
             Expr::BinaryOp { op, left, right } => {
                 let left_ty = self.type_for_expr(&left).unwrap();
-                let right_ty = self.type_for_expr(&right).unwrap();
+                let _right_ty = self.type_for_expr(&right).unwrap();
 
                 if left_ty != MonoType::int() && left_ty != MonoType::float() {
                     let left_expr = self.program.ast.expressions[left].clone();
@@ -93,8 +93,8 @@ impl<'a> SemanticContext<'a> {
                 self.analysis_expression(left)?;
                 self.analysis_expression(right)?;
             }
-            Expr::PostfixOp { op, left } => todo!(),
-            Expr::Call { callee, args } => todo!(),
+            Expr::PostfixOp { op: _, left: _ } => todo!(),
+            Expr::Call { callee: _, args: _ } => todo!(),
         }
 
         Ok(())

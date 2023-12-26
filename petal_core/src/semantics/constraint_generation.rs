@@ -1,5 +1,5 @@
 use crate::{
-    ast::{BinaryOpType, Block, Expr, ExprId, FuncDecl, PrefixOpType, Stmt, StmtId},
+    ast::{Expr, ExprId, FuncDecl, PrefixOpType, Stmt, StmtId},
     source_info::Span,
     types::{FunctionAppType, MonoType},
 };
@@ -73,7 +73,7 @@ impl<'a> SemanticContext<'a> {
                         match &curr_func.clone() {
                             Some(func) => {
                                 let return_ty_data = if let Some(return_ty) = &func.return_ty {
-                                    MonoTypeData::new(self.type_for_annotation(&return_ty).unwrap())
+                                    MonoTypeData::new(self.type_for_annotation(return_ty).unwrap())
                                         .with_span(return_ty.span.clone())
                                 } else {
                                     MonoTypeData::new(MonoType::unit()).with_ident(func.ident)
@@ -114,13 +114,13 @@ impl<'a> SemanticContext<'a> {
             Expr::String(_) => MonoType::string(),
             Expr::Bool(_) => MonoType::bool(),
             Expr::Ident(ident) => {
-                let i = &self.program.ast.identifiers[*ident];
+                let _i = &self.program.ast.identifiers[*ident];
                 let sym = self.symbol_table.symbol_for_ident(ident).unwrap();
                 let ty = sym.ty.unwrap();
 
-                let instantiated = ty.instantiate(&mut self.ty_gen);
+                
 
-                instantiated
+                ty.instantiate(&mut self.ty_gen)
             }
 
             Expr::Call { callee, args } => {
@@ -220,7 +220,7 @@ impl<'a> SemanticContext<'a> {
                 }
             },
 
-            Expr::BinaryOp { left, right, op } => {
+            Expr::BinaryOp { left, right, op: _ } => {
                 let left_ty = self.expr_constraints(*left)?;
                 let right_ty = self.expr_constraints(*right)?;
 

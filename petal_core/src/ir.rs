@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use super::{
-    ast::{BinaryOpType, Expr, ExprId, FuncArg, FuncDecl, PrefixOpType, Stmt, StmtId, StmtNode},
+    ast::{BinaryOpType, Expr, ExprId, FuncArg, FuncDecl, PrefixOpType, Stmt, StmtId},
     semantics::{context::SemanticContext, symbol_table::Symbol},
     types::{FunctionAppType, MonoType},
 };
@@ -176,15 +176,15 @@ impl<'a> IRGeneration<'a> {
                 self.get_locals(*stmt, &mut main_locals);
             }
 
-            let main_func_ir = IRFunction {
+            
+
+            IRFunction {
                 signature: main_ir_sig,
                 body: IRStatement::Block {
                     statements: main_stmts,
                 },
                 locals: main_locals,
-            };
-
-            main_func_ir
+            }
         };
         ir.functions.push(main_func);
 
@@ -291,7 +291,7 @@ impl<'a> IRGeneration<'a> {
             Stmt::IfStmt {
                 condition,
                 then_block,
-                else_block,
+                else_block: _,
             } => {
                 let condition = self.ir_for_expr(condition);
 
@@ -366,8 +366,8 @@ impl<'a> IRGeneration<'a> {
                     ty,
                 }
             }
-            Expr::PostfixOp { op, left } => todo!(),
-            Expr::Call { callee, args } => todo!(),
+            Expr::PostfixOp { op: _, left: _ } => todo!(),
+            Expr::Call { callee: _, args: _ } => todo!(),
         }
     }
 
@@ -383,7 +383,7 @@ impl<'a> IRGeneration<'a> {
 impl Display for IRProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for func in self.functions.iter() {
-            write!(f, "{}\n", func)?;
+            writeln!(f, "{}", func)?;
         }
         Ok(())
     }
@@ -392,15 +392,15 @@ impl Display for IRProgram {
 impl Display for IRFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "fn {}", self.signature)?;
-        write!(f, " {{\n")?;
+        writeln!(f, " {{")?;
 
         for local in self.locals.iter() {
-            write!(f, "    local {}: {};\n", local.name, local.ty)?;
+            writeln!(f, "    local {}: {};", local.name, local.ty)?;
         }
-        write!(f, "\n")?;
+        writeln!(f)?;
 
         write!(f, "{}", self.body)?;
-        write!(f, "}}\n")
+        writeln!(f, "}}")
     }
 }
 
@@ -428,15 +428,15 @@ impl Display for IRStatement {
             IRStatement::Let { name, ty, init } => write!(f, "let {}: {} = {};", name, ty, init),
             IRStatement::Block { statements } => {
                 for stmt in statements.iter() {
-                    write!(f, "    {}\n", stmt)?;
+                    writeln!(f, "    {}", stmt)?;
                 }
 
                 Ok(())
             }
             IRStatement::If { condition, then } => {
-                write!(f, "if {} {{\n", condition)?;
-                write!(f, "    {}\n", then)?;
-                write!(f, "}}\n")
+                writeln!(f, "if {} {{", condition)?;
+                writeln!(f, "    {}", then)?;
+                writeln!(f, "}}")
             }
             IRStatement::Return { expr } => {
                 if let Some(expr) = expr {

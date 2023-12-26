@@ -41,12 +41,12 @@ impl<'a> CodegenContext<'a> {
             wat_funcs.push(func);
         }
 
-        let module = WatModule {
+        
+
+        WatModule {
             functions: wat_funcs,
             main_func: self.ir.main_func.clone(),
-        };
-
-        module
+        }
     }
 
     fn get_wat_signature(&self, ir_sig: &IRFunctionSignature) -> WatFunctionSignature {
@@ -75,12 +75,12 @@ impl<'a> CodegenContext<'a> {
 
     fn visit_statement(&self, stmt: &IRStatement, instrs: &mut Vec<WatInstruction>) {
         match stmt {
-            IRStatement::Let { name, ty, init } => {
+            IRStatement::Let { name, ty: _, init } => {
                 self.visit_expression(init, instrs);
                 instrs.push(WatInstruction::SetLocal(name.clone()));
             }
 
-            IRStatement::If { condition, then } => todo!(),
+            IRStatement::If { condition: _, then: _ } => todo!(),
 
             IRStatement::Return { expr } => {
                 if let Some(expr) = expr {
@@ -110,7 +110,7 @@ impl<'a> CodegenContext<'a> {
                 instrs.push(WatInstruction::Const(WatValue::I32(*b as i32)))
             }
             IRExpression::StringLiteral(_) => todo!(),
-            IRExpression::PrefixOp { op, right, ty } => todo!(),
+            IRExpression::PrefixOp { op: _, right: _, ty: _ } => todo!(),
             IRExpression::BinOp {
                 op,
                 left,
@@ -147,11 +147,11 @@ impl<'a> CodegenContext<'a> {
                     IRBinOpType::Geq => todo!(),
                 }
             }
-            IRExpression::Ident { name, ty } => {
+            IRExpression::Ident { name, ty: _ } => {
                 instrs.push(WatInstruction::GetLocal(name.clone()));
             }
 
-            IRExpression::Call { name, args, ty } => todo!(),
+            IRExpression::Call { name: _, args: _, ty: _ } => todo!(),
         }
     }
 

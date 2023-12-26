@@ -1,5 +1,5 @@
 use crate::{
-    ast::{ExprId, IdentId},
+    ast::{IdentId},
     source_info::Span,
     types::{MonoType, PolyType},
 };

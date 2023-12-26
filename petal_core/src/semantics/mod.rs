@@ -70,6 +70,6 @@ impl<'a> SemanticContext<'a> {
     }
 
     pub fn type_for_expr(&self, expr: &ExprId) -> Option<MonoType> {
-        self.expr_types.get(expr).map(|ty| ty.clone())
+        self.expr_types.get(expr).cloned()
     }
 }

@@ -12,7 +12,7 @@ pub fn run_wasm(wasm: Wasm, function: Option<String>) -> Result<Vec<Val>> {
 
     let mut store = Store::new(&engine, HostState { value: 42 });
 
-    let hello_fun = Func::wrap(&mut store, |mut caller: Caller<'_, HostState>| {
+    let _hello_fun = Func::wrap(&mut store, |mut caller: Caller<'_, HostState>| {
         println!("Calling back...");
         println!("> {}", caller.data().value);
         caller.data_mut().value += 1;

@@ -13,7 +13,7 @@ impl Wasm {
         let wat_string = format!("{wat}");
 
         let wasm_binary =
-            wat::parse_str(&wat_string.clone()).map_err(|e| (e.to_string(), wat_string.clone()))?;
+            wat::parse_str(wat_string.clone()).map_err(|e| (e.to_string(), wat_string.clone()))?;
 
         Ok(Self {
             wasm_binary,
