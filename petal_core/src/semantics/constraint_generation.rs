@@ -115,7 +115,6 @@ impl<'a> SemanticContext<'a> {
             Expr::Bool(_) => MonoType::bool(),
             Expr::Ident(ident) => {
                 let i = &self.program.ast.identifiers[*ident];
-                println!("Generating constraints for ident: {:?}", i);
                 let sym = self.symbol_table.symbol_for_ident(ident).unwrap();
                 let ty = sym.ty.unwrap();
 

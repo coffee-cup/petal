@@ -16,6 +16,7 @@ pub enum Precedence {
 }
 
 impl Precedence {
+    #[allow(dead_code)]
     pub fn next(&self) -> Precedence {
         let value = num::ToPrimitive::to_usize(self).unwrap();
         num::FromPrimitive::from_usize(value + 1).unwrap_or(Precedence::Highest)

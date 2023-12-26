@@ -2,7 +2,7 @@ use std::io::Write;
 
 use clap::{Parser, Subcommand};
 use petal_core::Compiler;
-use petal_runtime::run_wasm;
+use petal_runtime::{run_wasm, to_val_string};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -90,7 +90,15 @@ fn main() {
                     petal_core::errors::print_compiler_error(&file, e);
                 }
                 Ok(wasm) => {
-                    run_wasm(wasm, function).expect("Failed to run wasm");
+                    let results = run_wasm(wasm, function).expect("Failed to run wasm");
+                    println!(
+                        "{}",
+                        results
+                            .iter()
+                            .map(|v| to_val_string(v))
+                            .collect::<Vec<_>>()
+                            .join(",")
+                    )
                 }
             }
         }

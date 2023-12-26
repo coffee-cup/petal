@@ -7,7 +7,7 @@ use super::{context::SemanticContext, errors::SemanticResult};
 
 impl<'a> SemanticContext<'a> {
     pub fn analysis(&self) -> SemanticResult<()> {
-        println!("\n--- Analysing program\n");
+        // println!("\n--- Analysing program\n");
 
         for func in self.program.functions.iter() {
             self.analysis_function(func)?;

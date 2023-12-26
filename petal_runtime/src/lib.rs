@@ -45,20 +45,20 @@ pub fn run_wasm(wasm: Wasm, function: Option<String>) -> Result<Vec<Val>> {
         }
     };
 
-    println!("\n\n--- Result");
+    // println!("\n\n--- Result");
 
-    if results.is_empty() {
-        println!("No results")
-    } else {
-        println!(
-            "{}",
-            results
-                .iter()
-                .map(|val| format!("{}", to_val_string(val)))
-                .collect::<Vec<_>>()
-                .join(", ")
-        );
-    }
+    // if results.is_empty() {
+    //     println!("No results")
+    // } else {
+    //     println!(
+    //         "{}",
+    //         results
+    //             .iter()
+    //             .map(|val| format!("{}", to_val_string(val)))
+    //             .collect::<Vec<_>>()
+    //             .join(", ")
+    //     );
+    // }
 
     Ok(results)
 }

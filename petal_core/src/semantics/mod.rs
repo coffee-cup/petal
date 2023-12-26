@@ -44,7 +44,7 @@ impl<'a> SemanticContext<'a> {
         self.check_program()?;
         self.analysis()?;
 
-        println!("Symbol table:\n{}", self.symbol_table);
+        // println!("Symbol table:\n{}", self.symbol_table);
 
         Ok(())
     }
@@ -58,11 +58,11 @@ impl<'a> SemanticContext<'a> {
             self.stmt_constraints(func.body, &Some(func.clone()))?;
         }
 
-        println!("\n--- Constraints:");
-        for constraint in self.type_constraints.clone() {
-            println!("{}", constraint);
-        }
-        println!("---\n");
+        // println!("\n--- Constraints:");
+        // for constraint in self.type_constraints.clone() {
+        //     println!("{}", constraint);
+        // }
+        // println!("---\n");
 
         self.solve_constraints()?;
 

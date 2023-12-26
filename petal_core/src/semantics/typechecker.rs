@@ -350,7 +350,7 @@ impl<'a> SemanticContext<'a> {
             *ty = ty.apply(sub);
         });
 
-        println!("--- Expression types:\n{:#?}", self.expr_types);
+        // println!("--- Expression types:\n{:#?}", self.expr_types);
     }
 
     /// Unify two types

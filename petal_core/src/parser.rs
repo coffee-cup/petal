@@ -152,8 +152,6 @@ impl PrefixParselet for IdentParselet {
 struct GroupParselet;
 impl PrefixParselet for GroupParselet {
     fn parse(&self, parser: &mut Parser, _token: Token) -> ParserResult<ExprId> {
-        println!("Parsing group! {:?}", _token);
-
         let expr = parser.parse_expression(Precedence::Lowest)?;
         parser.consume_expected(TT::RightParen)?;
         Ok(expr)

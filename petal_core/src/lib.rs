@@ -35,23 +35,9 @@ impl Compiler {
     }
 
     pub fn compile_string(&self, file: String) -> CompilerResult<Wasm> {
-        // let f2 = file.clone();
-        // let lexer1 = Lexer::new(&f2);
-        // match lexer1.collect::<Result<Vec<_>, _>>() {
-        //     Ok(tokens) => {
-        //         println!("Tokens: {:#?}", tokens);
-        //     }
-        //     Err(e) => {
-        //         let report = miette::Report::from(e).with_source_code(f2);
-        //         println!("{:?}", report);
-        //     }
-        // };
-
         let mut lexer = Lexer::new(&file);
         let mut parser = parser::Parser::new(&mut lexer).map_err(CompilerError::ParserError)?;
         let mut program = parser.parse().map_err(CompilerError::ParserError)?;
-
-        // println!("{:#?}", program);
 
         let mut semantics = SemanticContext::new(&mut program);
         semantics
@@ -60,14 +46,14 @@ impl Compiler {
 
         let ir_generator = ir::IRGeneration::new(&semantics);
         let ir = ir_generator.generate_ir();
-        println!("--- IR:\n{}", ir);
+        // println!("--- IR:\n{}", ir);
 
         let codegen = codegen::context::CodegenContext::new(&ir);
         let wat = codegen.generate_wat();
 
-        println!("--- WAT:\n{:#?}", wat);
+        // println!("--- WAT:\n{:#?}", wat);
 
-        println!("\n---.wat\n{}", wat);
+        // println!("\n---.wat\n{}", wat);
 
         let wasm = Wasm::new(&wat).map_err(|(e, wat_string)| {
             CompilerError::WasmGenerationError(e.to_string(), wat_string)
