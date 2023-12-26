@@ -1,12 +1,12 @@
 use anyhow::{Context, Result};
 use petal_core::wasm::Wasm;
-use wasmtime::{Caller, Engine, Func, Instance, Linker, Module, Store, Val};
+use wasmtime::{Caller, Engine, Func, Instance, Module, Store, Val};
 
 struct HostState {
     pub value: i32,
 }
 
-pub fn run_wasm(wasm: Wasm, function: Option<String>) -> Result<()> {
+pub fn run_wasm(wasm: Wasm, function: Option<String>) -> Result<Vec<Val>> {
     let engine = Engine::default();
     let module = Module::new(&engine, wasm.bytes()).context("creating wasm module")?;
 
@@ -21,6 +21,8 @@ pub fn run_wasm(wasm: Wasm, function: Option<String>) -> Result<()> {
     let imports = [];
     let instance =
         Instance::new(&mut store, &module, &imports).context("creating wasmtime instance")?;
+
+    // TODO: We should call the wasm.main_func here first always
 
     let func_name = function.unwrap_or_else(|| wasm.main_func.clone());
 
@@ -58,10 +60,10 @@ pub fn run_wasm(wasm: Wasm, function: Option<String>) -> Result<()> {
         );
     }
 
-    Ok(())
+    Ok(results)
 }
 
-fn to_val_string(val: &Val) -> String {
+pub fn to_val_string(val: &Val) -> String {
     match val {
         Val::I32(i) => format!("{}", i),
         Val::I64(i) => format!("{}", i),

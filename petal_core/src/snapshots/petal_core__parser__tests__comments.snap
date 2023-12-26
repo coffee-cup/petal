@@ -1,0 +1,10 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_stmt(\"# let x = 1\")"
+---
+(
+    [],
+    [],
+    [],
+    [],
+)

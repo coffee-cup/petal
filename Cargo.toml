@@ -1,6 +1,7 @@
 [workspace]
-members = ["petal_core", "petal_cli", "petal_runtime"]
+members = ["petal_core", "petal_cli", "petal_runtime", "petal_tests"]
 resolver = "2"
+default-members = ["petal_cli"]
 
 [workspace.dependencies]
 anyhow = "1.0.70"

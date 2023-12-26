@@ -131,7 +131,12 @@ impl Display for WatInstruction {
             Add(ty) => write!(f, "{}.add", ty),
             Sub(ty) => write!(f, "{}.sub", ty),
             Mult(ty) => write!(f, "{}.mul", ty),
-            Div(ty) => write!(f, "{}.div", ty),
+            Div(ty @ WatValueType::I32) | Div(ty @ WatValueType::I64) => {
+                write!(f, "{}.div_s", ty)
+            }
+            Div(ty @ WatValueType::F32) | Div(ty @ WatValueType::F64) => {
+                write!(f, "{}.div", ty)
+            }
 
             Return => write!(f, "return"),
             Drop => write!(f, "drop"),

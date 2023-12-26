@@ -136,15 +136,15 @@ impl PrefixParselet for IdentParselet {
 
 // struct CommentParselet;
 // impl PrefixParselet for CommentParselet {
-//     fn parse(&self, _parser: &mut Parser, token: Token) -> ParserResult<ExprId> {
+//     fn parse(&self, parser: &mut Parser, token: Token) -> ParserResult<ExprId> {
 //         match token.literal {
-//             Some(Literal::Comment(value)) => Ok(Expr::Comment {
-//                 value,
-//                 span: token.span,
+//             Some(Literal::Comment(comment)) => Ok(parser
+//                 .program
+//                 .new_expression(Expr::Comment(comment), token.span.clone())),
+//             _ => Err(ParserError::UnexpectedToken {
+//                 token: token.to_string(),
+//                 span: token.span(),
 //             }),
-//             _ => Err(ParserError::new(ParserErrorKind::UnexpectedToken(
-//                 token.to_string(),
-//             ))),
 //         }
 //     }
 // }
@@ -411,6 +411,9 @@ impl<'a> Parser<'a> {
                 TT::Fun | TT::Export => {
                     self.parse_function()?;
                 }
+                TT::Comment => {
+                    self.consume()?;
+                }
                 _ => {
                     let stmt = self.parse_declaration()?;
                     self.program.main_stmts.push(stmt);
@@ -577,6 +580,11 @@ impl<'a> Parser<'a> {
 
         let mut statements: Vec<StmtId> = Vec::new();
         while !self.peek().is(TT::RightBrace) && !self.is_at_end() {
+            if self.peek().is(TT::Comment) {
+                self.consume()?;
+                continue;
+            }
+
             statements.push(self.parse_declaration()?);
         }
 
@@ -952,5 +960,17 @@ mod tests {
 
         //     insta::assert_debug_snapshot!(parse_stmt("fn foo<T>() {}"));
         //     insta::assert_debug_snapshot!(parse_stmt("fn foo<T>(a: T) {}"));
+    }
+
+    #[test]
+    fn test_comments() {
+        insta::assert_debug_snapshot!(parse_stmt("# let x = 1"));
+        insta::assert_debug_snapshot!(parse_stmt(
+            "
+            # let x = 2
+            fn foo() {
+                # let a = foo + bar
+            }"
+        ));
     }
 }

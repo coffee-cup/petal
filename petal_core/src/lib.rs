@@ -31,18 +31,21 @@ impl Compiler {
 
     pub fn compile_file(&self, filename: &str) -> CompilerResult<Wasm> {
         let file = std::fs::read_to_string(filename).expect("Could not read file");
+        self.compile_string(file)
+    }
 
-        let f2 = file.clone();
-        let lexer1 = Lexer::new(&f2);
-        match lexer1.collect::<Result<Vec<_>, _>>() {
-            Ok(tokens) => {
-                println!("Tokens: {:#?}", tokens);
-            }
-            Err(e) => {
-                let report = miette::Report::from(e).with_source_code(f2);
-                println!("{:?}", report);
-            }
-        };
+    pub fn compile_string(&self, file: String) -> CompilerResult<Wasm> {
+        // let f2 = file.clone();
+        // let lexer1 = Lexer::new(&f2);
+        // match lexer1.collect::<Result<Vec<_>, _>>() {
+        //     Ok(tokens) => {
+        //         println!("Tokens: {:#?}", tokens);
+        //     }
+        //     Err(e) => {
+        //         let report = miette::Report::from(e).with_source_code(f2);
+        //         println!("{:?}", report);
+        //     }
+        // };
 
         let mut lexer = Lexer::new(&file);
         let mut parser = parser::Parser::new(&mut lexer).map_err(CompilerError::ParserError)?;

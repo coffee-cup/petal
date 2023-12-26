@@ -1,0 +1,66 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_stmt(\"\n            # let x = 2\n            fn foo() {\n                # let a = foo + bar\n            }\")"
+---
+(
+    [
+        Identifier {
+            name: "foo",
+            span: Span {
+                start: Pos(
+                    40,
+                ),
+                end: Some(
+                    Pos(
+                        42,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
+    [],
+    [
+        StmtNode {
+            stmt: BlockStmt(
+                Block {
+                    statements: [],
+                },
+            ),
+            span: Span {
+                start: Pos(
+                    46,
+                ),
+                end: Some(
+                    Pos(
+                        96,
+                    ),
+                ),
+            },
+        },
+    ],
+    [
+        FuncDecl {
+            ident: IdentId(
+                1v1,
+            ),
+            is_exported: false,
+            type_params: [],
+            args: [],
+            return_ty: None,
+            body: StmtId(
+                1v1,
+            ),
+            span: Span {
+                start: Pos(
+                    37,
+                ),
+                end: Some(
+                    Pos(
+                        96,
+                    ),
+                ),
+            },
+        },
+    ],
+)
