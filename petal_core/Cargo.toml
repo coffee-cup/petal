@@ -10,6 +10,8 @@ miette = { workspace = true }
 thiserror = { workspace = true }
 lazy_static = { workspace = true }
 insta = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
 num = "0.4.0"
 num-derive = "0.3.3"
 num-traits = "0.2.15"

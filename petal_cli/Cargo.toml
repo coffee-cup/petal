@@ -6,9 +6,11 @@ authors = ["Jake Runzer <jakerunzer@gmail.com>"]
 
 [dependencies]
 anyhow = { workspace = true }
-clap = { version = "4.2.4", features = ["derive"] }
 colored = { workspace = true }
 miette = { workspace = true }
 thiserror = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
 petal_core = { path = "../petal_core" }
 petal_runtime = { path = "../petal_runtime" }
+clap = { version = "4.2.4", features = ["derive"] }

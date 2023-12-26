@@ -39,6 +39,8 @@ enum Commands {
 }
 
 fn main() {
+    env_logger::builder().format_timestamp(None).init();
+
     let args = Cli::parse();
     let compiler = Compiler::new();
 

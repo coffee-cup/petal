@@ -1,3 +1,5 @@
+use log::debug;
+
 use self::{errors::CompilerError, lexer::Lexer, semantics::context::SemanticContext, wasm::Wasm};
 
 #[macro_use]
@@ -54,12 +56,12 @@ impl Compiler {
         let ir = ir_generator.generate_ir();
         // println!("--- IR:\n{}", ir);
 
+        debug!("--- IR\n{}", ir);
+
         let codegen = codegen::context::CodegenContext::new(&ir);
         let wat = codegen.generate_wat();
 
-        // println!("--- WAT:\n{:#?}", wat);
-
-        // println!("\n---.wat\n{}", wat);
+        // debug!("--- WAT\n{}", wat);
 
         let wasm = Wasm::new(&wat).map_err(|(e, wat_string)| {
             CompilerError::WasmGenerationError(e.to_string(), wat_string)
