@@ -81,9 +81,22 @@ impl<'a> CodegenContext<'a> {
             }
 
             IRStatement::If {
-                condition: _,
-                then: _,
-            } => todo!(),
+                condition,
+                then_block,
+                else_block,
+            } => {
+                self.visit_expression(condition, instrs);
+
+                let mut then_instrs = Vec::new();
+                self.visit_statement(then_block, &mut then_instrs);
+
+                let mut else_instrs = Vec::new();
+                if let Some(else_block) = else_block {
+                    self.visit_statement(else_block, &mut else_instrs);
+                }
+
+                instrs.push(WatInstruction::If(then_instrs, else_instrs));
+            }
 
             IRStatement::Return { expr } => {
                 if let Some(expr) = expr {

@@ -909,12 +909,15 @@ mod tests {
         insta::assert_debug_snapshot!(parse_expr("a ^ b ^ c"));
     }
 
-    // #[test]
-    // fn test_conditionals() {
-    //     insta::assert_debug_snapshot!(parse_expr("1 ? 2 : 3"));
-    //     insta::assert_debug_snapshot!(parse_expr("1 ? 2 : 3 ? 4 : 5"));
-    //     insta::assert_debug_snapshot!(parse_expr("a + b ? c * d : e / f",));
-    // }
+    #[test]
+    fn test_conditionals() {
+        insta::assert_debug_snapshot!(parse_expr("1 == 1"));
+        insta::assert_debug_snapshot!(parse_expr("1 != 1"));
+        insta::assert_debug_snapshot!(parse_expr("1 > 1"));
+        insta::assert_debug_snapshot!(parse_expr("1 >= 1"));
+        insta::assert_debug_snapshot!(parse_expr("1 < 1"));
+        insta::assert_debug_snapshot!(parse_expr("1 <= 1"));
+    }
 
     #[test]
     fn test_groups() {
@@ -940,25 +943,25 @@ mod tests {
         insta::assert_debug_snapshot!(parse_stmt("let a: Float = b"));
     }
 
-    // #[test]
-    // fn test_ifs() {
-    //     insta::assert_debug_snapshot!(parse_stmt(
-    //         "
-    //         if cond {
-    //             a
-    //         }
-    //     "
-    //     ));
-    //     insta::assert_debug_snapshot!(parse_stmt(
-    //         "
-    //         if cond {
-    //             a
-    //         } else {
-    //             b
-    //         }
-    //     "
-    //     ));
-    // }
+    #[test]
+    fn test_ifs() {
+        insta::assert_debug_snapshot!(parse_stmt(
+            "
+            if cond {
+                a
+            }
+        "
+        ));
+        insta::assert_debug_snapshot!(parse_stmt(
+            "
+            if cond {
+                a
+            } else {
+                b
+            }
+        "
+        ));
+    }
 
     // #[test]
     // fn test_structs() {

@@ -1,0 +1,207 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_stmt(\"\n            if cond {\n                a\n            } else {\n                b\n            }\n        \")"
+---
+(
+    [
+        Identifier {
+            name: "cond",
+            span: Span {
+                start: Pos(
+                    16,
+                ),
+                end: Some(
+                    Pos(
+                        19,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "a",
+            span: Span {
+                start: Pos(
+                    39,
+                ),
+                end: Some(
+                    Pos(
+                        39,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "b",
+            span: Span {
+                start: Pos(
+                    78,
+                ),
+                end: Some(
+                    Pos(
+                        78,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
+    [
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    1v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    16,
+                ),
+                end: Some(
+                    Pos(
+                        19,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    2v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    39,
+                ),
+                end: Some(
+                    Pos(
+                        39,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    3v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    78,
+                ),
+                end: Some(
+                    Pos(
+                        78,
+                    ),
+                ),
+            },
+        },
+    ],
+    [
+        StmtNode {
+            stmt: ExprStmt(
+                ExprId(
+                    2v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    39,
+                ),
+                end: Some(
+                    Pos(
+                        39,
+                    ),
+                ),
+            },
+        },
+        StmtNode {
+            stmt: BlockStmt(
+                Block {
+                    statements: [
+                        StmtId(
+                            1v1,
+                        ),
+                    ],
+                },
+            ),
+            span: Span {
+                start: Pos(
+                    21,
+                ),
+                end: Some(
+                    Pos(
+                        53,
+                    ),
+                ),
+            },
+        },
+        StmtNode {
+            stmt: ExprStmt(
+                ExprId(
+                    3v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    78,
+                ),
+                end: Some(
+                    Pos(
+                        78,
+                    ),
+                ),
+            },
+        },
+        StmtNode {
+            stmt: BlockStmt(
+                Block {
+                    statements: [
+                        StmtId(
+                            3v1,
+                        ),
+                    ],
+                },
+            ),
+            span: Span {
+                start: Pos(
+                    60,
+                ),
+                end: Some(
+                    Pos(
+                        92,
+                    ),
+                ),
+            },
+        },
+        StmtNode {
+            stmt: IfStmt {
+                condition: ExprId(
+                    1v1,
+                ),
+                then_block: StmtId(
+                    2v1,
+                ),
+                else_block: Some(
+                    StmtId(
+                        4v1,
+                    ),
+                ),
+            },
+            span: Span {
+                start: Pos(
+                    13,
+                ),
+                end: Some(
+                    Pos(
+                        92,
+                    ),
+                ),
+            },
+        },
+    ],
+    [],
+)

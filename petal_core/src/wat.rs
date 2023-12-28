@@ -47,16 +47,18 @@ pub enum WatInstruction {
     // Functions
     Call(String, usize),
     // Control flow
-    If(Vec<WatInstruction>, Vec<WatInstruction>),
+    If(Instrs, Instrs),
     Drop,
     Return,
 }
+
+type Instrs = Vec<WatInstruction>;
 
 #[derive(Clone, Debug)]
 pub struct WatFunction {
     pub signature: WatFunctionSignature,
     pub locals: Vec<WatLocal>,
-    pub instructions: Vec<WatInstruction>,
+    pub instructions: Instrs,
 }
 
 #[derive(Clone, Debug)]
@@ -165,6 +167,32 @@ impl Display for WatInstruction {
 
             Return => write!(f, "return"),
             Drop => write!(f, "drop"),
+
+            If(then_instrs, else_instrs) => {
+                let then_instrs = then_instrs
+                    .iter()
+                    .map(|i| format!("  {}", i))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+
+                let else_instrs = else_instrs
+                    .iter()
+                    .map(|i| format!("  {}", i))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+
+                writeln!(
+                    f,
+                    "(if 
+(then 
+    {then_instrs}
+)
+(else 
+    {else_instrs}
+)
+)"
+                )
+            }
 
             v => todo!("implement fmt for {:?}", v),
         }

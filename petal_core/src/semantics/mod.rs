@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use log::debug;
-
 use self::{
     context::SemanticContext, errors::SemanticResult, symbol_table::SymbolTable,
     typechecker::TypeVarGen,

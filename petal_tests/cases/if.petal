@@ -1,0 +1,21 @@
+export fn test(): Int {
+  if false {
+    return 1
+  }
+
+  if 1 == 2 {
+    return 2
+  } else {
+
+  }
+
+  if 2 >= 2 {
+    return 3
+  } else {
+    return 4
+  }
+
+  return 5
+}
+
+# Results: 3

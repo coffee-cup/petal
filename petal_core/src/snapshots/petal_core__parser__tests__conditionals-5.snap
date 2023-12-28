@@ -1,0 +1,72 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_expr(\"1 < 1\")"
+---
+(
+    [],
+    [
+        ExprNode {
+            expr: Integer(
+                1,
+            ),
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        0,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: Integer(
+                1,
+            ),
+            span: Span {
+                start: Pos(
+                    4,
+                ),
+                end: Some(
+                    Pos(
+                        4,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: BinaryOp {
+                op: BinaryOp {
+                    binary_type: LessThan,
+                    span: Span {
+                        start: Pos(
+                            2,
+                        ),
+                        end: Some(
+                            Pos(
+                                2,
+                            ),
+                        ),
+                    },
+                },
+                left: ExprId(
+                    1v1,
+                ),
+                right: ExprId(
+                    2v1,
+                ),
+            },
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        4,
+                    ),
+                ),
+            },
+        },
+    ],
+)

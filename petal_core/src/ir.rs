@@ -51,7 +51,8 @@ pub enum IRStatement {
 
     If {
         condition: IRExpression,
-        then: Box<IRStatement>,
+        then_block: Box<IRStatement>,
+        else_block: Option<Box<IRStatement>>,
     },
 
     Return {
@@ -297,15 +298,16 @@ impl<'a> IRGeneration<'a> {
             Stmt::IfStmt {
                 condition,
                 then_block,
-                else_block: _,
+                else_block,
             } => {
                 let condition = self.ir_for_expr(condition);
-
-                let then = self.ir_for_statement(then_block);
+                let then_block = self.ir_for_statement(then_block);
+                let else_block = else_block.map(|b| Box::new(self.ir_for_statement(b)));
 
                 IRStatement::If {
                     condition,
-                    then: Box::new(then),
+                    then_block: Box::new(then_block),
+                    else_block,
                 }
             }
 
@@ -458,10 +460,21 @@ impl Display for IRStatement {
 
                 Ok(())
             }
-            IRStatement::If { condition, then } => {
+            IRStatement::If {
+                condition,
+                then_block,
+                else_block,
+            } => {
                 writeln!(f, "if {} {{", condition)?;
-                writeln!(f, "    {}", then)?;
-                writeln!(f, "}}")
+                writeln!(f, "    {}", then_block)?;
+                write!(f, "}}")?;
+
+                if let Some(else_block) = else_block {
+                    writeln!(f, " else {{")?;
+                    writeln!(f, "    {}", else_block)?;
+                    write!(f, "}}")?;
+                }
+                writeln!(f, "")
             }
             IRStatement::Return { expr } => {
                 if let Some(expr) = expr {

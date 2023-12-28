@@ -1,5 +1,5 @@
 use crate::{
-    ast::{BinaryOp, BinaryOpType, Expr, ExprId, FuncDecl, PrefixOpType, Stmt, StmtId},
+    ast::{BinaryOpType, Expr, ExprId, FuncDecl, PrefixOpType, Stmt, StmtId},
     source_info::Span,
     types::{FunctionAppType, MonoType},
 };
