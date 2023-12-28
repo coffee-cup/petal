@@ -56,11 +56,14 @@ pub struct SymbolTable {
     /// Maps identifiers to their symbol IDs
     ident_lookup: HashMap<IdentId, SymbolId>,
 
-    /// The scope depth of the symbol table
-    current_depth: usize,
+    /// The chain of depths IDs to get to the current scope
+    depth_chain: Vec<usize>,
+
+    /// A counter used to generate unique depth IDs
+    depth_id_gen: usize,
 
     /// A counter used to generate unique symbol IDs
-    counter: usize,
+    symbol_id_gen: usize,
 }
 
 impl SymbolTable {
@@ -69,8 +72,9 @@ impl SymbolTable {
             symbols: HashMap::new(),
             scopes: HashMap::new(),
             ident_lookup: HashMap::new(),
-            current_depth: 0,
-            counter: 0,
+            depth_id_gen: 0,
+            depth_chain: vec![0],
+            symbol_id_gen: 0,
         }
     }
 
@@ -104,8 +108,8 @@ impl SymbolTable {
     }
 
     pub fn get(&self, name: &str) -> Option<Symbol> {
-        for depth in (0..=self.current_depth).rev() {
-            if let Some(id) = self.scopes.get(&(depth, name.to_owned())) {
+        for depth in self.depth_chain.iter().rev() {
+            if let Some(id) = self.scopes.get(&(*depth, name.to_owned())) {
                 return self.symbols.get(id).cloned();
             }
         }
@@ -115,25 +119,31 @@ impl SymbolTable {
 
     pub fn get_in_current_scope(&self, name: &str) -> Option<Symbol> {
         self.scopes
-            .get(&(self.current_depth, name.to_owned()))
+            .get(&(self.current_depth(), name.to_owned()))
             .and_then(|id| self.symbols.get(id).cloned())
     }
 
     pub fn enter_scope(&mut self) {
-        self.current_depth += 1;
+        // TODO: Write some tests for this
+        self.depth_id_gen += 1;
+        self.depth_chain.push(self.depth_id_gen);
     }
 
     pub fn leave_scope(&mut self) {
-        self.current_depth -= 1;
+        self.depth_chain.pop();
     }
 
     fn key(&self, name: &str) -> (usize, String) {
-        (self.current_depth, name.to_owned())
+        (self.current_depth(), name.to_owned())
+    }
+
+    fn current_depth(&self) -> usize {
+        *self.depth_chain.last().unwrap()
     }
 
     fn gen_id(&mut self) -> SymbolId {
-        let id = self.counter;
-        self.counter += 1;
+        let id = self.symbol_id_gen;
+        self.symbol_id_gen += 1;
         id
     }
 }
