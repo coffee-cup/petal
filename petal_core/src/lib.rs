@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, log_enabled, Level};
 
 use self::{errors::CompilerError, lexer::Lexer, semantics::context::SemanticContext, wasm::Wasm};
 
@@ -54,9 +54,11 @@ impl Compiler {
 
         let ir_generator = ir::IRGeneration::new(&semantics);
         let ir = ir_generator.generate_ir();
-        // println!("--- IR:\n{}", ir);
 
-        debug!("--- IR\n{}", ir);
+        if log_enabled!(Level::Debug) {
+            let mut ir_printer = ir::pretty_print::IRPrettyPrinter::new();
+            debug!("--- IR\n{}", ir_printer.print_program(&ir));
+        }
 
         let codegen = codegen::context::CodegenContext::new(&ir);
         let wat = codegen.generate_wat();

@@ -40,7 +40,6 @@ This is a rough list of everything that needs to be done
 - [ ] Control flow
   - [x] If
   - [ ] Loops
-  - [ ] Match statements
 - [ ] Functions
   - [x] Creation
   - [ ] Calling
@@ -52,3 +51,4 @@ This is a rough list of everything that needs to be done
 - [ ] Strings
 - [ ] Arrays
 - [ ] TypeScript bindings
+- [ ] Match statements

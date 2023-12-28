@@ -1,6 +1,5 @@
-use std::fmt::Display;
-
 use crate::types::HasType;
+pub mod pretty_print;
 
 use super::{
     ast::{BinaryOpType, Expr, ExprId, FuncArg, FuncDecl, PrefixOpType, Stmt, StmtId},
@@ -270,11 +269,24 @@ impl<'a> IRGeneration<'a> {
                     ty: sym.ty.clone().unwrap().extract_monotype().unwrap(),
                 });
             }
+
             Stmt::BlockStmt(block) => {
                 for stmt in block.statements.iter() {
                     self.get_locals(*stmt, locals);
                 }
             }
+
+            Stmt::IfStmt {
+                condition: _,
+                then_block,
+                else_block,
+            } => {
+                self.get_locals(then_block, locals);
+                if let Some(else_block) = else_block {
+                    self.get_locals(else_block, locals);
+                }
+            }
+
             _ => {}
         };
     }
@@ -399,153 +411,6 @@ impl HasType for IRExpression {
             IRExpression::BinOp { ty, .. } => ty.clone(),
             IRExpression::Ident { ty, .. } => ty.clone(),
             IRExpression::Call { ty, .. } => ty.clone(),
-        }
-    }
-}
-
-impl Display for IRProgram {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for func in self.functions.iter() {
-            writeln!(f, "{}", func)?;
-        }
-        Ok(())
-    }
-}
-
-impl Display for IRFunction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.signature.is_exported {
-            write!(f, "export ")?;
-        }
-        write!(f, "fn {}", self.signature)?;
-        writeln!(f, " {{")?;
-
-        for local in self.locals.iter() {
-            writeln!(f, "    local {}: {};", local.name, local.ty)?;
-        }
-        writeln!(f)?;
-
-        write!(f, "{}", self.body)?;
-        writeln!(f, "}}")
-    }
-}
-
-impl Display for IRParam {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: {}", self.name, self.ty)
-    }
-}
-
-impl Display for IRFunctionSignature {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let params_str = self
-            .params
-            .iter()
-            .map(|param| format!("{}", param))
-            .collect::<Vec<_>>()
-            .join(", ");
-
-        write!(f, "{}({}): {}", self.name, params_str, self.return_type)
-    }
-}
-
-impl Display for IRStatement {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            IRStatement::Let { name, ty, init } => write!(f, "let {}: {} = {};", name, ty, init),
-            IRStatement::Block { statements } => {
-                for stmt in statements.iter() {
-                    writeln!(f, "    {}", stmt)?;
-                }
-
-                Ok(())
-            }
-            IRStatement::If {
-                condition,
-                then_block,
-                else_block,
-            } => {
-                writeln!(f, "if {} {{", condition)?;
-                writeln!(f, "    {}", then_block)?;
-                write!(f, "}}")?;
-
-                if let Some(else_block) = else_block {
-                    writeln!(f, " else {{")?;
-                    writeln!(f, "    {}", else_block)?;
-                    write!(f, "}}")?;
-                }
-                writeln!(f, "")
-            }
-            IRStatement::Return { expr } => {
-                if let Some(expr) = expr {
-                    write!(f, "return {}", expr)
-                } else {
-                    write!(f, "return")
-                }
-            }
-            IRStatement::Expr(e) => {
-                write!(f, "{}", e)
-            }
-        }
-    }
-}
-
-impl Display for IRExpression {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            IRExpression::IntLiteral(n) => write!(f, "{}", n),
-            IRExpression::FloatLiteral(n) => write!(f, "{}", n),
-            IRExpression::StringLiteral(s) => write!(f, "\"{}\"", s),
-            IRExpression::BoolLiteral(b) => write!(f, "{}", b),
-            IRExpression::PrefixOp {
-                op,
-                right: expr,
-                ty,
-            } => write!(f, "({}{}):{}", op, expr, ty),
-            IRExpression::BinOp {
-                op,
-                left: lhs,
-                right: rhs,
-                ty,
-            } => write!(f, "({} {} {}):{}", lhs, op, rhs, ty),
-            IRExpression::Ident { name, ty } => write!(f, "{}:{}", name, ty),
-            IRExpression::Call { name, args, ty } => {
-                let args_str = args
-                    .iter()
-                    .map(|arg| format!("{}", arg))
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                write!(f, "{}({}): {}", name, args_str, ty)
-            }
-        }
-    }
-}
-
-impl Display for IRUnOpType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            IRUnOpType::Neg => write!(f, "-"),
-            IRUnOpType::Not => write!(f, "!"),
-        }
-    }
-}
-
-impl Display for IRBinOpType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            IRBinOpType::Add => write!(f, "+"),
-            IRBinOpType::Sub => write!(f, "-"),
-            IRBinOpType::Mul => write!(f, "*"),
-            IRBinOpType::Div => write!(f, "/"),
-            IRBinOpType::Mod => write!(f, "%"),
-            IRBinOpType::Eq => write!(f, "=="),
-            IRBinOpType::Neq => write!(f, "!="),
-            IRBinOpType::Lt => write!(f, "<"),
-            IRBinOpType::Gt => write!(f, ">"),
-            IRBinOpType::Leq => write!(f, "<="),
-            IRBinOpType::Geq => write!(f, ">="),
-            IRBinOpType::And => write!(f, "&&"),
-            IRBinOpType::Or => write!(f, "||"),
         }
     }
 }
