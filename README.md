@@ -38,7 +38,8 @@ This is a rough list of everything that needs to be done
 - [x] Primitive constants
 - [ ] Binary/unary operations
 - [ ] Control flow
-  - [ ] If
+  - [x] If
+  - [ ] Loops
   - [ ] Match statements
 - [ ] Functions
   - [x] Creation
