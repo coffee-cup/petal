@@ -1,0 +1,15 @@
+export fn test(): Bool {
+  let e1 = 1.1 == 1.1 # true
+  let a1 = e1 != false # true
+
+  let l1 = 1 < 1 # false
+  let l2 = 3.2 < 5.5 # true
+  let le1 = 1 <= 1 # true
+  let g1 = 1 > 1 # false
+  let g2 = 1 > 0 # true
+  let ge1 = 1 >= 1  # true
+
+  return a1
+}
+
+# Results: 1

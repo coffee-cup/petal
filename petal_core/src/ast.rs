@@ -2,6 +2,8 @@ use std::fmt::Display;
 
 use slotmap::{new_key_type, SlotMap};
 
+use crate::types::MonoType;
+
 use super::{source_info::Span, token::Token};
 
 new_key_type! {pub struct ExprId;}
@@ -232,12 +234,37 @@ pub enum BinaryOpType {
     Subtract,
     Multiply,
     Divide,
+    Equality,
+    Inequality,
+    LessThan,
+    LessThanOrEqual,
+    GreaterThan,
+    GreaterThanOrEqual,
 }
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct BinaryOp {
     pub binary_type: BinaryOpType,
     pub span: Span,
+}
+
+impl BinaryOpType {
+    pub fn supported_operand_types(&self) -> Vec<MonoType> {
+        match self {
+            BinaryOpType::Add
+            | BinaryOpType::Subtract
+            | BinaryOpType::Multiply
+            | BinaryOpType::Divide => vec![MonoType::int(), MonoType::float()],
+            BinaryOpType::Equality
+            | BinaryOpType::Inequality
+            | BinaryOpType::LessThan
+            | BinaryOpType::LessThanOrEqual
+            | BinaryOpType::GreaterThan
+            | BinaryOpType::GreaterThanOrEqual => {
+                vec![MonoType::int(), MonoType::float(), MonoType::bool()]
+            }
+        }
+    }
 }
 
 impl Display for BinaryOpType {
@@ -247,6 +274,12 @@ impl Display for BinaryOpType {
             BinaryOpType::Subtract => write!(f, "-"),
             BinaryOpType::Multiply => write!(f, "*"),
             BinaryOpType::Divide => write!(f, "/"),
+            BinaryOpType::Equality => write!(f, "=="),
+            BinaryOpType::Inequality => write!(f, "!="),
+            BinaryOpType::LessThan => write!(f, "<"),
+            BinaryOpType::LessThanOrEqual => write!(f, "<="),
+            BinaryOpType::GreaterThan => write!(f, ">"),
+            BinaryOpType::GreaterThanOrEqual => write!(f, ">="),
         }
     }
 }

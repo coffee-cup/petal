@@ -156,13 +156,14 @@ pub enum SemanticError {
         found_span: Span,
     },
 
-    #[error("{op} operations are only valid for `Int` or `Float` types. We found `{ty}`")]
+    #[error("`{op}` operations are only valid for {supported_operand_tys} types. We found `{ty}`")]
     InvalidBinaryExpressionTypes {
         ty: MonoType,
 
         op: BinaryOpType,
+        supported_operand_tys: String,
 
-        #[label("found `{ty}`. expected `Int` or `Float`")]
+        #[label("found `{ty}`. expected {supported_operand_tys}")]
         span: Span,
     },
 

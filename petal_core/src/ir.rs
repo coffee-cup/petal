@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::types::HasType;
+
 use super::{
     ast::{BinaryOpType, Expr, ExprId, FuncArg, FuncDecl, PrefixOpType, Stmt, StmtId},
     semantics::{context::SemanticContext, symbol_table::Symbol},
@@ -123,6 +125,12 @@ impl From<BinaryOpType> for IRBinOpType {
             BinaryOpType::Subtract => IRBinOpType::Sub,
             BinaryOpType::Multiply => IRBinOpType::Mul,
             BinaryOpType::Divide => IRBinOpType::Div,
+            BinaryOpType::Equality => IRBinOpType::Eq,
+            BinaryOpType::Inequality => IRBinOpType::Neq,
+            BinaryOpType::LessThan => IRBinOpType::Lt,
+            BinaryOpType::GreaterThan => IRBinOpType::Gt,
+            BinaryOpType::LessThanOrEqual => IRBinOpType::Leq,
+            BinaryOpType::GreaterThanOrEqual => IRBinOpType::Geq,
         }
     }
 }
@@ -378,6 +386,21 @@ impl<'a> IRGeneration<'a> {
     }
 }
 
+impl HasType for IRExpression {
+    fn ty(&self) -> MonoType {
+        match self {
+            IRExpression::IntLiteral(_) => MonoType::int(),
+            IRExpression::FloatLiteral(_) => MonoType::float(),
+            IRExpression::StringLiteral(_) => MonoType::string(),
+            IRExpression::BoolLiteral(_) => MonoType::bool(),
+            IRExpression::PrefixOp { ty, .. } => ty.clone(),
+            IRExpression::BinOp { ty, .. } => ty.clone(),
+            IRExpression::Ident { ty, .. } => ty.clone(),
+            IRExpression::Call { ty, .. } => ty.clone(),
+        }
+    }
+}
+
 impl Display for IRProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for func in self.functions.iter() {
@@ -389,6 +412,9 @@ impl Display for IRProgram {
 
 impl Display for IRFunction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.signature.is_exported {
+            write!(f, "export ")?;
+        }
         write!(f, "fn {}", self.signature)?;
         writeln!(f, " {{")?;
 
@@ -416,6 +442,7 @@ impl Display for IRFunctionSignature {
             .map(|param| format!("{}", param))
             .collect::<Vec<_>>()
             .join(", ");
+
         write!(f, "{}({}): {}", self.name, params_str, self.return_type)
     }
 }

@@ -55,6 +55,10 @@ pub struct TypeQuantifier {
     pub ty: MonoType,
 }
 
+pub trait HasType {
+    fn ty(&self) -> MonoType;
+}
+
 impl MonoType {
     pub fn unit() -> MonoType {
         MonoType::Struct(StructType {

@@ -122,8 +122,33 @@ impl Display for WatInstruction {
                 WatValue::F32(value) => write!(f, "f32.const {}", value),
                 WatValue::F64(value) => write!(f, "f64.const {}", value),
             },
-            Equal(ty) => write!(f, "eq.{}", ty),
-            NotEqual(ty) => write!(f, "ne.{}", ty),
+            Equal(ty) => write!(f, "{}.eq", ty),
+            NotEqual(ty) => write!(f, "{}.ne", ty),
+
+            LessThan(ty @ WatValueType::I32 | ty @ WatValueType::I64) => {
+                write!(f, "{}.lt_s", ty)
+            }
+            LessThan(ty @ WatValueType::F32 | ty @ WatValueType::F64) => {
+                write!(f, "{}.lt", ty)
+            }
+            LessOrEqual(ty @ WatValueType::I32 | ty @ WatValueType::I64) => {
+                write!(f, "{}.le_s", ty)
+            }
+            LessOrEqual(ty @ WatValueType::F32 | ty @ WatValueType::F64) => {
+                write!(f, "{}.le", ty)
+            }
+            GreaterThan(ty @ WatValueType::I32 | ty @ WatValueType::I64) => {
+                write!(f, "{}.gt_s", ty)
+            }
+            GreaterThan(ty @ WatValueType::F32 | ty @ WatValueType::F64) => {
+                write!(f, "{}.gt", ty)
+            }
+            GreaterOrEqual(ty @ WatValueType::I32 | ty @ WatValueType::I64) => {
+                write!(f, "{}.ge_s", ty)
+            }
+            GreaterOrEqual(ty @ WatValueType::F32 | ty @ WatValueType::F64) => {
+                write!(f, "{}.ge", ty)
+            }
 
             GetLocal(name) => write!(f, "local.get ${}", name),
             SetLocal(name) => write!(f, "local.set ${}", name),

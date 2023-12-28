@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use log::debug;
+
 use self::{
     context::SemanticContext, errors::SemanticResult, symbol_table::SymbolTable,
     typechecker::TypeVarGen,
@@ -58,11 +60,14 @@ impl<'a> SemanticContext<'a> {
             self.stmt_constraints(func.body, &Some(func.clone()))?;
         }
 
-        // println!("\n--- Constraints:");
-        // for constraint in self.type_constraints.clone() {
-        //     println!("{}", constraint);
-        // }
-        // println!("---\n");
+        // debug!(
+        //     "--- Constraints\n{}",
+        //     self.type_constraints
+        //         .iter()
+        //         .map(|c| c.to_string())
+        //         .collect::<Vec<String>>()
+        //         .join("\n")
+        // );
 
         self.solve_constraints()?;
 

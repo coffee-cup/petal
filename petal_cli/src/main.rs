@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::{io::Write, path::Path};
 
 use clap::{Parser, Subcommand};
 use petal_core::Compiler;
@@ -61,8 +61,12 @@ fn main() {
                     std::fs::create_dir_all(output.clone())
                         .expect("Unable to create output directory");
 
+                    let path = Path::new(&file);
+                    let filename = path.file_name().unwrap().to_str().unwrap().to_string();
+
                     // Save the WASM binary to the output directory
-                    let wasm_file_name = file.clone().replace("petal", "wasm");
+                    let wasm_file_name = filename.clone().replace("petal", "wasm");
+
                     let mut wasm_file =
                         std::fs::File::create(format!("{}/{}", output, wasm_file_name))
                             .expect("Unable to create output wasm file");
@@ -72,12 +76,13 @@ fn main() {
 
                     // Additionally, save the wat text to the output directory
                     // This is useful for debugging
-                    let wat_file_name = file.clone().replace("petal", "wat");
+                    let wat_file_name = filename.clone().replace("petal", "wat");
                     let mut wat_file =
                         std::fs::File::create(format!("{}/{}", output, wat_file_name))
                             .expect("Unable to create output wat file");
+
                     wat_file
-                        .write_all(wasm.wat_string.as_bytes())
+                        .write_all(wasm.print_wat().as_bytes())
                         .expect("Unable to write the .wat binary");
                 }
             }

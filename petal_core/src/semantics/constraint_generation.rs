@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Expr, ExprId, FuncDecl, PrefixOpType, Stmt, StmtId},
+    ast::{BinaryOp, BinaryOpType, Expr, ExprId, FuncDecl, PrefixOpType, Stmt, StmtId},
     source_info::Span,
     types::{FunctionAppType, MonoType},
 };
@@ -218,10 +218,11 @@ impl<'a> SemanticContext<'a> {
                 }
             },
 
-            Expr::BinaryOp { left, right, op: _ } => {
+            Expr::BinaryOp { left, right, op } => {
                 let left_ty = self.expr_constraints(*left)?;
                 let right_ty = self.expr_constraints(*right)?;
 
+                // The left and right types must be equal
                 self.associate_types(
                     MonoTypeData::new(left_ty)
                         .with_expr(*left)
@@ -229,11 +230,26 @@ impl<'a> SemanticContext<'a> {
                     MonoTypeData::new(right_ty.clone()).with_expr(*right),
                 );
 
-                let return_ty = self.ty_gen.gen_var();
-                self.associate_types(
-                    MonoTypeData::new(return_ty.clone()).with_parent_expr(expr_id),
-                    MonoTypeData::new(right_ty).with_expr(*right),
-                );
+                let return_ty = match op.binary_type {
+                    // Comparison operators always return a boolean
+                    BinaryOpType::Equality
+                    | BinaryOpType::Inequality
+                    | BinaryOpType::LessThan
+                    | BinaryOpType::LessThanOrEqual
+                    | BinaryOpType::GreaterThan
+                    | BinaryOpType::GreaterThanOrEqual => MonoType::bool(),
+
+                    // By default, the return type of a binary operation is the same as the left and right values
+                    _ => {
+                        let return_ty = self.ty_gen.gen_var();
+                        self.associate_types(
+                            MonoTypeData::new(return_ty.clone()).with_parent_expr(expr_id),
+                            MonoTypeData::new(right_ty).with_expr(*right),
+                        );
+
+                        return_ty
+                    }
+                };
 
                 return_ty
             }

@@ -35,7 +35,6 @@ This is a rough list of everything that needs to be done
   - [x] Snapshot tests
   - [ ] Assertions
   - [ ] Stdout comparison
-  - [ ] Type assertions
 - [x] Primitive constants
 - [ ] Binary/unary operations
 - [ ] Control flow
@@ -45,6 +44,8 @@ This is a rough list of everything that needs to be done
   - [x] Creation
   - [ ] Calling
   - [x] Return values
+- [ ] Import host functions
+- [ ] Import other files
 - [ ] Number casting
 - [ ] Structs
 - [ ] Strings

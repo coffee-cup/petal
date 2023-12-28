@@ -66,7 +66,6 @@ impl<'a> SemanticContext<'a> {
 
     fn analysis_expression(&self, expr: ExprId) -> SemanticResult<()> {
         use crate::ast::Expr;
-        use crate::types::MonoType;
 
         let expr_node = self.program.ast.expressions[expr].clone();
 
@@ -81,11 +80,19 @@ impl<'a> SemanticContext<'a> {
                 let left_ty = self.type_for_expr(&left).unwrap();
                 let _right_ty = self.type_for_expr(&right).unwrap();
 
-                if left_ty != MonoType::int() && left_ty != MonoType::float() {
+                let supported_operand_tys = op.binary_type.supported_operand_types();
+                let is_supported_operand_ty = supported_operand_tys.contains(&left_ty);
+
+                if !is_supported_operand_ty {
                     let left_expr = self.program.ast.expressions[left].clone();
                     return Err(SemanticError::InvalidBinaryExpressionTypes {
                         ty: left_ty,
                         op: op.binary_type,
+                        supported_operand_tys: supported_operand_tys
+                            .iter()
+                            .map(|ty| format!("`{ty}`"))
+                            .collect::<Vec<String>>()
+                            .join(", "),
                         span: left_expr.span,
                     });
                 }

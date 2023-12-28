@@ -422,8 +422,6 @@ impl<'a> SemanticContext<'a> {
 
             (t1 @ Struct(s1), t2 @ Struct(s2)) => {
                 if s1.name != s2.name {
-                    println!("s1 = {}, s2 = {}", s1.name, s2.name);
-
                     return Err(self.mismatch_type_error(t1, t2, &lhs_data, &rhs_data));
                 }
 

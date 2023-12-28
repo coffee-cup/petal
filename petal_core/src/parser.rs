@@ -241,6 +241,12 @@ impl InfixParselet for BinaryOperatorParselet {
             TT::Minus => BinaryOpType::Subtract,
             TT::Star => BinaryOpType::Multiply,
             TT::Slash => BinaryOpType::Divide,
+            TT::EqualEqual => BinaryOpType::Equality,
+            TT::BangEqual => BinaryOpType::Inequality,
+            TT::Less => BinaryOpType::LessThan,
+            TT::LessEqual => BinaryOpType::LessThanOrEqual,
+            TT::Greater => BinaryOpType::GreaterThan,
+            TT::GreaterEqual => BinaryOpType::GreaterThanOrEqual,
             // TT::Caret => BinaryOpType::Power,
             _ => unreachable!("Invalid binary operator, {token}"),
         };
@@ -388,6 +394,29 @@ impl<'a> Parser<'a> {
         infix_left!(parser.infix_parselets, TT::Plus, Precedence::Sum);
         infix_left!(parser.infix_parselets, TT::Star, Precedence::Product);
         infix_left!(parser.infix_parselets, TT::Slash, Precedence::Product);
+        infix_left!(
+            parser.infix_parselets,
+            TT::EqualEqual,
+            Precedence::Comparison
+        );
+        infix_left!(
+            parser.infix_parselets,
+            TT::BangEqual,
+            Precedence::Comparison
+        );
+        infix_left!(
+            parser.infix_parselets,
+            TT::LessEqual,
+            Precedence::Comparison
+        );
+        infix_left!(
+            parser.infix_parselets,
+            TT::GreaterEqual,
+            Precedence::Comparison
+        );
+        infix_left!(parser.infix_parselets, TT::Greater, Precedence::Comparison);
+        infix_left!(parser.infix_parselets, TT::Less, Precedence::Comparison);
+
         // infix_right!(parser.infix_parselets, TT::Caret, Precedence::Exponent);
 
         Ok(parser)

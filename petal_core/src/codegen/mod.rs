@@ -1,3 +1,5 @@
+use crate::types::HasType;
+
 use self::context::CodegenContext;
 
 use super::{
@@ -144,12 +146,24 @@ impl<'a> CodegenContext<'a> {
                     }
                     IRBinOpType::And => todo!(),
                     IRBinOpType::Or => todo!(),
-                    IRBinOpType::Eq => todo!(),
-                    IRBinOpType::Neq => todo!(),
-                    IRBinOpType::Lt => todo!(),
-                    IRBinOpType::Gt => todo!(),
-                    IRBinOpType::Leq => todo!(),
-                    IRBinOpType::Geq => todo!(),
+                    IRBinOpType::Eq => {
+                        instrs.push(WatInstruction::Equal(self.type_for_monotype(&left.ty())))
+                    }
+                    IRBinOpType::Neq => {
+                        instrs.push(WatInstruction::NotEqual(self.type_for_monotype(&left.ty())))
+                    }
+                    IRBinOpType::Lt => {
+                        instrs.push(WatInstruction::LessThan(self.type_for_monotype(&left.ty())))
+                    }
+                    IRBinOpType::Gt => instrs.push(WatInstruction::GreaterThan(
+                        self.type_for_monotype(&left.ty()),
+                    )),
+                    IRBinOpType::Leq => instrs.push(WatInstruction::LessOrEqual(
+                        self.type_for_monotype(&left.ty()),
+                    )),
+                    IRBinOpType::Geq => instrs.push(WatInstruction::GreaterOrEqual(
+                        self.type_for_monotype(&left.ty()),
+                    )),
                 }
             }
             IRExpression::Ident { name, ty: _ } => {
