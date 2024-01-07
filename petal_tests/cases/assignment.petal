@@ -1,12 +1,12 @@
 export fn test(): Int {
-  let x = 0
+  let a = 1
+  a = (a = 10)
 
-  while x < 100 {
-    x = x + 3
-  }
+  let b = 100
+  b = a + b + 1
 
-  return x
+  return b
 }
 
 
-# Results: 102
+# Results: 111

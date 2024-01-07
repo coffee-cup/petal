@@ -1,0 +1,12 @@
+export fn test(): Int {
+  let x = 0
+
+  while x < 100 {
+    x = x + 3
+  }
+
+  return x
+}
+
+
+# Results: 102
