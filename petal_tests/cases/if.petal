@@ -3,12 +3,8 @@ export fn test(): Int {
     return 1
   }
 
-  if 1 == 2 {
-    return 2
-  } else {
-
-  }
-
+  if 1 == 2 { return 2 } else {}
+  
   if 2 >= 2 {
     return 3
   } else {
