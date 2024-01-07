@@ -42,8 +42,11 @@ pub enum ParserError {
     #[error("Left side of assignment is not an identifier")]
     #[diagnostic(help("You can only assign to identifiers. For example: `x = 1`"))]
     LeftSideOfAssignmentNotIdent {
-        #[label("the left side of an assignment must be an identifier")]
-        span: Span,
+        #[label("this should be an identifier")]
+        left_span: Span,
+
+        #[label("for this assignment")]
+        assign_span: Span,
     },
 
     #[error("Expected {expected}, found the end of the file")]
@@ -265,7 +268,8 @@ impl InfixParselet for BinaryOperatorParselet {
                     } => ident,
                     _ => {
                         return Err(ParserError::LeftSideOfAssignmentNotIdent {
-                            span: parser.program.ast.expressions[left].span.clone(),
+                            left_span: parser.program.ast.expressions[left].span.clone(),
+                            assign_span: token.span(),
                         })
                     }
                 };
