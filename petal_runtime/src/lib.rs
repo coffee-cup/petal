@@ -67,8 +67,8 @@ pub fn to_val_string(val: &Val) -> String {
     match val {
         Val::I32(i) => format!("{}", i),
         Val::I64(i) => format!("{}", i),
-        Val::F32(f) => format!("{}", f),
-        Val::F64(f) => format!("{}", f),
+        Val::F32(f) => format!("{}", f32::from_bits(*f)),
+        Val::F64(f) => format!("{}", f64::from_bits(*f)),
         Val::V128(_) => String::from("v128"),
         Val::ExternRef(_) => String::from("externref"),
         Val::FuncRef(_) => String::from("funcref"),
