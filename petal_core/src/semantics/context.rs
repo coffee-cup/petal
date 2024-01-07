@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    ast::{ExprId, Program},
+    ast::{ExprId, Program, StmtId},
     types::MonoType,
 };
 
@@ -18,4 +18,7 @@ pub struct SemanticContext<'a> {
 
     pub ty_gen: TypeVarGen,
     pub type_constraints: Vec<Constraint>,
+
+    pub loop_ids: HashMap<StmtId, usize>,
+    pub loop_counter: usize,
 }

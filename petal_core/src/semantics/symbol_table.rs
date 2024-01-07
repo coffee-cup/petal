@@ -1,5 +1,5 @@
 use crate::{
-    ast::IdentId,
+    ast::{IdentId, StmtId},
     source_info::Span,
     types::{MonoType, PolyType},
 };
@@ -56,6 +56,9 @@ pub struct SymbolTable {
     /// Maps identifiers to their symbol IDs
     ident_lookup: HashMap<IdentId, SymbolId>,
 
+    /// Maps statement IDs to their symbol IDs
+    stmt_lookup: HashMap<StmtId, SymbolId>,
+
     /// The chain of depths IDs to get to the current scope
     depth_chain: Vec<usize>,
 
@@ -72,6 +75,7 @@ impl SymbolTable {
             symbols: HashMap::new(),
             scopes: HashMap::new(),
             ident_lookup: HashMap::new(),
+            stmt_lookup: HashMap::new(),
             depth_id_gen: 0,
             depth_chain: vec![0],
             symbol_id_gen: 0,

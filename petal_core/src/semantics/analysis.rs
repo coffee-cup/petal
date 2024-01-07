@@ -46,6 +46,11 @@ impl<'a> SemanticContext<'a> {
                 }
             }
 
+            Stmt::While { condition, body } => {
+                self.analysis_expression(condition)?;
+                self.analysis_statement(body)?;
+            }
+
             Stmt::Return(expr) => {
                 if let Some(expr) = expr {
                     self.analysis_expression(expr)?;
@@ -58,7 +63,6 @@ impl<'a> SemanticContext<'a> {
                 }
             }
             Stmt::ExprStmt(e) => self.analysis_expression(e)?,
-            Stmt::Comment(_) => {}
         }
 
         Ok(())

@@ -63,6 +63,19 @@ impl<'a> SemanticContext<'a> {
                 }
             }
 
+            Stmt::While { condition, body } => {
+                let condition_ty = self.expr_constraints(condition)?;
+
+                self.associate_types(
+                    MonoTypeData::new(condition_ty)
+                        .with_expr(condition)
+                        .with_parent_stmt(stmt_id),
+                    MonoType::bool().into(),
+                );
+
+                self.stmt_constraints(body, curr_func)?;
+            }
+
             Stmt::Return(expr) => {
                 let stmt_span = stmt_node.span.clone();
 
@@ -98,8 +111,6 @@ impl<'a> SemanticContext<'a> {
             Stmt::ExprStmt(expr) => {
                 self.expr_constraints(expr)?;
             }
-
-            Stmt::Comment(_) => {}
         };
 
         Ok(())

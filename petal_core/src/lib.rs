@@ -60,8 +60,7 @@ impl Compiler {
             debug!("--- IR\n{}", ir_printer.print_program(&ir));
         }
 
-        let codegen = codegen::context::CodegenContext::new(&ir);
-        let wat = codegen.generate_wat();
+        let wat = codegen::context::CodegenContext::new(&ir).generate_wat();
 
         // debug!("--- WAT\n{}", wat);
 

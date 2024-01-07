@@ -125,13 +125,19 @@ impl<'a> SemanticContext<'a> {
                 }
             }
 
+            Stmt::While { condition, body } => {
+                self.generate_symbols_for_expression(*condition)?;
+                self.generate_symbols_for_statement(*body)?;
+
+                let loop_id = self.gen_loop_id();
+                self.loop_ids.insert(stmt_id, loop_id);
+            }
+
             Stmt::Return(return_expr) => {
                 if let Some(return_expr) = return_expr {
                     self.generate_symbols_for_expression(*return_expr)?;
                 }
             }
-
-            Stmt::Comment(_) => {}
         };
 
         Ok(())

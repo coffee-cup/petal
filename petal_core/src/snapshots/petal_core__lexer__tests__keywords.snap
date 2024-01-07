@@ -1,6 +1,6 @@
 ---
 source: petal_core/src/lexer.rs
-expression: "lex(\"let if else false true return\".to_string())"
+expression: "lex(\"let if while else false true return\".to_string())"
 ---
 [
     Token {
@@ -34,8 +34,8 @@ expression: "lex(\"let if else false true return\".to_string())"
         },
     },
     Token {
-        token_type: Else,
-        lexeme: "else",
+        token_type: While,
+        lexeme: "while",
         literal: None,
         span: Span {
             start: Pos(
@@ -43,7 +43,22 @@ expression: "lex(\"let if else false true return\".to_string())"
             ),
             end: Some(
                 Pos(
-                    10,
+                    11,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Else,
+        lexeme: "else",
+        literal: None,
+        span: Span {
+            start: Pos(
+                13,
+            ),
+            end: Some(
+                Pos(
+                    16,
                 ),
             ),
         },
@@ -58,11 +73,11 @@ expression: "lex(\"let if else false true return\".to_string())"
         ),
         span: Span {
             start: Pos(
-                12,
+                18,
             ),
             end: Some(
                 Pos(
-                    16,
+                    22,
                 ),
             ),
         },
@@ -77,11 +92,11 @@ expression: "lex(\"let if else false true return\".to_string())"
         ),
         span: Span {
             start: Pos(
-                18,
+                24,
             ),
             end: Some(
                 Pos(
-                    21,
+                    27,
                 ),
             ),
         },
@@ -92,11 +107,11 @@ expression: "lex(\"let if else false true return\".to_string())"
         literal: None,
         span: Span {
             start: Pos(
-                23,
+                29,
             ),
             end: Some(
                 Pos(
-                    28,
+                    34,
                 ),
             ),
         },

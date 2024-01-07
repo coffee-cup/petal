@@ -36,6 +36,8 @@ impl<'a> SemanticContext<'a> {
             type_constraints: Vec::new(),
             expr_types: HashMap::new(),
             program,
+            loop_ids: HashMap::new(),
+            loop_counter: 0,
         }
     }
 
@@ -74,5 +76,11 @@ impl<'a> SemanticContext<'a> {
 
     pub fn type_for_expr(&self, expr: &ExprId) -> Option<MonoType> {
         self.expr_types.get(expr).cloned()
+    }
+
+    fn gen_loop_id(&mut self) -> usize {
+        let id = self.loop_counter;
+        self.loop_counter += 1;
+        id
     }
 }

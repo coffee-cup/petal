@@ -676,6 +676,7 @@ impl<'a> Parser<'a> {
     fn parse_statement(&mut self) -> ParserResult<StmtId> {
         let stmt = match self.peek().token_type {
             TT::If => self.parse_if_statement()?,
+            TT::While => self.parse_while_statement()?,
             _ => {
                 let expr = self.parse_expression(Precedence::Lowest)?;
                 let span = self.program.ast.expressions[expr].span.clone();
@@ -713,6 +714,21 @@ impl<'a> Parser<'a> {
             },
             span,
         ))
+    }
+
+    fn parse_while_statement(&mut self) -> ParserResult<StmtId> {
+        let token = self.consume()?;
+        let mut span = token.span();
+
+        let condition = self.parse_expression(Precedence::Lowest)?;
+
+        let body = self.parse_block()?;
+
+        span = span.merge(self.program.ast.statements[body].span.clone());
+
+        Ok(self
+            .program
+            .new_statement(Stmt::While { condition, body }, span))
     }
 
     /// Parse the next expression using the provided precedence

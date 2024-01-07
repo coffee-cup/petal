@@ -53,11 +53,13 @@ impl IRPrettyPrinter {
             IRStatement::Let { name, ty, init } => {
                 self.output(format!("let {}: {} = {};", name, ty, init));
             }
+
             IRStatement::Block { statements } => {
                 for block_stmt in statements.iter() {
                     self.print_statement(block_stmt);
                 }
             }
+
             IRStatement::If {
                 condition,
                 then_block,
@@ -81,6 +83,21 @@ impl IRPrettyPrinter {
                     self.output("}\n".to_string());
                 }
             }
+
+            IRStatement::While {
+                condition,
+                body,
+                uid,
+            } => {
+                self.output(format!("while#{uid} {condition} {{"));
+
+                self.indent += 1;
+                self.print_statement(body);
+                self.indent -= 1;
+
+                self.output("}\n".to_string());
+            }
+
             IRStatement::Return { expr } => {
                 if let Some(expr) = expr {
                     self.output(format!("return {}", expr))
@@ -88,6 +105,7 @@ impl IRPrettyPrinter {
                     self.output("return".to_string())
                 }
             }
+
             IRStatement::Expr(e) => {
                 self.output(e.to_string());
             }

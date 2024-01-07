@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use miette::LabeledSpan;
+
 #[derive(PartialEq, Clone, Debug)]
 pub enum WatValueType {
     I32,
@@ -48,6 +50,10 @@ pub enum WatInstruction {
     Call(String, usize),
     // Control flow
     If(Instrs, Instrs),
+    Block(String, Instrs),
+    Loop(String, Instrs),
+    BrIf(String),
+    Br(String),
     Drop,
     Return,
 }
@@ -164,6 +170,39 @@ impl Display for WatInstruction {
             Div(ty @ WatValueType::F32) | Div(ty @ WatValueType::F64) => {
                 write!(f, "{}.div", ty)
             }
+
+            Block(label, body_instrs) => {
+                let body_instrs = body_instrs
+                    .iter()
+                    .map(|i| format!("  {}", i))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+
+                writeln!(
+                    f,
+                    "(block ${label}
+{body_instrs}
+                    )"
+                )
+            }
+
+            Loop(label, body_instrs) => {
+                let body_instrs = body_instrs
+                    .iter()
+                    .map(|i| format!("  {}", i))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+
+                writeln!(
+                    f,
+                    "(loop ${label}
+{body_instrs}
+                    )"
+                )
+            }
+
+            BrIf(label) => write!(f, "br_if ${}", label),
+            Br(label) => write!(f, "br ${}", label),
 
             Return => write!(f, "return"),
             Drop => write!(f, "drop"),

@@ -56,6 +56,7 @@ lazy_static! {
         m.insert("export", TT::Export);
         m.insert("let", TT::Let);
         m.insert("if", TT::If);
+        m.insert("while", TT::While);
         m.insert("else", TT::Else);
         m.insert("true", TT::Boolean);
         m.insert("false", TT::Boolean);
@@ -351,7 +352,7 @@ mod tests {
 
     #[test]
     fn test_keywords() {
-        insta::assert_debug_snapshot!(lex("let if else false true return".to_string()));
+        insta::assert_debug_snapshot!(lex("let if while else false true return".to_string()));
     }
 
     #[test]

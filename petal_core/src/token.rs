@@ -43,6 +43,7 @@ pub enum TokenType {
     Export,
     Let,
     If,
+    While,
     Else,
     Return,
 
@@ -152,6 +153,7 @@ impl fmt::Display for TokenType {
             Export => write!(f, "export"),
             Let => write!(f, "let"),
             If => write!(f, "if"),
+            While => write!(f, "while"),
             Else => write!(f, "else"),
             Return => write!(f, "return"),
             Comment => write!(f, "comment"),

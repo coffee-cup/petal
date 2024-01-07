@@ -155,11 +155,17 @@ pub enum Stmt {
     // let a = 1
     Let(LetDecl),
 
-    // if a { ... } else { ... }
+    // if cond { ... } else { ... }
     IfStmt {
         condition: ExprId,
         then_block: StmtId,
         else_block: Option<StmtId>,
+    },
+
+    // while cond { ... }
+    While {
+        condition: ExprId,
+        body: StmtId,
     },
 
     // return 1
@@ -168,9 +174,6 @@ pub enum Stmt {
     BlockStmt(Block),
 
     ExprStmt(ExprId),
-
-    // # this is a comment
-    Comment(String),
 }
 
 #[derive(PartialEq, Clone, Debug)]

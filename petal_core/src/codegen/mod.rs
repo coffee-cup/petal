@@ -98,6 +98,39 @@ impl<'a> CodegenContext<'a> {
                 instrs.push(WatInstruction::If(then_instrs, else_instrs));
             }
 
+            IRStatement::While {
+                condition,
+                body,
+                uid,
+            } => {
+                let block_label = format!("outer#{uid}");
+                let loop_label = format!("inner#{uid}");
+
+                // Generate instructions for the while condition
+                let mut body_instrs = Vec::new();
+                self.visit_expression(condition, &mut body_instrs);
+
+                // Branching instruction to exit the loop if the condition is true
+                body_instrs.append(&mut vec![
+                    // Invert the condition so that we jump out of the loop if the condition is false
+                    WatInstruction::Const(WatValue::I32(0)),
+                    WatInstruction::Equal(WatValueType::I32),
+                    // Do the branch if the condition is false
+                    WatInstruction::BrIf(block_label.clone()),
+                ]);
+
+                // Generate instructions for the loop body
+                self.visit_statement(body, &mut body_instrs);
+
+                // Loop back to the top of the inner loop
+                body_instrs.push(WatInstruction::Br(loop_label.clone()));
+
+                instrs.push(WatInstruction::Block(
+                    block_label,
+                    vec![WatInstruction::Loop(loop_label, body_instrs)],
+                ));
+            }
+
             IRStatement::Return { expr } => {
                 if let Some(expr) = expr {
                     self.visit_expression(expr, instrs);
@@ -115,6 +148,8 @@ impl<'a> CodegenContext<'a> {
                 self.visit_expression(x, instrs);
                 instrs.push(WatInstruction::Drop)
             }
+
+            _ => todo!(),
         };
     }
 

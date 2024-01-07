@@ -54,6 +54,12 @@ pub enum IRStatement {
         else_block: Option<Box<IRStatement>>,
     },
 
+    While {
+        condition: IRExpression,
+        body: Box<IRStatement>,
+        uid: usize,
+    },
+
     Return {
         expr: Option<IRExpression>,
     },
@@ -323,6 +329,12 @@ impl<'a> IRGeneration<'a> {
                 }
             }
 
+            Stmt::While { condition, body } => IRStatement::While {
+                condition: self.ir_for_expr(condition),
+                body: Box::new(self.ir_for_statement(body)),
+                uid: *self.semantics.loop_ids.get(&stmt).unwrap(),
+            },
+
             Stmt::Return(expr) => IRStatement::Return {
                 expr: expr.map(|expr| self.ir_for_expr(expr)),
             },
@@ -341,7 +353,7 @@ impl<'a> IRGeneration<'a> {
                 IRStatement::Expr(expr)
             }
 
-            Stmt::Comment(_) => todo!(),
+            _ => todo!(),
         }
     }
 
