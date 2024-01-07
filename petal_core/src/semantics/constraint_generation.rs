@@ -266,6 +266,26 @@ impl<'a> SemanticContext<'a> {
             }
 
             Expr::PostfixOp { op: _, left: _ } => todo!(),
+
+            Expr::Assign {
+                ident: ident_id,
+                expr,
+            } => {
+                let sym = self.symbol_table.symbol_for_ident(ident_id).unwrap();
+                let var_ty = sym.ty.unwrap().instantiate(&mut self.ty_gen);
+
+                let expr_ty = self.expr_constraints(*expr)?;
+
+                // The type of the variable must be equal to the type of the expression
+                self.associate_types(
+                    MonoTypeData::new(var_ty.clone()).with_ident(*ident_id),
+                    MonoTypeData::new(expr_ty).with_expr(*expr),
+                );
+
+                var_ty
+            }
+
+            _ => todo!(),
         };
 
         self.expr_types.insert(expr_id, ty.clone());

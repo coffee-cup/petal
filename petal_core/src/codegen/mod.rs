@@ -85,8 +85,10 @@ impl<'a> CodegenContext<'a> {
                 then_block,
                 else_block,
             } => {
+                // Generate instructions for the if condition
                 self.visit_expression(condition, instrs);
 
+                // Generate instructions for the then and else blocks
                 let mut then_instrs = Vec::new();
                 self.visit_statement(then_block, &mut then_instrs);
 
@@ -95,6 +97,7 @@ impl<'a> CodegenContext<'a> {
                     self.visit_statement(else_block, &mut else_instrs);
                 }
 
+                // Push the if instruction
                 instrs.push(WatInstruction::If(then_instrs, else_instrs));
             }
 
@@ -103,8 +106,8 @@ impl<'a> CodegenContext<'a> {
                 body,
                 uid,
             } => {
-                let block_label = format!("outer#{uid}");
-                let loop_label = format!("inner#{uid}");
+                let block_label = format!("o#{uid}");
+                let loop_label = format!("i#{uid}");
 
                 // Generate instructions for the while condition
                 let mut body_instrs = Vec::new();
@@ -125,6 +128,8 @@ impl<'a> CodegenContext<'a> {
                 // Loop back to the top of the inner loop
                 body_instrs.push(WatInstruction::Br(loop_label.clone()));
 
+                // Push the top level block instruction
+                // This block is used to jump out of the loop if the condition is false
                 instrs.push(WatInstruction::Block(
                     block_label,
                     vec![WatInstruction::Loop(loop_label, body_instrs)],
@@ -161,11 +166,13 @@ impl<'a> CodegenContext<'a> {
                 instrs.push(WatInstruction::Const(WatValue::I32(*b as i32)))
             }
             IRExpression::StringLiteral(_) => todo!(),
+
             IRExpression::PrefixOp {
                 op: _,
                 right: _,
                 ty: _,
             } => todo!(),
+
             IRExpression::BinOp {
                 op,
                 left,
@@ -215,6 +222,12 @@ impl<'a> CodegenContext<'a> {
                 }
             }
             IRExpression::Ident { name, ty: _ } => {
+                instrs.push(WatInstruction::GetLocal(name.clone()));
+            }
+
+            IRExpression::Assign { name, expr, .. } => {
+                self.visit_expression(expr, instrs);
+                instrs.push(WatInstruction::SetLocal(name.clone()));
                 instrs.push(WatInstruction::GetLocal(name.clone()));
             }
 

@@ -185,6 +185,26 @@ impl<'a> SemanticContext<'a> {
                     self.generate_symbols_for_expression(*arg)?;
                 }
             }
+
+            Expr::Assign {
+                ident: ident_id,
+                expr,
+            } => {
+                let ident = &self.program.ast.identifiers[*ident_id];
+
+                if let Some(sym) = self.symbol_table.get(&ident.name) {
+                    self.symbol_table.associate_ident(*ident_id, sym.id);
+                } else {
+                    return Err(SemanticError::UndeclaredVariable {
+                        name: ident.name.clone(),
+                        span: ident.span.clone(),
+                    });
+                }
+
+                self.generate_symbols_for_expression(*expr)?;
+            }
+
+            _ => todo!(),
         }
 
         Ok(())

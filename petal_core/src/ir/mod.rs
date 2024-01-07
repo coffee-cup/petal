@@ -92,6 +92,11 @@ pub enum IRExpression {
         name: String,
         ty: MonoType,
     },
+    Assign {
+        name: String,
+        expr: Box<IRExpression>,
+        ty: MonoType,
+    },
     Call {
         name: String,
         args: Vec<IRExpression>,
@@ -400,6 +405,24 @@ impl<'a> IRGeneration<'a> {
             }
             Expr::PostfixOp { op: _, left: _ } => todo!(),
             Expr::Call { callee: _, args: _ } => todo!(),
+
+            Expr::Assign { ident, expr } => {
+                let sym = self
+                    .semantics
+                    .symbol_table
+                    .symbol_for_ident(&ident)
+                    .unwrap();
+                let ty = sym.ty.clone().unwrap().extract_monotype().unwrap();
+                let expr = self.ir_for_expr(expr);
+
+                IRExpression::Assign {
+                    name: sym.unique_name(),
+                    expr: Box::new(expr),
+                    ty,
+                }
+            }
+
+            _ => todo!(),
         }
     }
 
@@ -423,6 +446,7 @@ impl HasType for IRExpression {
             IRExpression::BinOp { ty, .. } => ty.clone(),
             IRExpression::Ident { ty, .. } => ty.clone(),
             IRExpression::Call { ty, .. } => ty.clone(),
+            IRExpression::Assign { ty, .. } => ty.clone(),
         }
     }
 }

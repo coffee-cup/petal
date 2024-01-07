@@ -1,0 +1,92 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_expr(\"a = b\")"
+---
+(
+    [
+        Identifier {
+            name: "a",
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        0,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "b",
+            span: Span {
+                start: Pos(
+                    4,
+                ),
+                end: Some(
+                    Pos(
+                        4,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
+    [
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    1v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        0,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: Ident(
+                IdentId(
+                    2v1,
+                ),
+            ),
+            span: Span {
+                start: Pos(
+                    4,
+                ),
+                end: Some(
+                    Pos(
+                        4,
+                    ),
+                ),
+            },
+        },
+        ExprNode {
+            expr: Assign {
+                ident: IdentId(
+                    1v1,
+                ),
+                expr: ExprId(
+                    2v1,
+                ),
+            },
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        4,
+                    ),
+                ),
+            },
+        },
+    ],
+)

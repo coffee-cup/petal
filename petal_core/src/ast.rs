@@ -199,6 +199,12 @@ pub enum Expr {
         right: ExprId,
     },
 
+    // a = 1
+    Assign {
+        ident: IdentId,
+        expr: ExprId,
+    },
+
     // 1 + 2
     BinaryOp {
         op: BinaryOp,

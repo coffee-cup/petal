@@ -168,7 +168,7 @@ impl Display for IRExpression {
                 right: rhs,
                 ty,
             } => write!(f, "({} {} {}):{}", lhs, op, rhs, ty),
-            IRExpression::Ident { name, ty } => write!(f, "{}:{}", name, ty),
+            IRExpression::Ident { name, .. } => write!(f, "{}", name),
             IRExpression::Call { name, args, ty } => {
                 let args_str = args
                     .iter()
@@ -176,6 +176,9 @@ impl Display for IRExpression {
                     .collect::<Vec<_>>()
                     .join(", ");
                 write!(f, "{}({}): {}", name, args_str, ty)
+            }
+            IRExpression::Assign { name, expr, .. } => {
+                write!(f, "{} = {}", name, expr)
             }
         }
     }

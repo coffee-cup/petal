@@ -2,6 +2,8 @@ use miette::{Diagnostic, SourceSpan};
 use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
 
+use crate::ast::ExprNode;
+
 use super::{
     ast::{
         BinaryOp, BinaryOpType, Block, Expr, ExprId, FuncArg, FuncDecl, IdentId, LetDecl, PrefixOp,
@@ -35,6 +37,13 @@ pub enum ParserError {
         span: Span,
 
         name: String,
+    },
+
+    #[error("Left side of assignment is not an identifier")]
+    #[diagnostic(help("You can only assign to identifiers. For example: `x = 1`"))]
+    LeftSideOfAssignmentNotIdent {
+        #[label("the left side of an assignment must be an identifier")]
+        span: Span,
     },
 
     #[error("Expected {expected}, found the end of the file")]
@@ -247,6 +256,24 @@ impl InfixParselet for BinaryOperatorParselet {
             TT::LessEqual => BinaryOpType::LessThanOrEqual,
             TT::Greater => BinaryOpType::GreaterThan,
             TT::GreaterEqual => BinaryOpType::GreaterThanOrEqual,
+            TT::Equal => {
+                // Error if the left side of the assignment is not an identifier
+                let ident = match parser.program.ast.expressions[left] {
+                    ExprNode {
+                        expr: Expr::Ident(ident),
+                        span: _,
+                    } => ident,
+                    _ => {
+                        return Err(ParserError::LeftSideOfAssignmentNotIdent {
+                            span: parser.program.ast.expressions[left].span.clone(),
+                        })
+                    }
+                };
+
+                return Ok(parser
+                    .program
+                    .new_expression(Expr::Assign { ident, expr: right }, span));
+            }
             // TT::Caret => BinaryOpType::Power,
             _ => unreachable!("Invalid binary operator, {token}"),
         };
@@ -390,6 +417,7 @@ impl<'a> Parser<'a> {
         prefix!(parser.prefix_parselets, TT::Bang, Precedence::Unary);
 
         // Infix parselets
+        infix_left!(parser.infix_parselets, TT::Equal, Precedence::Assign);
         infix_left!(parser.infix_parselets, TT::Minus, Precedence::Sum);
         infix_left!(parser.infix_parselets, TT::Plus, Precedence::Sum);
         infix_left!(parser.infix_parselets, TT::Star, Precedence::Product);
@@ -681,13 +709,34 @@ impl<'a> Parser<'a> {
                 let expr = self.parse_expression(Precedence::Lowest)?;
                 let span = self.program.ast.expressions[expr].span.clone();
 
-                // TODO: consume newline or semicolon?
+                // If the next token is an equal sign, start parsing an assignment
+                // if self.match_expected(TT::Equal)? {
+                //     self.parse_assignment(&expr)?
+                // } else {
+                //     self.program.new_statement(Stmt::ExprStmt(expr), span)
+                // }
+
                 self.program.new_statement(Stmt::ExprStmt(expr), span)
             }
         };
 
         Ok(stmt)
     }
+
+    // fn parse_assignment(&mut self, left: &ExprId) -> ParserResult<StmtId> {
+    //     match self.program.ast.expressions[*left] {
+    //         ExprNode {
+    //             expr: Expr::Ident(_),
+    //             span: _,
+    //         } => {}
+    //         _ => {
+    //             return Err(ParserError::LeftSideOfAssignmentNotIdent {
+    //                 span: self.program.ast.expressions[*left].span.clone(),
+    //             })
+    //         }
+    //     };
+
+    // }
 
     fn parse_if_statement(&mut self) -> ParserResult<StmtId> {
         let token = self.consume()?;
@@ -923,6 +972,12 @@ mod tests {
         insta::assert_debug_snapshot!(parse_expr("a + b - c"));
         insta::assert_debug_snapshot!(parse_expr("a * b / c"));
         insta::assert_debug_snapshot!(parse_expr("a ^ b ^ c"));
+    }
+
+    #[test]
+    fn test_assignment() {
+        insta::assert_debug_snapshot!(parse_expr("a = b"));
+        insta::assert_debug_snapshot!(parse_expr("a = 1 * 2"));
     }
 
     #[test]

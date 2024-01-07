@@ -106,6 +106,12 @@ impl<'a> SemanticContext<'a> {
             }
             Expr::PostfixOp { op: _, left: _ } => todo!(),
             Expr::Call { callee: _, args: _ } => todo!(),
+
+            Expr::Assign { expr, .. } => {
+                self.analysis_expression(expr)?;
+            }
+
+            _ => todo!(),
         }
 
         Ok(())

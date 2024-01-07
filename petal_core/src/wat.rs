@@ -1,7 +1,5 @@
 use std::fmt::Display;
 
-use miette::LabeledSpan;
-
 #[derive(PartialEq, Clone, Debug)]
 pub enum WatValueType {
     I32,
