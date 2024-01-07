@@ -228,6 +228,8 @@ impl<'a> CodegenContext<'a> {
             IRExpression::Assign { name, expr, .. } => {
                 self.visit_expression(expr, instrs);
                 instrs.push(WatInstruction::SetLocal(name.clone()));
+
+                // We need to push the value back onto the stack so that it can be used in expressions
                 instrs.push(WatInstruction::GetLocal(name.clone()));
             }
 

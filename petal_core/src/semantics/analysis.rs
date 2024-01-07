@@ -105,7 +105,12 @@ impl<'a> SemanticContext<'a> {
                 self.analysis_expression(right)?;
             }
             Expr::PostfixOp { op: _, left: _ } => todo!(),
-            Expr::Call { callee: _, args: _ } => todo!(),
+
+            Expr::Call { callee, args } => {
+                args.iter().for_each(|arg| {
+                    self.analysis_expression(*arg).unwrap();
+                });
+            }
 
             Expr::Assign { expr, .. } => {
                 self.analysis_expression(expr)?;

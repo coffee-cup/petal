@@ -169,13 +169,13 @@ impl Display for IRExpression {
                 ty,
             } => write!(f, "({} {} {}):{}", lhs, op, rhs, ty),
             IRExpression::Ident { name, .. } => write!(f, "{}", name),
-            IRExpression::Call { name, args, ty } => {
+            IRExpression::Call { name, args, .. } => {
                 let args_str = args
                     .iter()
                     .map(|arg| format!("{}", arg))
                     .collect::<Vec<_>>()
                     .join(", ");
-                write!(f, "{}({}): {}", name, args_str, ty)
+                write!(f, "{}({})", name, args_str)
             }
             IRExpression::Assign { name, expr, .. } => {
                 write!(f, "{} = {}", name, expr)

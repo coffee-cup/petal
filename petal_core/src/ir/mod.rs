@@ -1,4 +1,4 @@
-use crate::types::HasType;
+use crate::{ast::ExprNode, types::HasType};
 pub mod pretty_print;
 
 use super::{
@@ -404,7 +404,37 @@ impl<'a> IRGeneration<'a> {
                 }
             }
             Expr::PostfixOp { op: _, left: _ } => todo!(),
-            Expr::Call { callee: _, args: _ } => todo!(),
+
+            Expr::Call { callee, args } => {
+                let callee_ident = match self.semantics.program.ast.expressions[callee].clone() {
+                    ExprNode {
+                        expr: Expr::Ident(ident),
+                        ..
+                    } => ident,
+                    _ => unreachable!(),
+                };
+
+                let callee_ty = self.semantics.type_for_expr(&callee).unwrap();
+
+                let fun_sym = self
+                    .semantics
+                    .symbol_table
+                    .symbol_for_ident(&callee_ident)
+                    .unwrap();
+                let fun_name = fun_sym.name;
+                let fun_ty = fun_sym.ty.clone().unwrap().extract_monotype().unwrap();
+
+                let args = args
+                    .iter()
+                    .map(|arg| self.ir_for_expr(*arg))
+                    .collect::<Vec<_>>();
+
+                IRExpression::Call {
+                    name: fun_name,
+                    args,
+                    ty: fun_ty,
+                }
+            }
 
             Expr::Assign { ident, expr } => {
                 let sym = self
