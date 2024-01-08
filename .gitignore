@@ -73,4 +73,5 @@ Cargo.lock
 
 # Petal
 test.petal
+test.js
 build/
