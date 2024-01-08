@@ -37,9 +37,10 @@ This is a rough list of everything that needs to be done
   - [ ] Stdout comparison
 - [x] Primitive constants
 - [ ] Binary/unary operations
-- [ ] Control flow
+- [x] Control flow
   - [x] If
-  - [ ] Loops
+  - [x] Loops
+  - [x] Return
 - [ ] Functions
   - [x] Creation
   - [ ] Calling

@@ -414,7 +414,7 @@ impl<'a> IRGeneration<'a> {
                     _ => unreachable!(),
                 };
 
-                let callee_ty = self.semantics.type_for_expr(&callee).unwrap();
+                let ty = self.semantics.type_for_expr(&expr).unwrap();
 
                 let fun_sym = self
                     .semantics
@@ -422,7 +422,6 @@ impl<'a> IRGeneration<'a> {
                     .symbol_for_ident(&callee_ident)
                     .unwrap();
                 let fun_name = fun_sym.name;
-                let fun_ty = fun_sym.ty.clone().unwrap().extract_monotype().unwrap();
 
                 let args = args
                     .iter()
@@ -432,7 +431,7 @@ impl<'a> IRGeneration<'a> {
                 IRExpression::Call {
                     name: fun_name,
                     args,
-                    ty: fun_ty,
+                    ty,
                 }
             }
 

@@ -169,7 +169,7 @@ impl Display for IRExpression {
                 ty,
             } => write!(f, "({} {} {}):{}", lhs, op, rhs, ty),
             IRExpression::Ident { name, .. } => write!(f, "{}", name),
-            IRExpression::Call { name, args, .. } => {
+            IRExpression::Call { name, args, ty } => {
                 let args_str = args
                     .iter()
                     .map(|arg| format!("{}", arg))

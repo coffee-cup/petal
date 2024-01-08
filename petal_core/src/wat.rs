@@ -45,7 +45,7 @@ pub enum WatInstruction {
     GetLocal(String),
     SetLocal(String),
     // Functions
-    Call(String, usize),
+    Call(String),
     // Control flow
     If(Instrs, Instrs),
     Block(String, Instrs),
@@ -231,6 +231,8 @@ impl Display for WatInstruction {
                 )
             }
 
+            Call(name) => write!(f, "call ${}", name),
+
             v => todo!("implement fmt for {:?}", v),
         }
     }
@@ -242,7 +244,7 @@ impl Display for WatFunction {
             .signature
             .params
             .iter()
-            .map(|p| format!("(param ${}: {})", p.name, p.ty))
+            .map(|p| format!("(param ${} {})", p.name, p.ty))
             .collect::<Vec<_>>()
             .join("\n");
 

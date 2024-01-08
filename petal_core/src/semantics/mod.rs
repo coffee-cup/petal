@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use log::debug;
+
 use self::{
     context::SemanticContext, errors::SemanticResult, symbol_table::SymbolTable,
     typechecker::TypeVarGen,
@@ -69,7 +71,19 @@ impl<'a> SemanticContext<'a> {
         //         .join("\n")
         // );
 
+        // println!("--- (before) Expression types");
+        // for (expr, ty) in self.expr_types.iter() {
+        //     let expr = self.program.ast.expressions[*expr].clone();
+        //     println!("{:?}: {}", expr.expr, ty);
+        // }
+
         self.solve_constraints()?;
+
+        // println!("\n--- (after) Expression types");
+        // for (expr, ty) in self.expr_types.iter() {
+        //     let expr = self.program.ast.expressions[*expr].clone();
+        //     println!("{:?}: {}", expr.expr, ty);
+        // }
 
         Ok(())
     }

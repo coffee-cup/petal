@@ -1,4 +1,4 @@
-use crate::types::HasType;
+use crate::types::{FunctionAppType, HasType};
 
 use self::context::CodegenContext;
 
@@ -233,11 +233,13 @@ impl<'a> CodegenContext<'a> {
                 instrs.push(WatInstruction::GetLocal(name.clone()));
             }
 
-            IRExpression::Call {
-                name: _,
-                args: _,
-                ty: _,
-            } => todo!(),
+            IRExpression::Call { name, args, .. } => {
+                for arg in args {
+                    self.visit_expression(arg, instrs);
+                }
+
+                instrs.push(WatInstruction::Call(name.clone()));
+            }
         }
     }
 
@@ -250,7 +252,7 @@ impl<'a> CodegenContext<'a> {
                 "Bool" => WatValueType::I32,
                 _ => todo!(),
             },
-            MonoType::FunApp(_) => todo!(),
+            MonoType::FunApp(FunctionAppType { return_ty, .. }) => unreachable!(),
         }
     }
 }
