@@ -138,6 +138,8 @@ impl<'a> SemanticContext<'a> {
                     self.generate_symbols_for_expression(*return_expr)?;
                 }
             }
+
+            Stmt::Import(_) => todo!(),
         };
 
         Ok(())

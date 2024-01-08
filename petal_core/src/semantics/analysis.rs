@@ -62,7 +62,10 @@ impl<'a> SemanticContext<'a> {
                     self.analysis_statement(*stmt)?;
                 }
             }
+
             Stmt::ExprStmt(e) => self.analysis_expression(e)?,
+
+            _ => todo!(),
         }
 
         Ok(())

@@ -134,6 +134,13 @@ pub struct LetDecl {
 }
 
 #[derive(PartialEq, Clone, Debug)]
+pub struct ImportFunc {
+    pub ident: IdentId,
+    pub args: Vec<FuncArg>,
+    pub return_ty: Option<TypeAnnotation>,
+}
+
+#[derive(PartialEq, Clone, Debug)]
 pub struct Block {
     pub statements: Vec<StmtId>,
 }
@@ -154,6 +161,9 @@ pub struct StmtNode {
 pub enum Stmt {
     // let a = 1
     Let(LetDecl),
+
+    // import foo(a: Int): Int
+    Import(ImportFunc),
 
     // if cond { ... } else { ... }
     IfStmt {

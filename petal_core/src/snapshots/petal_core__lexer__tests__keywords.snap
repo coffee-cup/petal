@@ -1,6 +1,6 @@
 ---
 source: petal_core/src/lexer.rs
-expression: "lex(\"let if while else false true return\".to_string())"
+expression: "lex(\"let if while else false true return export import\".to_string())"
 ---
 [
     Token {
@@ -112,6 +112,36 @@ expression: "lex(\"let if while else false true return\".to_string())"
             end: Some(
                 Pos(
                     34,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Export,
+        lexeme: "export",
+        literal: None,
+        span: Span {
+            start: Pos(
+                36,
+            ),
+            end: Some(
+                Pos(
+                    41,
+                ),
+            ),
+        },
+    },
+    Token {
+        token_type: Import,
+        lexeme: "import",
+        literal: None,
+        span: Span {
+            start: Pos(
+                43,
+            ),
+            end: Some(
+                Pos(
+                    48,
                 ),
             ),
         },

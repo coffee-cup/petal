@@ -111,6 +111,8 @@ impl<'a> SemanticContext<'a> {
             Stmt::ExprStmt(expr) => {
                 self.expr_constraints(expr)?;
             }
+
+            _ => todo!(),
         };
 
         Ok(())

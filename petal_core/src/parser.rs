@@ -1,8 +1,9 @@
 use miette::{Diagnostic, SourceSpan};
 use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
+use wasmparser::Import;
 
-use crate::ast::ExprNode;
+use crate::ast::{ExprNode, ImportFunc};
 
 use super::{
     ast::{
@@ -660,6 +661,7 @@ impl<'a> Parser<'a> {
         match self.peek().token_type {
             TT::Let => self.parse_let_declaration(),
             TT::Return => self.parse_return(),
+            TT::Import => self.parse_import_function(),
             _ => self.parse_statement(),
         }
     }
@@ -678,6 +680,43 @@ impl<'a> Parser<'a> {
         }
 
         Ok(self.program.new_statement(Stmt::Return(expr), span))
+    }
+
+    fn parse_import_function(&mut self) -> ParserResult<StmtId> {
+        let token = self.consume()?;
+        let mut span = token.span();
+
+        let ident = self.parse_identifier()?;
+
+        // Function args
+        self.consume_expected(TT::LeftParen)?;
+        let mut args: Vec<FuncArg> = Vec::new();
+        while !self.peek().is(TT::RightParen) && !self.is_at_end() {
+            args.push(self.parse_function_arg()?);
+
+            if self.peek().is(TT::Comma) {
+                self.consume()?;
+            }
+        }
+        let right_paren = self.consume_expected(TT::RightParen)?;
+        span = span.merge(right_paren.span());
+
+        // Return type
+        let mut return_ty = None;
+        if self.match_expected(TT::Colon)? {
+            let annotation = self.parse_type()?;
+            span = span.merge(annotation.span.clone());
+            return_ty = Some(annotation);
+        }
+
+        Ok(self.program.new_statement(
+            Stmt::Import(ImportFunc {
+                ident,
+                args,
+                return_ty,
+            }),
+            span,
+        ))
     }
 
     fn parse_let_declaration(&mut self) -> ParserResult<StmtId> {
@@ -727,21 +766,6 @@ impl<'a> Parser<'a> {
 
         Ok(stmt)
     }
-
-    // fn parse_assignment(&mut self, left: &ExprId) -> ParserResult<StmtId> {
-    //     match self.program.ast.expressions[*left] {
-    //         ExprNode {
-    //             expr: Expr::Ident(_),
-    //             span: _,
-    //         } => {}
-    //         _ => {
-    //             return Err(ParserError::LeftSideOfAssignmentNotIdent {
-    //                 span: self.program.ast.expressions[*left].span.clone(),
-    //             })
-    //         }
-    //     };
-
-    // }
 
     fn parse_if_statement(&mut self) -> ParserResult<StmtId> {
         let token = self.consume()?;
@@ -1078,5 +1102,12 @@ mod tests {
                 # let a = foo + bar
             }"
         ));
+    }
+
+    #[test]
+    fn test_external_imports() {
+        insta::assert_debug_snapshot!(parse_stmt("import foo()"));
+        insta::assert_debug_snapshot!(parse_stmt("import foo(a: Int)"));
+        insta::assert_debug_snapshot!(parse_stmt("import foo(a: Int, b: Int): Bool"));
     }
 }

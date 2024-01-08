@@ -1,0 +1,90 @@
+---
+source: petal_core/src/parser.rs
+expression: "parse_stmt(\"import foo(a: Int)\")"
+---
+(
+    [
+        Identifier {
+            name: "foo",
+            span: Span {
+                start: Pos(
+                    7,
+                ),
+                end: Some(
+                    Pos(
+                        9,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+        Identifier {
+            name: "a",
+            span: Span {
+                start: Pos(
+                    11,
+                ),
+                end: Some(
+                    Pos(
+                        11,
+                    ),
+                ),
+            },
+            symbol_id: None,
+        },
+    ],
+    [],
+    [
+        StmtNode {
+            stmt: Import(
+                ImportFunc {
+                    ident: IdentId(
+                        1v1,
+                    ),
+                    args: [
+                        FuncArg {
+                            ident: IdentId(
+                                2v1,
+                            ),
+                            ty: TypeAnnotation {
+                                name: "Int",
+                                span: Span {
+                                    start: Pos(
+                                        14,
+                                    ),
+                                    end: Some(
+                                        Pos(
+                                            16,
+                                        ),
+                                    ),
+                                },
+                            },
+                            span: Span {
+                                start: Pos(
+                                    11,
+                                ),
+                                end: Some(
+                                    Pos(
+                                        16,
+                                    ),
+                                ),
+                            },
+                        },
+                    ],
+                    return_ty: None,
+                },
+            ),
+            span: Span {
+                start: Pos(
+                    0,
+                ),
+                end: Some(
+                    Pos(
+                        17,
+                    ),
+                ),
+            },
+        },
+    ],
+    [],
+)
