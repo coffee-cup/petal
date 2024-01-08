@@ -1,0 +1,19 @@
+fn fact(n: Int): Int {
+  if n <= 1 {
+    return 1
+  }
+
+  return n * fact(n - 1)
+}
+
+fn add(a: Int, b: Int): Int {
+  return a + b
+}
+
+export fn test(): Int {
+  let x = fact(10)
+  let y = add(x, 2)
+  return y
+}
+
+# Results: 3628802

@@ -235,6 +235,7 @@ struct BinaryOperatorParselet {
     precedence: Precedence,
     is_right: bool,
 }
+
 impl InfixParselet for BinaryOperatorParselet {
     fn parse(&self, parser: &mut Parser, left: ExprId, token: Token) -> ParserResult<ExprId> {
         let parse_right_prec = if self.is_right {
