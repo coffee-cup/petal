@@ -33,17 +33,18 @@ This is a rough list of everything that needs to be done
   - [x] Wasm bytes generation
 - [ ] Testing architecture
   - [x] Snapshot tests
+  - [x] Output comparison
   - [ ] Assertions
-  - [ ] Stdout comparison
 - [x] Primitive constants
-- [ ] Binary/unary operations
+- [x] Binary operations
+- [ ] Unary operations
 - [x] Control flow
   - [x] If
   - [x] Loops
   - [x] Return
-- [ ] Functions
+- [x] Functions
   - [x] Creation
-  - [ ] Calling
+  - [x] Calling
   - [x] Return values
 - [ ] Import host functions
 - [ ] Import other files

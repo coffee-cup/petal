@@ -252,7 +252,7 @@ impl<'a> CodegenContext<'a> {
                 "Bool" => WatValueType::I32,
                 _ => todo!(),
             },
-            MonoType::FunApp(FunctionAppType { return_ty, .. }) => unreachable!(),
+            MonoType::FunApp(_) => unreachable!(),
         }
     }
 }
