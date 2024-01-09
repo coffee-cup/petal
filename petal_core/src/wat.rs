@@ -60,6 +60,7 @@ type Instrs = Vec<WatInstruction>;
 
 #[derive(Clone, Debug)]
 pub struct WatFunction {
+    pub is_exported: bool,
     pub signature: WatFunctionSignature,
     pub locals: Vec<WatLocal>,
     pub instructions: Instrs,
@@ -81,13 +82,13 @@ pub struct WatLocal {
 pub struct WatFunctionSignature {
     pub name: String,
     pub return_ty: Option<WatValueType>,
-    pub is_exported: bool,
     pub params: Vec<WatParam>,
 }
 
 #[derive(Clone, Debug)]
 pub struct WatModule {
     pub functions: Vec<WatFunction>,
+    pub imports: Vec<WatFunctionSignature>,
     pub main_func: String,
 }
 
@@ -271,7 +272,7 @@ impl Display for WatFunction {
 
 )",
             name = self.signature.name,
-            export = if self.signature.is_exported {
+            export = if self.is_exported {
                 format!("(export \"{}\")", self.signature.name)
             } else {
                 String::new()
@@ -287,8 +288,39 @@ impl Display for WatFunction {
     }
 }
 
+impl Display for WatFunctionSignature {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params = self
+            .params
+            .iter()
+            .map(|p| format!("(param {})", p.ty))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        let return_ty = match &self.return_ty {
+            Some(ty) => format!("(result {})", ty),
+            None => String::new(),
+        };
+
+        write!(
+            f,
+            "(import \"env\" \"{name}\" (func ${name} {params} {return_ty}))",
+            name = self.name,
+            params = params,
+            return_ty = return_ty,
+        )
+    }
+}
+
 impl Display for WatModule {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let imports = self
+            .imports
+            .iter()
+            .map(|import| import.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+
         let funcs = self
             .functions
             .iter()
@@ -299,6 +331,7 @@ impl Display for WatModule {
         write!(
             f,
             "(module
+{imports}
 
 {funcs}
     

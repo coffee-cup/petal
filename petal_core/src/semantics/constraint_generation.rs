@@ -85,11 +85,14 @@ impl<'a> SemanticContext<'a> {
 
                         match &curr_func.clone() {
                             Some(func) => {
-                                let return_ty_data = if let Some(return_ty) = &func.return_ty {
+                                let return_ty_data = if let Some(return_ty) =
+                                    &func.signature.return_ty
+                                {
                                     MonoTypeData::new(self.type_for_annotation(return_ty).unwrap())
                                         .with_span(return_ty.span.clone())
                                 } else {
-                                    MonoTypeData::new(MonoType::unit()).with_ident(func.ident)
+                                    MonoTypeData::new(MonoType::unit())
+                                        .with_ident(func.signature.ident)
                                 };
 
                                 self.associate_types(

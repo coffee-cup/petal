@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use slotmap::{new_key_type, SlotMap};
+use wasmparser::Import;
 
 use crate::types::MonoType;
 
@@ -27,6 +28,7 @@ pub struct Program {
     pub ast: AstPool,
     pub functions: Vec<FuncDecl>,
     pub structs: Vec<StructDecl>,
+    pub imports: Vec<ImportFunc>,
     pub main_stmts: Vec<StmtId>,
 }
 
@@ -42,6 +44,7 @@ impl Program {
             ast,
             functions: Vec::new(),
             structs: Vec::new(),
+            imports: Vec::new(),
             main_stmts: Vec::new(),
         }
     }
@@ -56,6 +59,10 @@ impl Program {
 
     pub fn add_function(&mut self, func: FuncDecl) {
         self.functions.push(func);
+    }
+
+    pub fn add_import(&mut self, import: ImportFunc) {
+        self.imports.push(import);
     }
 
     pub fn add_struct(&mut self, struct_decl: StructDecl) {
@@ -114,14 +121,20 @@ pub struct FuncArg {
     pub span: Span,
 }
 
-/// fn foo(a, b) { ... }
 #[derive(PartialEq, Clone, Debug)]
-pub struct FuncDecl {
+pub struct FuncSignature {
     pub ident: IdentId,
-    pub is_exported: bool,
     pub type_params: Vec<TypeAnnotation>,
     pub args: Vec<FuncArg>,
     pub return_ty: Option<TypeAnnotation>,
+    pub span: Span,
+}
+
+/// fn foo(a, b) { ... }
+#[derive(PartialEq, Clone, Debug)]
+pub struct FuncDecl {
+    pub is_exported: bool,
+    pub signature: FuncSignature,
     pub body: StmtId,
     pub span: Span,
 }
@@ -135,9 +148,8 @@ pub struct LetDecl {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct ImportFunc {
-    pub ident: IdentId,
-    pub args: Vec<FuncArg>,
-    pub return_ty: Option<TypeAnnotation>,
+    pub signature: FuncSignature,
+    pub span: Span,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -161,9 +173,6 @@ pub struct StmtNode {
 pub enum Stmt {
     // let a = 1
     Let(LetDecl),
-
-    // import foo(a: Int): Int
-    Import(ImportFunc),
 
     // if cond { ... } else { ... }
     IfStmt {
@@ -302,56 +311,3 @@ impl Display for BinaryOpType {
         }
     }
 }
-
-// impl HasSpan for Stmt {
-//     fn span(&self) -> Span {
-//         match self {
-//             Stmt::Struct(decl) => decl.span.clone(),
-//             Stmt::Func(decl) => decl.span.clone(),
-//             Stmt::Let(decl) => decl.span.clone(),
-//             Stmt::IfStmt { span, .. } => span.clone(),
-//             Stmt::ExprStmt { span, .. } => span.clone(),
-//         }
-//     }
-// }
-
-// impl HasSpan for Expr {
-//     fn span(&self) -> Span {
-//         match self {
-//             Expr::Integer { span, .. } => span.clone(),
-//             Expr::Float { span, .. } => span.clone(),
-//             Expr::PrefixOp { span, .. } => span.clone(),
-//             Expr::BinaryOp { span, .. } => span.clone(),
-//             Expr::PostfixOp { span, .. } => span.clone(),
-//             Expr::Conditional { span, .. } => span.clone(),
-//             Expr::Ident(id) => id.span(),
-//             Expr::String { span, .. } => span.clone(),
-//             Expr::Comment { span, .. } => span.clone(),
-//             Expr::Call { span, .. } => span.clone(),
-//         }
-//     }
-// }
-
-// impl HasSpan for Block {
-//     fn span(&self) -> Span {
-//         self.span.clone()
-//     }
-// }
-
-// impl HasSpan for TypeAnnotation {
-//     fn span(&self) -> Span {
-//         self.span.clone()
-//     }
-// }
-
-// impl HasSpan for FuncDecl {
-//     fn span(&self) -> Span {
-//         self.span.clone()
-//     }
-// }
-
-// impl HasSpan for Identifier {
-//     fn span(&self) -> Span {
-//         self.span.clone()
-//     }
-// }

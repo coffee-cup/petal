@@ -20,28 +20,38 @@ expression: "parse_stmt(\"import foo()\")"
         },
     ],
     [],
+    [],
+    [],
     [
-        StmtNode {
-            stmt: Import(
-                ImportFunc {
-                    ident: IdentId(
-                        1v1,
+        ImportFunc {
+            signature: FuncSignature {
+                ident: IdentId(
+                    1v1,
+                ),
+                type_params: [],
+                args: [],
+                return_ty: None,
+                span: Span {
+                    start: Pos(
+                        7,
                     ),
-                    args: [],
-                    return_ty: None,
+                    end: Some(
+                        Pos(
+                            9,
+                        ),
+                    ),
                 },
-            ),
+            },
             span: Span {
                 start: Pos(
                     0,
                 ),
                 end: Some(
                     Pos(
-                        11,
+                        9,
                     ),
                 ),
             },
         },
     ],
-    [],
 )

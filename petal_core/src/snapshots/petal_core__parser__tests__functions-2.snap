@@ -55,21 +55,33 @@ expression: "parse_stmt(\"fn foo(a: Int) {}\")"
     ],
     [
         FuncDecl {
-            ident: IdentId(
-                1v1,
-            ),
             is_exported: false,
-            type_params: [],
-            args: [
-                FuncArg {
-                    ident: IdentId(
-                        2v1,
-                    ),
-                    ty: TypeAnnotation {
-                        name: "Int",
+            signature: FuncSignature {
+                ident: IdentId(
+                    1v1,
+                ),
+                type_params: [],
+                args: [
+                    FuncArg {
+                        ident: IdentId(
+                            2v1,
+                        ),
+                        ty: TypeAnnotation {
+                            name: "Int",
+                            span: Span {
+                                start: Pos(
+                                    10,
+                                ),
+                                end: Some(
+                                    Pos(
+                                        12,
+                                    ),
+                                ),
+                            },
+                        },
                         span: Span {
                             start: Pos(
-                                10,
+                                7,
                             ),
                             end: Some(
                                 Pos(
@@ -78,19 +90,19 @@ expression: "parse_stmt(\"fn foo(a: Int) {}\")"
                             ),
                         },
                     },
-                    span: Span {
-                        start: Pos(
-                            7,
+                ],
+                return_ty: None,
+                span: Span {
+                    start: Pos(
+                        3,
+                    ),
+                    end: Some(
+                        Pos(
+                            5,
                         ),
-                        end: Some(
-                            Pos(
-                                12,
-                            ),
-                        ),
-                    },
+                    ),
                 },
-            ],
-            return_ty: None,
+            },
             body: StmtId(
                 1v1,
             ),
@@ -106,4 +118,5 @@ expression: "parse_stmt(\"fn foo(a: Int) {}\")"
             },
         },
     ],
+    [],
 )

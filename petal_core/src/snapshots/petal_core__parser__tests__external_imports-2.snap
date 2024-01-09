@@ -34,34 +34,25 @@ expression: "parse_stmt(\"import foo(a: Int)\")"
         },
     ],
     [],
+    [],
+    [],
     [
-        StmtNode {
-            stmt: Import(
-                ImportFunc {
-                    ident: IdentId(
-                        1v1,
-                    ),
-                    args: [
-                        FuncArg {
-                            ident: IdentId(
-                                2v1,
-                            ),
-                            ty: TypeAnnotation {
-                                name: "Int",
-                                span: Span {
-                                    start: Pos(
-                                        14,
-                                    ),
-                                    end: Some(
-                                        Pos(
-                                            16,
-                                        ),
-                                    ),
-                                },
-                            },
+        ImportFunc {
+            signature: FuncSignature {
+                ident: IdentId(
+                    1v1,
+                ),
+                type_params: [],
+                args: [
+                    FuncArg {
+                        ident: IdentId(
+                            2v1,
+                        ),
+                        ty: TypeAnnotation {
+                            name: "Int",
                             span: Span {
                                 start: Pos(
-                                    11,
+                                    14,
                                 ),
                                 end: Some(
                                     Pos(
@@ -70,21 +61,40 @@ expression: "parse_stmt(\"import foo(a: Int)\")"
                                 ),
                             },
                         },
-                    ],
-                    return_ty: None,
+                        span: Span {
+                            start: Pos(
+                                11,
+                            ),
+                            end: Some(
+                                Pos(
+                                    16,
+                                ),
+                            ),
+                        },
+                    },
+                ],
+                return_ty: None,
+                span: Span {
+                    start: Pos(
+                        7,
+                    ),
+                    end: Some(
+                        Pos(
+                            9,
+                        ),
+                    ),
                 },
-            ),
+            },
             span: Span {
                 start: Pos(
                     0,
                 ),
                 end: Some(
                     Pos(
-                        17,
+                        9,
                     ),
                 ),
             },
         },
     ],
-    [],
 )

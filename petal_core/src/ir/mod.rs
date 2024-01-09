@@ -1,4 +1,9 @@
-use crate::{ast::ExprNode, types::HasType};
+use std::os::unix::process;
+
+use crate::{
+    ast::{ExprNode, ImportFunc},
+    types::HasType,
+};
 pub mod pretty_print;
 
 use super::{
@@ -10,6 +15,7 @@ use super::{
 #[derive(Clone, Debug)]
 pub struct IRProgram {
     pub functions: Vec<IRFunction>,
+    pub imports: Vec<IRImport>,
     pub main_func: String,
 }
 
@@ -24,14 +30,19 @@ pub struct IRFunctionSignature {
     pub name: String,
     pub params: Vec<IRParam>,
     pub return_type: MonoType,
-    pub is_exported: bool,
 }
 
 #[derive(Clone, Debug)]
 pub struct IRFunction {
+    pub is_exported: bool,
     pub signature: IRFunctionSignature,
     pub locals: Vec<IRLocal>,
     pub body: IRStatement,
+}
+
+#[derive(Clone, Debug)]
+pub struct IRImport {
+    pub signature: IRFunctionSignature,
 }
 
 #[derive(Clone, Debug)]
@@ -167,12 +178,19 @@ impl<'a> IRGeneration<'a> {
     pub fn generate_ir(&self) -> IRProgram {
         let mut ir = IRProgram {
             functions: vec![],
+            imports: vec![],
             main_func: MAIN_FUNC_NAME.into(),
         };
-        for func in self.semantics.program.functions.iter() {
+
+        self.semantics.program.functions.iter().for_each(|func| {
             let func_ir = self.ir_for_function(func);
             ir.functions.push(func_ir);
-        }
+        });
+
+        self.semantics.program.imports.iter().for_each(|import| {
+            let import_ir = self.ir_for_import(import);
+            ir.imports.push(import_ir);
+        });
 
         let main_func: IRFunction = {
             let main_stmts = self
@@ -187,7 +205,6 @@ impl<'a> IRGeneration<'a> {
                 name: MAIN_FUNC_NAME.into(),
                 params: vec![],
                 return_type: MonoType::unit(),
-                is_exported: true,
             };
 
             let mut main_locals = Vec::new();
@@ -196,6 +213,7 @@ impl<'a> IRGeneration<'a> {
             }
 
             IRFunction {
+                is_exported: true,
                 signature: main_ir_sig,
                 body: IRStatement::Block {
                     statements: main_stmts,
@@ -212,28 +230,36 @@ impl<'a> IRGeneration<'a> {
         let sym = self
             .semantics
             .symbol_table
-            .symbol_for_ident(&func.ident)
+            .symbol_for_ident(&func.signature.ident)
             .unwrap();
 
-        let signature = self.signature_for_func(&sym, &func.args, func.is_exported);
+        let signature = self.signature_for_func(&sym, &func.signature.args);
         let body = self.ir_for_statement(func.body);
 
         let mut locals = Vec::new();
         self.get_locals(func.body, &mut locals);
 
         IRFunction {
+            is_exported: func.is_exported,
             signature,
             body,
             locals,
         }
     }
 
-    fn signature_for_func(
-        &self,
-        sym: &Symbol,
-        args: &Vec<FuncArg>,
-        is_exported: bool,
-    ) -> IRFunctionSignature {
+    fn ir_for_import(&self, import: &ImportFunc) -> IRImport {
+        let sym = self
+            .semantics
+            .symbol_table
+            .symbol_for_ident(&import.signature.ident)
+            .unwrap();
+
+        let signature = self.signature_for_func(&sym, &import.signature.args);
+
+        IRImport { signature }
+    }
+
+    fn signature_for_func(&self, sym: &Symbol, args: &Vec<FuncArg>) -> IRFunctionSignature {
         let ty = sym.ty.clone().unwrap().extract_monotype().unwrap();
 
         let return_ty = match ty {
@@ -262,7 +288,6 @@ impl<'a> IRGeneration<'a> {
             name: sym.name.clone(),
             params,
             return_type: *return_ty,
-            is_exported,
         }
     }
 

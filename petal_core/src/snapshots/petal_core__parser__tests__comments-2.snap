@@ -41,13 +41,25 @@ expression: "parse_stmt(\"\n            # let x = 2\n            fn foo() {\n   
     ],
     [
         FuncDecl {
-            ident: IdentId(
-                1v1,
-            ),
             is_exported: false,
-            type_params: [],
-            args: [],
-            return_ty: None,
+            signature: FuncSignature {
+                ident: IdentId(
+                    1v1,
+                ),
+                type_params: [],
+                args: [],
+                return_ty: None,
+                span: Span {
+                    start: Pos(
+                        40,
+                    ),
+                    end: Some(
+                        Pos(
+                            42,
+                        ),
+                    ),
+                },
+            },
             body: StmtId(
                 1v1,
             ),
@@ -63,4 +75,5 @@ expression: "parse_stmt(\"\n            # let x = 2\n            fn foo() {\n   
             },
         },
     ],
+    [],
 )

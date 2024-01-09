@@ -18,15 +18,25 @@ impl IRPrettyPrinter {
     pub fn print_program(&mut self, program: &IRProgram) -> String {
         self.output = String::new();
 
-        for func in program.functions.iter() {
+        program.imports.iter().for_each(|import| {
+            self.print_import(import);
+        });
+
+        self.output.push_str("\n");
+
+        program.functions.iter().for_each(|func| {
             self.print_function(func);
-        }
+        });
 
         self.output.clone()
     }
 
+    pub fn print_import(&mut self, import: &IRImport) {
+        self.output(format!("import {}", import.signature));
+    }
+
     pub fn print_function(&mut self, func: &IRFunction) {
-        if func.signature.is_exported {
+        if func.is_exported {
             self.output.push_str("export ");
         }
         self.output

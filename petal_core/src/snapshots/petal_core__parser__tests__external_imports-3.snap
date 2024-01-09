@@ -48,34 +48,25 @@ expression: "parse_stmt(\"import foo(a: Int, b: Int): Bool\")"
         },
     ],
     [],
+    [],
+    [],
     [
-        StmtNode {
-            stmt: Import(
-                ImportFunc {
-                    ident: IdentId(
-                        1v1,
-                    ),
-                    args: [
-                        FuncArg {
-                            ident: IdentId(
-                                2v1,
-                            ),
-                            ty: TypeAnnotation {
-                                name: "Int",
-                                span: Span {
-                                    start: Pos(
-                                        14,
-                                    ),
-                                    end: Some(
-                                        Pos(
-                                            16,
-                                        ),
-                                    ),
-                                },
-                            },
+        ImportFunc {
+            signature: FuncSignature {
+                ident: IdentId(
+                    1v1,
+                ),
+                type_params: [],
+                args: [
+                    FuncArg {
+                        ident: IdentId(
+                            2v1,
+                        ),
+                        ty: TypeAnnotation {
+                            name: "Int",
                             span: Span {
                                 start: Pos(
-                                    11,
+                                    14,
                                 ),
                                 end: Some(
                                     Pos(
@@ -84,26 +75,26 @@ expression: "parse_stmt(\"import foo(a: Int, b: Int): Bool\")"
                                 ),
                             },
                         },
-                        FuncArg {
-                            ident: IdentId(
-                                3v1,
+                        span: Span {
+                            start: Pos(
+                                11,
                             ),
-                            ty: TypeAnnotation {
-                                name: "Int",
-                                span: Span {
-                                    start: Pos(
-                                        22,
-                                    ),
-                                    end: Some(
-                                        Pos(
-                                            24,
-                                        ),
-                                    ),
-                                },
-                            },
+                            end: Some(
+                                Pos(
+                                    16,
+                                ),
+                            ),
+                        },
+                    },
+                    FuncArg {
+                        ident: IdentId(
+                            3v1,
+                        ),
+                        ty: TypeAnnotation {
+                            name: "Int",
                             span: Span {
                                 start: Pos(
-                                    19,
+                                    22,
                                 ),
                                 end: Some(
                                     Pos(
@@ -112,24 +103,44 @@ expression: "parse_stmt(\"import foo(a: Int, b: Int): Bool\")"
                                 ),
                             },
                         },
-                    ],
-                    return_ty: Some(
-                        TypeAnnotation {
-                            name: "Bool",
-                            span: Span {
-                                start: Pos(
-                                    28,
+                        span: Span {
+                            start: Pos(
+                                19,
+                            ),
+                            end: Some(
+                                Pos(
+                                    24,
                                 ),
-                                end: Some(
-                                    Pos(
-                                        31,
-                                    ),
-                                ),
-                            },
+                            ),
                         },
+                    },
+                ],
+                return_ty: Some(
+                    TypeAnnotation {
+                        name: "Bool",
+                        span: Span {
+                            start: Pos(
+                                28,
+                            ),
+                            end: Some(
+                                Pos(
+                                    31,
+                                ),
+                            ),
+                        },
+                    },
+                ),
+                span: Span {
+                    start: Pos(
+                        7,
+                    ),
+                    end: Some(
+                        Pos(
+                            31,
+                        ),
                     ),
                 },
-            ),
+            },
             span: Span {
                 start: Pos(
                     0,
@@ -142,5 +153,4 @@ expression: "parse_stmt(\"import foo(a: Int, b: Int): Bool\")"
             },
         },
     ],
-    [],
 )

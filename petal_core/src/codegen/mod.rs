@@ -19,8 +19,13 @@ impl<'a> CodegenContext<'a> {
     }
 
     pub fn generate_wat(&self) -> WatModule {
-        let mut wat_funcs = Vec::new();
+        let mut wat_imports = Vec::new();
+        for import in self.ir.imports.iter() {
+            let signature = self.get_wat_signature(&import.signature);
+            wat_imports.push(signature);
+        }
 
+        let mut wat_funcs = Vec::new();
         for func in self.ir.functions.iter() {
             let locals = func
                 .locals
@@ -35,6 +40,7 @@ impl<'a> CodegenContext<'a> {
             self.visit_statement(&func.body, &mut instructions);
 
             let func = WatFunction {
+                is_exported: func.is_exported,
                 signature: self.get_wat_signature(&func.signature),
                 locals,
                 instructions,
@@ -45,6 +51,7 @@ impl<'a> CodegenContext<'a> {
 
         WatModule {
             functions: wat_funcs,
+            imports: wat_imports,
             main_func: self.ir.main_func.clone(),
         }
     }
@@ -67,7 +74,6 @@ impl<'a> CodegenContext<'a> {
 
         WatFunctionSignature {
             name: ir_sig.name.clone(),
-            is_exported: ir_sig.is_exported,
             return_ty,
             params,
         }
@@ -233,12 +239,21 @@ impl<'a> CodegenContext<'a> {
                 instrs.push(WatInstruction::GetLocal(name.clone()));
             }
 
-            IRExpression::Call { name, args, .. } => {
+            IRExpression::Call { name, args, ty } => {
                 for arg in args {
                     self.visit_expression(arg, instrs);
                 }
 
                 instrs.push(WatInstruction::Call(name.clone()));
+
+                // All expressions must leave a value on the stack
+                // If the function returns unit, we need to push a 0 onto the stack
+                // Which will then be dropped immediatley after
+                //
+                // An optimization pass should remove pushes onto the stack that are immediately dropped
+                if ty.is_unit() {
+                    instrs.push(WatInstruction::Const(WatValue::I32(0)));
+                }
             }
         }
     }

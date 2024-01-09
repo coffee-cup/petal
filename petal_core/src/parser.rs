@@ -3,7 +3,7 @@ use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
 use wasmparser::Import;
 
-use crate::ast::{ExprNode, ImportFunc};
+use crate::ast::{ExprNode, FuncSignature, ImportFunc};
 
 use super::{
     ast::{
@@ -472,6 +472,7 @@ impl<'a> Parser<'a> {
                 TT::Fun | TT::Export => {
                     self.parse_function()?;
                 }
+                TT::Import => self.parse_import_function()?,
                 TT::Comment => {
                     self.consume()?;
                 }
@@ -540,7 +541,38 @@ impl<'a> Parser<'a> {
             self.consume_expected(TT::Fun)?;
         }
 
+        // Function signature
+        let signature = self.parse_function_signature()?;
+
+        // Function body
+        let block = self.parse_block()?;
+        span = span.merge(self.program.ast.statements[block].span.clone());
+
+        self.program.add_function(FuncDecl {
+            is_exported,
+            signature,
+            body: block,
+            span,
+        });
+
+        Ok(())
+    }
+
+    fn parse_import_function(&mut self) -> ParserResult<()> {
+        let token = self.consume()?;
+        let mut span = token.span();
+
+        let signature = self.parse_function_signature()?;
+        span = span.merge(signature.span.clone());
+
+        self.program.add_import(ImportFunc { signature, span });
+
+        Ok(())
+    }
+
+    fn parse_function_signature(&mut self) -> ParserResult<FuncSignature> {
         let ident = self.parse_identifier()?;
+        let mut span = self.program.span_for_ident(ident);
 
         // Generic type parameters
         let mut type_params = Vec::new();
@@ -571,24 +603,18 @@ impl<'a> Parser<'a> {
         // Return type
         let mut return_ty = None;
         if self.match_expected(TT::Colon)? {
-            return_ty = Some(self.parse_type()?);
+            let annotation = self.parse_type()?;
+            span = span.merge(annotation.span.clone());
+            return_ty = Some(annotation);
         }
 
-        // Function body
-        let block = self.parse_block()?;
-        span = span.merge(self.program.ast.statements[block].span.clone());
-
-        self.program.add_function(FuncDecl {
+        Ok(FuncSignature {
             ident,
-            is_exported,
             type_params,
             args,
             return_ty,
-            body: block,
             span,
-        });
-
-        Ok(())
+        })
     }
 
     fn parse_identifier(&mut self) -> ParserResult<IdentId> {
@@ -661,7 +687,6 @@ impl<'a> Parser<'a> {
         match self.peek().token_type {
             TT::Let => self.parse_let_declaration(),
             TT::Return => self.parse_return(),
-            TT::Import => self.parse_import_function(),
             _ => self.parse_statement(),
         }
     }
@@ -680,43 +705,6 @@ impl<'a> Parser<'a> {
         }
 
         Ok(self.program.new_statement(Stmt::Return(expr), span))
-    }
-
-    fn parse_import_function(&mut self) -> ParserResult<StmtId> {
-        let token = self.consume()?;
-        let mut span = token.span();
-
-        let ident = self.parse_identifier()?;
-
-        // Function args
-        self.consume_expected(TT::LeftParen)?;
-        let mut args: Vec<FuncArg> = Vec::new();
-        while !self.peek().is(TT::RightParen) && !self.is_at_end() {
-            args.push(self.parse_function_arg()?);
-
-            if self.peek().is(TT::Comma) {
-                self.consume()?;
-            }
-        }
-        let right_paren = self.consume_expected(TT::RightParen)?;
-        span = span.merge(right_paren.span());
-
-        // Return type
-        let mut return_ty = None;
-        if self.match_expected(TT::Colon)? {
-            let annotation = self.parse_type()?;
-            span = span.merge(annotation.span.clone());
-            return_ty = Some(annotation);
-        }
-
-        Ok(self.program.new_statement(
-            Stmt::Import(ImportFunc {
-                ident,
-                args,
-                return_ty,
-            }),
-            span,
-        ))
     }
 
     fn parse_let_declaration(&mut self) -> ParserResult<StmtId> {
@@ -912,6 +900,8 @@ impl<'a> Parser<'a> {
 
 #[cfg(test)]
 mod tests {
+    use wast::core::Import;
+
     use crate::ast::{ExprNode, Identifier, StmtNode};
 
     use super::*;
@@ -934,7 +924,15 @@ mod tests {
         (idents, exprs)
     }
 
-    fn parse_stmt(s: &str) -> (Vec<Identifier>, Vec<ExprNode>, Vec<StmtNode>, Vec<FuncDecl>) {
+    fn parse_stmt(
+        s: &str,
+    ) -> (
+        Vec<Identifier>,
+        Vec<ExprNode>,
+        Vec<StmtNode>,
+        Vec<FuncDecl>,
+        Vec<ImportFunc>,
+    ) {
         let mut lexer = Lexer::new(s);
         let mut parser = Parser::new(&mut lexer).unwrap();
         parser.parse_program().unwrap();
@@ -959,7 +957,12 @@ mod tests {
             funcs.push(func.clone())
         }
 
-        (idents, exprs, stmts, funcs)
+        let mut imports = Vec::new();
+        for import in parser.program.imports.iter() {
+            imports.push(import.clone())
+        }
+
+        (idents, exprs, stmts, funcs, imports)
     }
 
     #[test]

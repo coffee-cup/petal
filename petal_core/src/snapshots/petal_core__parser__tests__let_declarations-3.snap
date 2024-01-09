@@ -92,4 +92,5 @@ expression: "parse_stmt(\"let a: Float = b\")"
         },
     ],
     [],
+    [],
 )

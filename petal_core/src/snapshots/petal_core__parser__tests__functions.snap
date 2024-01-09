@@ -41,13 +41,25 @@ expression: "parse_stmt(\"fn foo() {}\")"
     ],
     [
         FuncDecl {
-            ident: IdentId(
-                1v1,
-            ),
             is_exported: false,
-            type_params: [],
-            args: [],
-            return_ty: None,
+            signature: FuncSignature {
+                ident: IdentId(
+                    1v1,
+                ),
+                type_params: [],
+                args: [],
+                return_ty: None,
+                span: Span {
+                    start: Pos(
+                        3,
+                    ),
+                    end: Some(
+                        Pos(
+                            5,
+                        ),
+                    ),
+                },
+            },
             body: StmtId(
                 1v1,
             ),
@@ -63,4 +75,5 @@ expression: "parse_stmt(\"fn foo() {}\")"
             },
         },
     ],
+    [],
 )

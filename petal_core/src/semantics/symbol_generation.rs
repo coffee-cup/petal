@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Expr, ExprId, FuncDecl, Stmt, StmtId, TypeAnnotation},
+    ast::{Expr, ExprId, FuncDecl, FuncSignature, ImportFunc, Stmt, StmtId, TypeAnnotation},
     types::{FunctionAppType, MonoType, PolyType},
 };
 
@@ -10,27 +10,36 @@ use super::{
 
 impl<'a> SemanticContext<'a> {
     pub fn generate_symbols_for_program(&mut self) -> SemanticResult<()> {
-        // Add all functions to symbol table
-        for func in self.program.functions.iter() {
-            let fun_name = self.program.get_ident_name(func.ident);
+        self.program
+            .functions
+            .clone()
+            .iter()
+            .map(|func| self.add_functions_to_symbol_table(func))
+            .collect::<SemanticResult<()>>()?;
 
-            if let Some(sym) = self.symbol_table.get(&fun_name) {
-                return Err(SemanticError::FunctionAlreadyDeclared {
-                    name: sym.name,
-                    first_declaration: sym.decl_source,
-                    span: self.program.span_for_ident(func.ident),
-                });
-            }
+        self.program
+            .imports
+            .clone()
+            .iter()
+            .map(|import| self.add_imports_to_symbol_table(import))
+            .collect::<SemanticResult<()>>()?;
 
-            let func_ty = self.get_type_of_function_decl(func)?;
+        // println!("Symbol table\n{}", self.symbol_table);
 
-            let sym = self.symbol_table.insert(
-                fun_name,
-                func_ty,
-                Some(self.program.span_for_ident(func.ident)),
-            );
-            self.symbol_table.associate_ident(func.ident, sym.id);
-        }
+        // Add all imports to the symbol table
+        // for import in self.program.imports.iter() {
+        //     let import_name = self.program.get_ident_name(import.ident);
+
+        //     if let Some(sym) = self.symbol_table.get(&import_name) {
+        //         return Err(SemanticError::FunctionAlreadyDeclared {
+        //             name: sym.name,
+        //             first_declaration: sym.decl_source,
+        //             span: self.program.span_for_ident(import.ident),
+        //         });
+        //     }
+
+        //     let import_ty = self.get_type_of_function_decl()?;
+        // }
 
         // Analysis the top-level statements
         for stmt in self.program.main_stmts.clone().iter() {
@@ -38,32 +47,110 @@ impl<'a> SemanticContext<'a> {
         }
 
         for func in self.program.functions.clone().iter() {
-            self.symbol_table.enter_scope();
+            self.generate_symbols_for_function_bodies(func)?;
+        }
 
-            // Add function arguments to symbol table
-            for arg in func.args.iter() {
-                let ident = &self.program.ast.identifiers[arg.ident];
+        Ok(())
+    }
 
-                if let Some(sym) = self.symbol_table.get_in_current_scope(&ident.name) {
-                    return Err(SemanticError::ArgumentAlreadyDefined {
-                        name: sym.name.clone(),
-                        first_declaration: sym.decl_source,
-                        span: ident.span.clone(),
-                    });
-                }
+    /// Generate symbols for all function bodies
+    fn generate_symbols_for_function_bodies(&mut self, func: &FuncDecl) -> SemanticResult<()> {
+        self.symbol_table.enter_scope();
 
-                let ty = self.type_for_annotation(&arg.ty)?;
+        // Add function arguments to symbol table
+        for arg in func.signature.args.iter() {
+            let ident = &self.program.ast.identifiers[arg.ident];
 
-                let sym =
-                    self.symbol_table
-                        .insert_mono(ident.name.clone(), ty, Some(ident.span.clone()));
-                self.symbol_table.associate_ident(arg.ident, sym.id);
+            if let Some(sym) = self.symbol_table.get_in_current_scope(&ident.name) {
+                return Err(SemanticError::ArgumentAlreadyDefined {
+                    name: sym.name.clone(),
+                    first_declaration: sym.decl_source,
+                    span: ident.span.clone(),
+                });
             }
 
-            self.generate_symbols_for_statement(func.body)?;
+            let ty = self.type_for_annotation(&arg.ty)?;
 
-            self.symbol_table.leave_scope();
+            let sym =
+                self.symbol_table
+                    .insert_mono(ident.name.clone(), ty, Some(ident.span.clone()));
+            self.symbol_table.associate_ident(arg.ident, sym.id);
         }
+
+        // Add function body to symbol table
+        self.generate_symbols_for_statement(func.body)?;
+
+        self.symbol_table.leave_scope();
+
+        Ok(())
+    }
+
+    /// Add the function to the symbol table so that it can be referenced by other functions
+    fn add_functions_to_symbol_table(&mut self, func: &FuncDecl) -> SemanticResult<()> {
+        let fun_name = self.program.get_ident_name(func.signature.ident);
+
+        if let Some(sym) = self.symbol_table.get(&fun_name) {
+            return Err(SemanticError::FunctionAlreadyDeclared {
+                name: sym.name,
+                first_declaration: sym.decl_source,
+                span: self.program.span_for_ident(func.signature.ident),
+            });
+        }
+
+        let func_ty = self.get_type_of_function_signature(&func.signature)?;
+
+        let sym = self.symbol_table.insert(
+            fun_name,
+            func_ty,
+            Some(self.program.span_for_ident(func.signature.ident)),
+        );
+        self.symbol_table
+            .associate_ident(func.signature.ident, sym.id);
+
+        Ok(())
+    }
+
+    fn add_imports_to_symbol_table(&mut self, import: &ImportFunc) -> SemanticResult<()> {
+        let import_name = self.program.get_ident_name(import.signature.ident);
+
+        if let Some(sym) = self.symbol_table.get(&import_name) {
+            return Err(SemanticError::FunctionAlreadyDeclared {
+                name: sym.name,
+                first_declaration: sym.decl_source,
+                span: self.program.span_for_ident(import.signature.ident),
+            });
+        }
+
+        let import_ty = self.get_type_of_function_signature(&import.signature)?;
+
+        let sym = self.symbol_table.insert(
+            import_name,
+            import_ty,
+            Some(self.program.span_for_ident(import.signature.ident)),
+        );
+        self.symbol_table
+            .associate_ident(import.signature.ident, sym.id);
+
+        self.symbol_table.enter_scope();
+        for arg in import.signature.args.iter() {
+            let ident = &self.program.ast.identifiers[arg.ident];
+
+            if let Some(sym) = self.symbol_table.get_in_current_scope(&ident.name) {
+                return Err(SemanticError::ArgumentAlreadyDefined {
+                    name: sym.name.clone(),
+                    first_declaration: sym.decl_source,
+                    span: ident.span.clone(),
+                });
+            }
+
+            let ty = self.type_for_annotation(&arg.ty)?;
+
+            let sym =
+                self.symbol_table
+                    .insert_mono(ident.name.clone(), ty, Some(ident.span.clone()));
+            self.symbol_table.associate_ident(arg.ident, sym.id);
+        }
+        self.symbol_table.leave_scope();
 
         Ok(())
     }
@@ -138,8 +225,6 @@ impl<'a> SemanticContext<'a> {
                     self.generate_symbols_for_expression(*return_expr)?;
                 }
             }
-
-            Stmt::Import(_) => todo!(),
         };
 
         Ok(())
@@ -212,17 +297,20 @@ impl<'a> SemanticContext<'a> {
         Ok(())
     }
 
-    // Get the polytype of a function declaration based on its signature
-    fn get_type_of_function_decl(&self, func: &FuncDecl) -> SemanticResult<PolyType> {
+    // Get the polytype of a function signature
+    fn get_type_of_function_signature(
+        &self,
+        signature: &FuncSignature,
+    ) -> SemanticResult<PolyType> {
         // Get the type of the arguments
         let mut param_tys = Vec::new();
-        for param in &func.args {
+        for param in &signature.args {
             let ty = self.type_for_annotation(&param.ty)?;
             param_tys.push(ty);
         }
 
         // Get the return type
-        let return_ty = match &func.return_ty {
+        let return_ty = match &signature.return_ty {
             Some(annotation) => self.type_for_annotation(annotation)?,
             None => MonoType::unit(),
         };

@@ -206,21 +206,33 @@ expression: "parse_stmt(\"\n            fn foo(foo: Int, bar: Int) {\n          
     ],
     [
         FuncDecl {
-            ident: IdentId(
-                1v1,
-            ),
             is_exported: false,
-            type_params: [],
-            args: [
-                FuncArg {
-                    ident: IdentId(
-                        2v1,
-                    ),
-                    ty: TypeAnnotation {
-                        name: "Int",
+            signature: FuncSignature {
+                ident: IdentId(
+                    1v1,
+                ),
+                type_params: [],
+                args: [
+                    FuncArg {
+                        ident: IdentId(
+                            2v1,
+                        ),
+                        ty: TypeAnnotation {
+                            name: "Int",
+                            span: Span {
+                                start: Pos(
+                                    25,
+                                ),
+                                end: Some(
+                                    Pos(
+                                        27,
+                                    ),
+                                ),
+                            },
+                        },
                         span: Span {
                             start: Pos(
-                                25,
+                                20,
                             ),
                             end: Some(
                                 Pos(
@@ -229,26 +241,26 @@ expression: "parse_stmt(\"\n            fn foo(foo: Int, bar: Int) {\n          
                             ),
                         },
                     },
-                    span: Span {
-                        start: Pos(
-                            20,
+                    FuncArg {
+                        ident: IdentId(
+                            3v1,
                         ),
-                        end: Some(
-                            Pos(
-                                27,
-                            ),
-                        ),
-                    },
-                },
-                FuncArg {
-                    ident: IdentId(
-                        3v1,
-                    ),
-                    ty: TypeAnnotation {
-                        name: "Int",
+                        ty: TypeAnnotation {
+                            name: "Int",
+                            span: Span {
+                                start: Pos(
+                                    35,
+                                ),
+                                end: Some(
+                                    Pos(
+                                        37,
+                                    ),
+                                ),
+                            },
+                        },
                         span: Span {
                             start: Pos(
-                                35,
+                                30,
                             ),
                             end: Some(
                                 Pos(
@@ -257,19 +269,19 @@ expression: "parse_stmt(\"\n            fn foo(foo: Int, bar: Int) {\n          
                             ),
                         },
                     },
-                    span: Span {
-                        start: Pos(
-                            30,
+                ],
+                return_ty: None,
+                span: Span {
+                    start: Pos(
+                        16,
+                    ),
+                    end: Some(
+                        Pos(
+                            18,
                         ),
-                        end: Some(
-                            Pos(
-                                37,
-                            ),
-                        ),
-                    },
+                    ),
                 },
-            ],
-            return_ty: None,
+            },
             body: StmtId(
                 2v1,
             ),
@@ -285,4 +297,5 @@ expression: "parse_stmt(\"\n            fn foo(foo: Int, bar: Int) {\n          
             },
         },
     ],
+    [],
 )

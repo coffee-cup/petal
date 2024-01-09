@@ -18,6 +18,18 @@ pub fn run_wasm(wasm: Wasm, function: Option<String>) -> Result<Vec<Val>> {
         caller.data_mut().value += 1;
     });
 
+    let print_func = Func::wrap(&mut store, |_caller: Caller<'_, HostState>, param: i64| {
+        println!("{param}");
+    });
+
+    let add_func = Func::wrap(
+        &mut store,
+        |_caller: Caller<'_, HostState>, a: i64, b: i64| -> i64 {
+            return a + b;
+        },
+    );
+
+    // let imports = [print_func.into(), add_func.into()];
     let imports = [];
     let instance =
         Instance::new(&mut store, &module, &imports).context("creating wasmtime instance")?;
