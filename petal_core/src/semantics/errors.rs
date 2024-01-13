@@ -2,7 +2,11 @@ use miette::Diagnostic;
 
 use thiserror::Error;
 
-use crate::{ast::BinaryOpType, source_info::Span, types::MonoType};
+use crate::{
+    ast::{BinaryOpType, PrefixOpType},
+    source_info::Span,
+    types::MonoType,
+};
 
 #[derive(Diagnostic, Error, Clone, Debug)]
 pub enum SemanticError {
@@ -154,6 +158,17 @@ pub enum SemanticError {
 
         #[label("found {found} arguments")]
         found_span: Span,
+    },
+
+    #[error("`{op}` operations are only valid for {supported_operand_tys} types. We found `{ty}`")]
+    InvalidPrefixExpressionType {
+        ty: MonoType,
+
+        op: PrefixOpType,
+        supported_operand_tys: String,
+
+        #[label("found `{ty}`. {supported_operand_tys}")]
+        span: Span,
     },
 
     #[error("`{op}` operations are only valid for {supported_operand_tys} types. We found `{ty}`")]

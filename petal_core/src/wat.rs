@@ -21,6 +21,7 @@ pub enum WatInstruction {
     // Numbers https://developer.mozilla.org/en-US/docs/WebAssembly/Reference/Numeric
     Const(WatValue),
     Equal(WatValueType),
+    EqualZero(WatValueType),
     NotEqual(WatValueType),
     GreaterThan(WatValueType),
     GreaterOrEqual(WatValueType),
@@ -130,6 +131,7 @@ impl Display for WatInstruction {
                 WatValue::F64(value) => write!(f, "f64.const {}", value),
             },
             Equal(ty) => write!(f, "{}.eq", ty),
+            EqualZero(ty) => write!(f, "{}.eqz", ty),
             NotEqual(ty) => write!(f, "{}.ne", ty),
 
             LessThan(ty @ WatValueType::I32 | ty @ WatValueType::I64) => {

@@ -311,3 +311,21 @@ impl Display for BinaryOpType {
         }
     }
 }
+
+impl PrefixOpType {
+    pub fn supported_operand_types(&self) -> Vec<MonoType> {
+        match self {
+            PrefixOpType::Neg => vec![MonoType::int(), MonoType::float()],
+            PrefixOpType::Not => vec![MonoType::bool()],
+        }
+    }
+}
+
+impl Display for PrefixOpType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PrefixOpType::Neg => write!(f, "-"),
+            PrefixOpType::Not => write!(f, "!"),
+        }
+    }
+}

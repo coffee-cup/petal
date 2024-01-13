@@ -1,6 +1,7 @@
 use crate::{
-    ast::{ExprId, FuncDecl, StmtId},
+    ast::{ExprId, FuncDecl, PrefixOpType, StmtId},
     semantics::errors::SemanticError,
+    types::MonoType,
 };
 
 use super::{context::SemanticContext, errors::SemanticResult};
@@ -82,7 +83,27 @@ impl<'a> SemanticContext<'a> {
             Expr::String(_) => {}
             Expr::Bool(_) => {}
             Expr::Ident(_) => {}
-            Expr::PrefixOp { op: _, right: _ } => todo!(),
+            Expr::PrefixOp { op, right } => {
+                let right_ty = self.type_for_expr(&right).unwrap();
+                let supported_operand_tys = op.prefix_type.supported_operand_types();
+                let is_supported_operand_ty = supported_operand_tys.contains(&right_ty);
+
+                if !is_supported_operand_ty {
+                    let right_expr = self.program.ast.expressions[right].clone();
+                    return Err(SemanticError::InvalidPrefixExpressionType {
+                        ty: right_ty,
+                        op: op.prefix_type,
+                        supported_operand_tys: supported_operand_tys
+                            .iter()
+                            .map(|ty| format!("`{ty}`"))
+                            .collect::<Vec<String>>()
+                            .join(", "),
+                        span: right_expr.span,
+                    });
+                }
+
+                self.analysis_expression(right)?;
+            }
             Expr::BinaryOp { op, left, right } => {
                 let left_ty = self.type_for_expr(&left).unwrap();
                 let _right_ty = self.type_for_expr(&right).unwrap();

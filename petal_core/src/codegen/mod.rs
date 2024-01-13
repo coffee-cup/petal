@@ -1,4 +1,7 @@
-use crate::types::{FunctionAppType, HasType};
+use crate::{
+    ir::IRUnOpType,
+    types::{FunctionAppType, HasType},
+};
 
 use self::context::CodegenContext;
 
@@ -173,11 +176,31 @@ impl<'a> CodegenContext<'a> {
             }
             IRExpression::StringLiteral(_) => todo!(),
 
-            IRExpression::PrefixOp {
-                op: _,
-                right: _,
-                ty: _,
-            } => todo!(),
+            IRExpression::PrefixOp { op, right, ty } => {
+                self.visit_expression(right, instrs);
+
+                match op {
+                    IRUnOpType::Neg => {
+                        let wat_ty = self.type_for_monotype(ty);
+
+                        match wat_ty {
+                            WatValueType::I64 => {
+                                instrs.push(WatInstruction::Const(WatValue::I64(-1)))
+                            }
+                            WatValueType::F64 => {
+                                instrs.push(WatInstruction::Const(WatValue::F64(-1.0)))
+                            }
+                            _ => unreachable!(),
+                        };
+
+                        instrs.push(WatInstruction::Mult(wat_ty))
+                    }
+
+                    IRUnOpType::Not => {
+                        instrs.push(WatInstruction::EqualZero(self.type_for_monotype(ty)))
+                    }
+                }
+            }
 
             IRExpression::BinOp {
                 op,
