@@ -288,6 +288,7 @@ impl<'a> CodegenContext<'a> {
                 "Int" => WatValueType::I64,
                 "Float" => WatValueType::F64,
                 "Bool" => WatValueType::I32,
+                "Unit" => WatValueType::I32,
                 _ => todo!(),
             },
             MonoType::FunApp(_) => unreachable!(),

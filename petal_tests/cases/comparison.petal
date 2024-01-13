@@ -9,6 +9,8 @@ export fn test(): Bool {
   let g2 = 1 > 0 # true
   let ge1 = 1 >= 1  # true
 
+  let n1 = !true
+
   return a1
 }
 

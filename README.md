@@ -46,11 +46,13 @@ This is a rough list of everything that needs to be done
   - [x] Creation
   - [x] Calling
   - [x] Return values
-- [ ] Import host functions
-- [ ] Import other files
+- [ ] Modules
+- [x] Import host functions
+- [ ] Encode wasm directly
 - [ ] Number casting
 - [ ] Structs
 - [ ] Strings
 - [ ] Arrays
+- [ ] VSCode syntax highlighting
 - [ ] TypeScript bindings
-- [ ] Match statements
+- [ ] Match expressions

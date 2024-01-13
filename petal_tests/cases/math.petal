@@ -3,7 +3,8 @@ export fn test(): Int {
   let b = a * 2
   let c = (24 / b) * 123
   let d = 1 + 2 * (3 - 5) + 6
-  return c - d
+  let e = -d
+  return c - e
 }
 
-# Results: 366
+# Results: 372
