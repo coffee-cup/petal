@@ -37,7 +37,7 @@ This is a rough list of everything that needs to be done
   - [ ] Assertions
 - [x] Primitive constants
 - [x] Binary operations
-- [ ] Unary operations
+- [x] Unary operations
 - [x] Control flow
   - [x] If
   - [x] Loops
