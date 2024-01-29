@@ -23,14 +23,6 @@ pub fn link_runtime(runtime: Runtime, linker: &mut Linker<RuntimeState>) -> Resu
         Runtime::Petal => {
             linker.func_wrap(
                 "env",
-                "add",
-                |_caller: Caller<'_, RuntimeState>, a: i64, b: i64| {
-                    return a + b;
-                },
-            )?;
-
-            linker.func_wrap(
-                "env",
                 "printInt",
                 |_caller: Caller<'_, RuntimeState>, param: i64| {
                     println!("{param}");

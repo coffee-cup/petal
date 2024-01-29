@@ -46,13 +46,35 @@ This is a rough list of everything that needs to be done
   - [x] Creation
   - [x] Calling
   - [x] Return values
-- [ ] Modules
 - [x] Import host functions
 - [ ] Encode wasm directly
-- [ ] Number casting
-- [ ] Structs
+- [ ] Memory
 - [ ] Strings
+- [ ] Modules
+- [ ] Structs
 - [ ] Arrays
+- [ ] Generics
+  - [ ] Generic typechecking
+  - [ ] Polymorphic wasm generation
+- [ ] Standard library
+- [ ] Number casting
 - [ ] VSCode syntax highlighting
 - [ ] TypeScript bindings
 - [ ] Match expressions
+- [ ] Component spec generation
+- [ ] Website
+  - [ ] Landing page
+  - [ ] Docs
+  - [ ] Dev blog
+  - [ ] Playground
+
+## examples
+
+How do we know that the language is actually useful?
+
+- [x] Hello world
+- [x] Fibonacci
+- [ ] FizzBuzz
+- [ ] Wasm4 game
+- [ ] Interop with TypeScript
+- [ ] HTTP handler
