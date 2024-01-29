@@ -246,8 +246,6 @@ impl<'a> SemanticContext<'a> {
                     MonoTypeData::new(right_ty.clone()).with_expr(*right),
                 );
 
-                
-
                 match op.binary_type {
                     // Comparison operators always return a boolean
                     BinaryOpType::Equality

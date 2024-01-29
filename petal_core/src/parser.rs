@@ -2,7 +2,6 @@ use miette::{Diagnostic, SourceSpan};
 use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
 
-
 use crate::ast::{ExprNode, FuncSignature, ImportFunc};
 
 use super::{

@@ -1,7 +1,4 @@
-use crate::{
-    ir::IRUnOpType,
-    types::{HasType},
-};
+use crate::{ir::IRUnOpType, types::HasType};
 
 use self::context::CodegenContext;
 
