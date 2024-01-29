@@ -31,10 +31,10 @@ This is a rough list of everything that needs to be done
   - [x] Type checking
   - [x] Wat generation
   - [x] Wasm bytes generation
-- [ ] Testing architecture
+- [x] Testing architecture
   - [x] Snapshot tests
   - [x] Output comparison
-  - [ ] Assertions
+  - [x] Assertions
 - [x] Primitive constants
 - [x] Binary operations
 - [x] Unary operations
