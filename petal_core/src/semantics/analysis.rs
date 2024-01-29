@@ -1,7 +1,6 @@
 use crate::{
-    ast::{ExprId, FuncDecl, PrefixOpType, StmtId},
+    ast::{ExprId, FuncDecl, StmtId},
     semantics::errors::SemanticError,
-    types::MonoType,
 };
 
 use super::{context::SemanticContext, errors::SemanticResult};
@@ -130,7 +129,7 @@ impl<'a> SemanticContext<'a> {
             }
             Expr::PostfixOp { op: _, left: _ } => todo!(),
 
-            Expr::Call { callee, args } => {
+            Expr::Call { callee: _, args } => {
                 args.iter().for_each(|arg| {
                     self.analysis_expression(*arg).unwrap();
                 });

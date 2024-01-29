@@ -246,7 +246,9 @@ impl<'a> SemanticContext<'a> {
                     MonoTypeData::new(right_ty.clone()).with_expr(*right),
                 );
 
-                let return_ty = match op.binary_type {
+                
+
+                match op.binary_type {
                     // Comparison operators always return a boolean
                     BinaryOpType::Equality
                     | BinaryOpType::Inequality
@@ -265,9 +267,7 @@ impl<'a> SemanticContext<'a> {
 
                         return_ty
                     }
-                };
-
-                return_ty
+                }
             }
 
             Expr::PostfixOp { op: _, left: _ } => todo!(),

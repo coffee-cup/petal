@@ -1,7 +1,7 @@
 use miette::{Diagnostic, SourceSpan};
 use std::{collections::HashMap, rc::Rc};
 use thiserror::Error;
-use wasmparser::Import;
+
 
 use crate::ast::{ExprNode, FuncSignature, ImportFunc};
 

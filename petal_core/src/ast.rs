@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use slotmap::{new_key_type, SlotMap};
-use wasmparser::Import;
+
 
 use crate::types::MonoType;
 

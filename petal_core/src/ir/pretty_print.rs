@@ -22,7 +22,7 @@ impl IRPrettyPrinter {
             self.print_import(import);
         });
 
-        self.output.push_str("\n");
+        self.output.push('\n');
 
         program.functions.iter().for_each(|func| {
             self.print_function(func);
@@ -48,7 +48,7 @@ impl IRPrettyPrinter {
             self.output(local.to_string());
         }
         if !func.locals.is_empty() {
-            self.output.push_str("\n");
+            self.output.push('\n');
         }
 
         self.print_statement(&func.body);
@@ -179,7 +179,7 @@ impl Display for IRExpression {
                 ty,
             } => write!(f, "({} {} {}):{}", lhs, op, rhs, ty),
             IRExpression::Ident { name, .. } => write!(f, "{}", name),
-            IRExpression::Call { name, args, ty } => {
+            IRExpression::Call { name, args, ty: _ } => {
                 let args_str = args
                     .iter()
                     .map(|arg| format!("{}", arg))

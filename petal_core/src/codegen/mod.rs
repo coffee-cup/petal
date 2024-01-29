@@ -1,6 +1,6 @@
 use crate::{
     ir::IRUnOpType,
-    types::{FunctionAppType, HasType},
+    types::{HasType},
 };
 
 use self::context::CodegenContext;

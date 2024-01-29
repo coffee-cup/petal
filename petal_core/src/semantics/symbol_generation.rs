@@ -13,16 +13,12 @@ impl<'a> SemanticContext<'a> {
         self.program
             .functions
             .clone()
-            .iter()
-            .map(|func| self.add_functions_to_symbol_table(func))
-            .collect::<SemanticResult<()>>()?;
+            .iter().try_for_each(|func| self.add_functions_to_symbol_table(func))?;
 
         self.program
             .imports
             .clone()
-            .iter()
-            .map(|import| self.add_imports_to_symbol_table(import))
-            .collect::<SemanticResult<()>>()?;
+            .iter().try_for_each(|import| self.add_imports_to_symbol_table(import))?;
 
         // println!("Symbol table\n{}", self.symbol_table);
 
