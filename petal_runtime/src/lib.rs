@@ -1,59 +1,24 @@
 use anyhow::{Context, Result};
+use linker::{link_runtime, Runtime};
 use petal_core::wasm::Wasm;
-use wasmtime::{Caller, Engine, Func, Instance, Linker, Module, Store, Val};
+use state::RuntimeState;
+use wasmtime::{Engine, Linker, Module, Store, Val};
 
-struct HostState {
-    pub value: i32,
-}
+pub mod linker;
+mod state;
 
-pub fn run_wasm(wasm: Wasm, function: Option<String>) -> Result<Vec<Val>> {
+pub fn run_wasm(wasm: Wasm, runtime: Runtime, function: Option<String>) -> Result<Vec<Val>> {
     let engine = Engine::default();
     let module = Module::new(&engine, wasm.bytes()).context("creating wasm module")?;
 
     let mut linker = Linker::new(&engine);
-    linker.func_wrap(
-        "env",
-        "add",
-        |_caller: Caller<'_, HostState>, a: i64, b: i64| {
-            return a + b;
-        },
-    )?;
+    link_runtime(runtime, &mut linker).context("Linking runtime")?;
 
-    linker.func_wrap(
-        "env",
-        "printInt",
-        |_caller: Caller<'_, HostState>, param: i64| {
-            println!("{param}");
-        },
-    )?;
-
-    let mut store = Store::new(&engine, HostState { value: 42 });
+    let mut store = Store::new(&engine, RuntimeState::default());
 
     let instance = linker
         .instantiate(&mut store, &module)
         .context("creating wasmtime instance")?;
-
-    // let _hello_fun = Func::wrap(&mut store, |mut caller: Caller<'_, HostState>| {
-    //     println!("Calling back...");
-    //     println!("> {}", caller.data().value);
-    //     caller.data_mut().value += 1;
-    // });
-
-    // let print_func = Func::wrap(&mut store, |_caller: Caller<'_, HostState>, param: i64| {
-    //     println!("{param}");
-    // });
-
-    // let add_func = Func::wrap(
-    //     &mut store,
-    //     |_caller: Caller<'_, HostState>, a: i64, b: i64| -> i64 {
-    //         return a + b;
-    //     },
-    // );
-
-    // let imports = [print_func.into(), add_func.into()];
-    // let imports = [];
-    // let instance =
-    //     Instance::new(&mut store, &module, &imports).context("creating wasmtime instance")?;
 
     // TODO: We should call the wasm.main_func here first always
 

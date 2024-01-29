@@ -1,9 +1,13 @@
+import assert(a: Int, b:Int)
+
 export fn test(): Int {
   let a = 1
   a = (a = 10)
+  assert(a, 10)
 
   let b = 100
   b = a + b + 1
+  assert(b, 111)
 
   return b
 }

@@ -2,7 +2,7 @@ use std::{io::Write, path::Path};
 
 use clap::{Parser, Subcommand};
 use petal_core::Compiler;
-use petal_runtime::{run_wasm, to_val_string};
+use petal_runtime::{linker::Runtime, run_wasm, to_val_string};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -97,7 +97,9 @@ fn main() {
                     petal_core::errors::print_compiler_error(&file, e);
                 }
                 Ok(wasm) => {
-                    let results = run_wasm(wasm, function).expect("Failed to run wasm");
+                    let results =
+                        run_wasm(wasm, Runtime::Petal, function).expect("Failed to run wasm");
+
                     println!(
                         "{}",
                         results

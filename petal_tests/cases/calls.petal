@@ -1,3 +1,5 @@
+import assert(a: Int, b:Int)
+
 fn fact(n: Int): Int {
   if n <= 1 {
     return 1
@@ -12,7 +14,11 @@ fn add(a: Int, b: Int): Int {
 
 export fn test(): Int {
   let x = fact(10)
+  assert(x, 3628800)
+
   let y = add(x, 2)
+  assert(y, 3628802)
+
   return y
 }
 

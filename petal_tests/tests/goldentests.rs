@@ -1,5 +1,5 @@
 use petal_core::Compiler;
-use petal_runtime::run_wasm;
+use petal_runtime::{linker::Runtime, run_wasm};
 use rstest::*;
 use std::path::PathBuf;
 
@@ -27,7 +27,7 @@ fn for_each_file(#[files("cases/**/*.petal")] path: PathBuf) {
         .compile_file(path.display().to_string().as_str())
         .unwrap();
 
-    let results = run_wasm(wasm, Some("test".to_string())).unwrap();
+    let results = run_wasm(wasm, Runtime::Tests, Some("test".to_string())).unwrap();
     let results_string = results
         .iter()
         .map(|val| petal_runtime::to_val_string(val).to_string())
