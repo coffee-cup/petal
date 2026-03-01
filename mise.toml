@@ -1,0 +1,23 @@
+[tools]
+rust = "1.93"
+
+[tasks.build]
+run = "cargo build"
+
+[tasks.test]
+run = "cargo test --all"
+
+[tasks.snapshot]
+run = "cargo insta test --review -p petal_core"
+
+[tasks.fix]
+run = """
+cargo fmt --all -- --check
+cargo clippy --fix --all-features --all-targets --allow-dirty --allow-staged
+"""
+
+[tasks.clean]
+run = """
+cargo clean
+rm -rf build
+"""

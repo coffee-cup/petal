@@ -14,10 +14,10 @@ Statically-typed language compiling to WASM, written in Rust.
 ## Commands
 
 ```sh
-just test       # run all tests (cargo test --all)
-just build      # cargo build
-just snapshot   # update insta snapshots (cargo insta test --review -p petal_core)
-just fix        # fmt check + clippy autofix
+mise run test       # run all tests (cargo test --all)
+mise run build      # cargo build
+mise run snapshot   # update insta snapshots (cargo insta test --review -p petal_core)
+mise run fix        # fmt check + clippy autofix
 ```
 
 ```sh
